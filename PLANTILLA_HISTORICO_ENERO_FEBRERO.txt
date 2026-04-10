@@ -1,0 +1,245 @@
+═══════════════════════════════════════════════════════════════════════════════
+  PLANTILLA PARA IMPORTAR HISTÓRICO: ENERO Y FEBRERO 2026
+  Sistema Alquileres - Validación de Integridad Referencial
+═══════════════════════════════════════════════════════════════════════════════
+
+ÍNDICE DE SHEETS (Completar en este orden):
+───────────────────────────────────────────────────────────────────────────────
+
+1. 📋 INSTRUCCIONES (LEER PRIMERO)
+2. 📅 PERIODOS_NUEVO
+3. 💡 RECIBOS_LUZ
+4. 📊 LECTURAS_UNIDAD
+5. 💰 COBROS_MENSUALES
+6. 🧮 LIQUIDACION_LUZ_DETALLE
+7. 💳 PAGOS (opcional, solo si hay historial)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SHEET 1: 📋 INSTRUCCIONES
+───────────────────────────────────────────────────────────────────────────────
+
+🔴 IMPORTANTE DE LEER:
+
+1. ORDEN OBLIGATORIO DE LLENADO:
+   - Primero: PERIODOS_NUEVO
+   - Segundo: RECIBOS_LUZ
+   - Tercero: LECTURAS_UNIDAD
+   - Cuarto: COBROS_MENSUALES
+   - Quinto: LIQUIDACION_LUZ_DETALLE
+   - Sexto (opcional): PAGOS
+
+2. DATOS QUE REUTILIZAREMOS (NO TOCAS):
+   ✓ Ocupaciones (ya existen, ocupan desde 2026-01-01 adelante)
+   ✓ Personas (Jeferson, Noelia, etc. ya están registradas)
+   ✓ Unidades (101, 102, 201, 202, 301, 302, 401, 402 ya existen)
+   ✓ Inmuebles (id=1, OK)
+
+3. VALIDACIONES AUTOMÁTICAS (no rellenar):
+   ✓ Las columnas grises/protegidas son calculadas automáticamente
+   ✓ Los IDs se generan automáticamente al INSERT
+   ✓ Las referencias a otras tablas se validan antes de insertar
+
+4. SI ALGO FALLA:
+   ✓ Revisa que no haya duplicados de periodo (enero 2026 solo 1 vez)
+   ✓ Las fechas deben ser dentro del rango mes (01/01 a 31/01)
+   ✓ Los IDs de unidades/personas deben existir (ve al Excel lookup)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SHEET 2: 📅 PERIODOS_NUEVO
+───────────────────────────────────────────────────────────────────────────────
+
+Formato: Copia estos DOS registros:
+
+| id_periodo | anio | mes | fecha_inicio | fecha_fin  | estado  | observacion        |
+|------------|------|-----|--------------|------------|---------|-------------------|
+| [AUTO]     | 2026 |  1  | 2026-01-01   | 2026-01-31 | CERRADO | Importado histórico|
+| [AUTO]     | 2026 |  2  | 2026-02-01   | 2026-02-28 | CERRADO | Importado histórico|
+
+⚠️ NOTAS:
+- id_periodo: dejalo en blanco, se genera automáticamente
+- anio: SIEMPRE 2026
+- mes: 1 para enero, 2 para febrero
+- estado: CERRADO (son periodos pasados)
+- Las fechas DEBEN ser exactas (01 del mes a fin del mes)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SHEET 3: 💡 RECIBOS_LUZ
+───────────────────────────────────────────────────────────────────────────────
+
+Formato: Une fila por periodo (enero + febrero)
+
+| id_recibo_luz | id_periodo | id_inmueble | precio_kwh | total_recibo | fecha_vencimiento | lectura_anterior_general | lectura_actual_general | observacion        |
+|---|---|---|---|---|---|---|---|---|
+| [AUTO] | 3 (enero) | 1 | 0.58 | 245.50 | 2026-01-31 | 16000.00 | 16400.00 | Reposición recibo PAD nov |
+| [AUTO] | 4 (febrero) | 1 | 0.58 | 218.75 | 2026-02-28 | 16400.00 | 16800.00 | Reposición recibo PAD dic |
+
+⚠️ NOTAS:
+- id_recibo_luz: dejalo en blanco
+- id_periodo: 3=enero, 4=febrero (lo que criaste en PERIODOS_NUEVO)
+- id_inmueble: SIEMPRE 1 (solo tienen 1 inmueble)
+- precio_kwh: toma del PDF del recibo (ej: 0.5814 en marzo)
+- total_recibo: TOTAL del recibo (sin IVA si es aparte)
+- fecha_vencimiento: vencimiento del recibo del mes
+- lectura_anterior_general / lectura_actual_general: medidor general del edificio del PDF
+- observacion: dónde sacaste los datos (PDF PAD, etc)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SHEET 4: 📊 LECTURAS_UNIDAD
+───────────────────────────────────────────────────────────────────────────────
+
+Formato: Una fila POR UNIDAD MEDIBLE por mes (11 unidades × 2 meses = 22 filas)
+
+| id_lectura | id_periodo | id_unidad | id_ocupacion | lectura_anterior | lectura_actual | fecha_lectura | observacion | estado     |
+|---|---|---|---|---|---|---|---|---|
+| [AUTO] | 3 | 1 | 1 | 16312.40 | 16409.60 | 2026-01-15 | Primer piso | REGISTRADO |
+| [AUTO] | 3 | 2 | 2 | 620.90 | 641.40 | 2026-01-15 | 1A | REGISTRADO |
+| [AUTO] | 3 | 3 | 3 | 534.40 | 561.30 | 2026-01-15 | 2A | REGISTRADO |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... |
+
+⚠️ NOTAS:
+- id_lectura: dejalo en blanco
+- id_periodo: 3=enero, 4=febrero
+- id_unidad: 1 a 11 (unidades 101, 102, 201, 202, 301, 302, 401, 402, Escalera, Terraza, Sala)
+- id_ocupacion: debe ser válido en la BD (quien ocupaba esa unidad en esa fecha)
+  → Revisa Sheet LOOKUP_OCUPACIONES para saber qué id_ocupacion corresponde
+- lectura_anterior: IGUAL a lectura_actual del mes anterior
+  - Enero: usa lo que tenías de diciembre 2025 (el PDF dirá "lectura anterior")
+  - Febrero: usa lectura_actual de enero
+- lectura_actual: del PDF del recibo (lectura actual del mes)
+- fecha_lectura: cuándo se leyó (15 del mes típico)
+- observacion: descripción de unidad (Piso 1, Depto 1A, etc)
+- estado: REGISTRADO (siempre)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SHEET 5: 💰 COBROS_MENSUALES
+───────────────────────────────────────────────────────────────────────────────
+
+Formato: Una fila PER COBRO (11 unidades × 2 meses = ~22 filas, menos no medibles)
+
+| id_cobro | id_periodo | id_persona | id_unidad | monto_alquiler | monto_luz | ajuste_minimo_luz | monto_agua | monto_gas | otros_conceptos | total_cobrar | estado_pago | fecha_vencimiento | observacion |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| [AUTO] | 3 | 1 | 1 | 700.00 | 40.50 | 0.00 | 15.00 | 30.00 | 0.00 | 785.50 | PENDIENTE | 2026-01-31 | Importado |
+| [AUTO] | 3 | 2 | 2 | 300.00 | 22.80 | 0.00 | 15.00 | 30.00 | 0.00 | 367.80 | PENDIENTE | 2026-01-31 | Importado |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+
+⚠️ NOTAS CRÍTICAS:
+- id_cobro: dejalo en blanco
+- id_periodo: 3=enero, 4=febrero
+- id_persona: ID de la persona (revisa LOOKUP_PERSONAS)
+- id_unidad: ID de la unidad (1-11)
+- monto_alquiler: DEBE COINCIDIR con ocupacion_unidad.monto_alquiler de ese mes
+- monto_luz: SALE de liquidacion_luz_detalle.total_pagar_luz (lo calculas importando recibos)
+  → Por ahora: suma_consumo_unidad / suma_total_consumo × total_recibo
+- ajuste_minimo_luz: solo si monto_luz < monto_minimo (hoy=12 soles)
+  → Si es menor: ajuste = 12 - monto_luz
+  → Si no: 0
+- monto_agua: CONSTANTE (en tu caso 15 soles, revisa tarifas)
+- monto_gas: VARIABLE, tú lo ajustas (por ahora: 30 soles si participa, 0 si no)
+- otros_conceptos: lo que fue mantenimiento (revisa tarifas)
+- total_cobrar: SUMA de todos los montos anteriores
+  → Fórmula: monto_alquiler + monto_luz + ajuste_minimo_luz + monto_agua + monto_gas + otros
+- estado_pago: PENDIENTE (es histórico, puede cambiar luego si pagaron)
+- fecha_vencimiento: fin de mes típicamente
+- observacion: "Importado" o "Reposición"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SHEET 6: 🧮 LIQUIDACION_LUZ_DETALLE
+───────────────────────────────────────────────────────────────────────────────
+
+Formato: Una fila PER UNIDAD MEDIBLE por mes (11 × 2 = 22 filas)
+
+| id_periodo | id_inmueble | id_unidad | id_persona | id_lectura | id_recibo_luz | consumo_kwh | porcentaje_participacion | monto_consumo | gasto_comun | ajuste | total_pagar_luz | estado | observacion |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 3 | 1 | 1 | 1 | [AUTO] | [BUSCAR] | 96.20 | 0.320000 | 55.87 | 18.43 | 0.00 | 74.30 | PROCESADO | Importado |
+| 3 | 1 | 2 | 2 | [AUTO] | [BUSCAR] | 20.50 | 0.068100 | 11.90 | 3.91 | 0.00 | 15.81 | PROCESADO | Importado |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+
+⚠️ NOTAS CRÍTICAS:
+- id_periodo: 3=enero, 4=febrero
+- id_inmueble: SIEMPRE 1
+- id_unidad: 1 a 11
+- id_persona: de ocupacion_unidad (quien ocupa esa unidad)
+- id_lectura: [BUSCAR en tabla lecturas_unidad para este mes]
+- id_recibo_luz: [BUSCAR en tabla recibos_luz para este periodo]
+- consumo_kwh: lectura_actual - lectura_anterior (del sheet LECTURAS_UNIDAD)
+- porcentaje_participacion: consumo_unidad / suma_consumos_total
+  → Fórmula: consumo_kwh / SUM(todos los consumos del mes)
+- monto_consumo: consumo × precio_kwh × (1 + IGV 18%)
+  → Fórmula: consumo_kwh × precio_kwh × 1.18, luego redondea al 0.1
+- gasto_comun: (total_recibo - suma_montos_consumo) × porcentaje_participacion
+  → Es la diferencia de cargos administrativos distribuida
+- ajuste: 0 (es para ajustes puntuales)
+- total_pagar_luz: monto_consumo + gasto_comun + ajuste
+  → ESTO se usa luego en COBROS_MENSUALES.monto_luz
+- estado: PROCESADO
+- observacion: "Importado"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SHEET 7: 💳 PAGOS (OPCIONAL)
+───────────────────────────────────────────────────────────────────────────────
+
+SI EN ENERO/FEBRERO HUBO PAGOS, agrega acá. Si comenzaste en marzo:
+→ Dejar vacío
+
+Formato: Una fila PER PAGO realizado
+
+| id_pago | id_cobro | fecha_pago | monto_pagado | metodo_pago | numero_operacion | observacion | estado |
+|---|---|---|---|---|---|---|---|
+| [AUTO] | [BUSCAR id_cobro] | 2026-01-20 | 367.80 | YAPE | 1234567 | Pago enero | REGISTRADO |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+
+⚠️ SOLO si hay histórico. Si no, dejar vacío.
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SHEET EXTRA: 📍 LOOKUP_OCUPACIONES
+───────────────────────────────────────────────────────────────────────────────
+
+Referencia para copiar los IDs correctos:
+
+| id_ocupacion | id_unidad | id_persona | nombre_persona | fecha_inicio | fecha_fin | monto_alquiler | estado |
+|---|---|---|---|---|---|---|---|
+| 1 | 1 | 1 | (busca en BD) | 2026-01-01 | (vigente) | 700.00 | ACTIVO |
+| 2 | 2 | 2 | (busca en BD) | 2026-01-01 | (vigente) | 300.00 | ACTIVO |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+
+⚠️ COPIA ESTO DE TU BD, solo es referencia
+
+═══════════════════════════════════════════════════════════════════════════════
+
+INSTRUCCIONES FINALES:
+───────────────────────────────────────────────────────────────────────────────
+
+1. 📥 DESCARGA este Excel y abre en LibreOffice Calc o Excel
+
+2. 📝 COMPLETA en este orden:
+   ✓ Hoja 2 (PERIODOS_NUEVO)
+   ✓ Hoja 3 (RECIBOS_LUZ) - necesitas PDF del recibo
+   ✓ Hoja 4 (LECTURAS_UNIDAD) - necesitas PDF/datos de lecturas
+   ✓ Hoja 5 (COBROS_MENSUALES) - usa datos de liquidación
+   ✓ Hoja 6 (LIQUIDACION_LUZ_DETALLE) - calcula distribuciones
+   ✓ Hoja 7 (PAGOS) - solo si hay histórico
+
+3. 📎 ENVÍA:
+   ✓ Excel completado
+   ✓ PDF del recibo de ENERO (indicar precio_kwh, total recibo)
+   ✓ PDF del recibo de FEBRERO (idem)
+   ✓ Datos de lecturas (si no están en PDF)
+   ✓ Aclaraciones: quién pagó, quién no, cambios de inquilinos, etc
+
+4. 🔧 YO AGREGO:
+   ✓ Valido integridad referencial
+   ✓ Creo el SQL de INSERT
+   ✓ Lo ejecuto sin afectar MARZO 2026
+   ✓ Te muestro un reporte de qué se importó
+
+═══════════════════════════════════════════════════════════════════════════════
+FIN DE PLANTILLA
+═══════════════════════════════════════════════════════════════════════════════

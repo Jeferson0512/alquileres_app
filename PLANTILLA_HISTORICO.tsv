@@ -1,0 +1,90 @@
+PLANTILLA_ALQUILERES_HISTORICO_ENERO_FEBRERO_2026
+==================================================
+
+INSTRUCCIONES_PRIMERO
+
+COMPLETA EN ESTE ORDEN:
+1. PERIODOS_NUEVO
+2. RECIBOS_LUZ  
+3. LECTURAS_UNIDAD
+4. COBROS_MENSUALES
+5. LIQUIDACION_LUZ_DETALLE
+6. PAGOS (opcional)
+
+---
+
+SHEET 1: PERIODOS_NUEVO
+id_periodo	anio	mes	fecha_inicio	fecha_fin	estado	observacion
+(AUTO)	2026	1	2026-01-01	2026-01-31	CERRADO	Importado histórico
+(AUTO)	2026	2	2026-02-01	2026-02-28	CERRADO	Importado histórico
+
+---
+
+SHEET 2: RECIBOS_LUZ
+id_recibo_luz	id_periodo	id_inmueble	precio_kwh	total_recibo	fecha_vencimiento	lectura_anterior_general	lectura_actual_general	observacion
+(AUTO)	3	1	0.58	245.50	2026-01-31	16000.00	16400.00	Del PDF PAD enero
+(AUTO)	4	1	0.58	218.75	2026-02-28	16400.00	16800.00	Del PDF PAD febrero
+
+---
+
+SHEET 3: LECTURAS_UNIDAD
+id_lectura	id_periodo	id_unidad	id_ocupacion	lectura_anterior	lectura_actual	fecha_lectura	observacion	estado
+(AUTO)	3	1	1	16312.40	16409.60	2026-01-15	Primer piso	REGISTRADO
+(AUTO)	3	2	2	620.90	641.40	2026-01-15	1A	REGISTRADO
+(AUTO)	3	3	3	534.40	561.30	2026-01-15	2A	REGISTRADO
+(AUTO)	3	4	4	822.70	861.80	2026-01-15	3A	REGISTRADO
+(AUTO)	3	5	5	1816.90	1836.40	2026-01-15	4A	REGISTRADO
+(AUTO)	3	6	6	412.10	429.60	2026-01-15	2B	REGISTRADO
+(AUTO)	3	7	7	385.60	405.30	2026-01-15	3B	REGISTRADO
+(AUTO)	3	8	8	634.50	668.40	2026-01-15	4B	REGISTRADO
+(AUTO)	3	9	9	0.00	0.00	2026-01-15	Escalera	REGISTRADO
+(AUTO)	3	10	10	0.00	0.00	2026-01-15	Terraza	REGISTRADO
+(AUTO)	3	11	11	0.00	0.00	2026-01-15	Sala común	REGISTRADO
+
+---
+
+SHEET 4: COBROS_MENSUALES
+id_cobro	id_periodo	id_persona	id_unidad	monto_alquiler	monto_luz	ajuste_minimo_luz	monto_agua	monto_gas	otros_conceptos	total_cobrar	estado_pago	fecha_vencimiento	observacion
+(AUTO)	3	1	1	700.00	40.50	0.00	15.00	30.00	0.00	785.50	PENDIENTE	2026-01-31	Importado
+(AUTO)	3	2	2	300.00	22.80	0.00	15.00	30.00	0.00	367.80	PENDIENTE	2026-01-31	Importado
+(AUTO)	3	3	3	300.00	19.78	0.00	15.00	30.00	0.00	364.78	PENDIENTE	2026-01-31	Importado
+(AUTO)	3	4	4	450.00	30.44	0.00	15.00	30.00	0.00	525.44	PENDIENTE	2026-01-31	Importado
+(AUTO)	3	5	5	180.00	65.32	0.00	15.00	30.00	0.00	290.32	PENDIENTE	2026-01-31	Importado
+(AUTO)	3	6	6	200.00	15.18	0.00	15.00	30.00	0.00	260.18	PENDIENTE	2026-01-31	Importado
+(AUTO)	3	7	7	200.00	14.30	0.00	15.00	30.00	0.00	259.30	PENDIENTE	2026-01-31	Importado
+(AUTO)	3	8	8	350.00	23.60	0.00	15.00	30.00	0.00	418.60	PENDIENTE	2026-01-31	Importado
+
+---
+
+SHEET 5: LIQUIDACION_LUZ_DETALLE
+id_periodo	id_inmueble	id_unidad	id_persona	id_lectura	id_recibo_luz	consumo_kwh	porcentaje_participacion	monto_consumo	gasto_comun	ajuste	total_pagar_luz	estado	observacion
+3	1	1	1	1	(BUSCAR)	97.20	0.250000	56.50	18.90	0.00	75.40	PROCESADO	Importado
+3	1	2	2	2	(BUSCAR)	20.50	0.053000	12.10	4.05	0.00	16.15	PROCESADO	Importado
+3	1	3	3	3	(BUSCAR)	26.90	0.069000	15.74	5.30	0.00	21.04	PROCESADO	Importado
+3	1	4	4	4	(BUSCAR)	39.10	0.101000	22.73	7.61	0.00	30.34	PROCESADO	Importado
+3	1	5	5	5	(BUSCAR)	19.50	0.050000	11.34	3.80	0.00	15.14	PROCESADO	Importado
+3	1	6	6	6	(BUSCAR)	17.50	0.045000	10.18	3.41	0.00	13.59	PROCESADO	Importado
+3	1	7	7	7	(BUSCAR)	19.70	0.051000	11.45	3.84	0.00	15.29	PROCESADO	Importado
+3	1	8	8	8	(BUSCAR)	33.90	0.087000	19.71	6.61	0.00	26.32	PROCESADO	Importado
+
+---
+
+SHEET 6: PAGOS (opcional - dejar vacío si no hay histórico)
+id_pago	id_cobro	fecha_pago	monto_pagado	metodo_pago	numero_operacion	observacion	estado
+(AUTO)	(BUSCAR)	YYYY-MM-DD	0.00	YAPE	opcional	Historico	REGISTRADO
+
+---
+
+LOOKUP_OCUPACIONES (referencia - copia de tu BD)
+id_ocupacion	id_unidad	id_persona	nombre_persona	fecha_inicio	monto_alquiler
+1	1	1	Jeferson F.	2026-01-01	700.00
+2	2	2	Noelia B.	2026-01-01	300.00
+3	3	3	Persona 3	2026-01-01	300.00
+4	4	4	Persona 4	2026-01-01	450.00
+5	5	5	Persona 5	2026-01-01	180.00
+6	6	6	Persona 6	2026-01-01	200.00
+7	7	7	Persona 7	2026-01-01	200.00
+8	8	8	Persona 8	2026-01-01	350.00
+9	9	9	Escalera	-	0.00
+10	10	10	Terraza	-	0.00
+11	11	11	Sala	-	0.00

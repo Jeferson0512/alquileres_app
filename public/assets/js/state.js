@@ -1,0 +1,16 @@
+export const STATE = {
+  section: "dashboard",
+  dashboard: null,
+  recibo: null,
+  lecturas: [],
+  previewLiquidacion: null,
+  liquidacionAjustes: {},
+  cobros: [],
+  pagosPeriodoRegistrados: 0,
+  inquilinos: [],
+  unidades: [],
+  ocupaciones: [],
+  configCobranza: null,
+  periodos: [],
+  periodoId: null,
+};

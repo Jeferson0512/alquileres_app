@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alquileres Admin</title>
+  <link rel="stylesheet" href="./assets/css/app.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">A</div>
+        <div>
+          <p class="brand-kicker">Sistema</p>
+          <h1>Alquileres</h1>
+        </div>
+      </div>
+
+      <nav class="menu" id="menu"></nav>
+
+      <div class="sidebar-period" id="sidebarPeriod"></div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Panel administrativo</p>
+          <h2>Gestión de alquileres y luz</h2>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="globalSearch" type="text" placeholder="Buscar por unidad o inquilino" />
+          </div>
+          <button id="btnNuevoRegistro" class="btn btn-primary" style="display:none">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            Nuevo registro
+          </button>
+        </div>
+      </header>
+
+      <section class="stats" id="stats"></section>
+      <div id="topbarOps"></div>
+      <section id="view"></section>
+    </main>
+  </div>
+
+  <!-- Modal genérico CRUD -->
+  <div class="modal-overlay hidden" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modalTitle">Nuevo registro</h3>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
+      <div id="modalBody"></div>
+      <div class="modal-foot">
+        <button class="btn btn-light" id="modalCancel">Cancelar</button>
+        <button class="btn btn-primary" id="modalSave">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div class="confirm-overlay hidden" id="confirmOverlay">
+    <div class="confirm-dialog">
+      <p class="confirm-msg" id="confirmMsg"></p>
+      <div class="confirm-foot">
+        <button class="btn btn-light" id="confirmNo">Cancelar</button>
+        <button class="btn btn-danger" id="confirmYes">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./assets/js/app.js"></script>
+</body>
+
+</html>

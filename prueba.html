@@ -1,0 +1,1419 @@
+# Versión 2 · Alquileres + PHP API + HTML/CSS/JS
+
+## Estructura propuesta
+
+```text
+alquileres-app/
+│
+├── public/
+│ ├── index.html
+│ ├── assets/
+│ │ ├── css/
+│ │ │ └── app.css
+│ │ └── js/
+│ │ ├── app.js
+│ │ ├── api.js
+│ │ ├── state.js
+│ │ ├── utils.js
+│ │ └── modules/
+│ │ ├── dashboard.js
+│ │ ├── recibo.js
+│ │ ├── lecturas.js
+│ │ ├── liquidacion.js
+│ │ └── cobros.js
+│ │
+├── api/
+│ ├── config/
+│ │ ├── config.php
+│ │ ├── Database.php
+│ │ └── helpers.php
+│ ├── modules/
+│ │ ├── dashboard/
+│ │ │ └── index.php
+│ │ ├── recibo/
+│ │ │ └── index.php
+│ │ ├── lecturas/
+│ │ │ ├── index.php
+│ │ │ └── save.php
+│ │ ├── liquidacion/
+│ │ │ ├── preview.php
+│ │ │ └── generate.php
+│ │ └── cobros/
+│ │ ├── index.php
+│ │ └── generate.php
+│ └── router.php
+│
+└── README.txt
+```
+
+---
+
+## 1) `api/config/config.php`
+
+```php
+<?php
+return [
+    'db' => [
+        'host' => '127.0.0.1',
+        'port' => '3306',
+        'dbname' => 'alquileres_db',
+        'user' => 'root',
+        'pass' => '',
+        'charset' => 'utf8mb4'
+    ]
+];
+```
+
+---
+
+## 2) `api/config/Database.php`
+
+```php
+<?php
+
+class Database
+{
+    private static ?PDO $instance = null;
+
+    public static function getConnection(): PDO
+    {
+        if (self::$instance instanceof PDO) {
+            return self::$instance;
+        }
+
+        $config = require __DIR__ . '/config.php';
+        $db = $config['db'];
+
+        $dsn = sprintf(
+            'mysql:host=%s;port=%s;dbname=%s;charset=%s',
+            $db['host'],
+            $db['port'],
+            $db['dbname'],
+            $db['charset']
+        );
+
+        self::$instance = new PDO($dsn, $db['user'], $db['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+
+        return self::$instance;
+    }
+}
+```
+
+---
+
+## 3) `api/config/helpers.php`
+
+```php
+<?php
+
+function jsonResponse(array $data, int $status = 200): void
+{
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+function getJsonBody(): array
+{
+    $raw = file_get_contents('php://input');
+    if (!$raw) {
+        return [];
+    }
+
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : [];
+}
+
+function getPeriodoId(PDO $pdo): int
+{
+    $stmt = $pdo->query("SELECT id_periodo FROM periodos WHERE anio = 2026 AND mes = 3 LIMIT 1");
+    $row = $stmt->fetch();
+
+    if (!$row) {
+        throw new RuntimeException('No existe el periodo 2026-03');
+    }
+
+    return (int) $row['id_periodo'];
+}
+```
+
+---
+
+## 4) `api/router.php`
+
+```php
+<?php
+
+$path = $_GET['path'] ?? '';
+$path = trim($path, '/');
+
+$routes = [
+    'dashboard' => __DIR__ . '/modules/dashboard/index.php',
+    'recibo' => __DIR__ . '/modules/recibo/index.php',
+    'lecturas' => __DIR__ . '/modules/lecturas/index.php',
+    'lecturas/save' => __DIR__ . '/modules/lecturas/save.php',
+    'liquidacion/preview' => __DIR__ . '/modules/liquidacion/preview.php',
+    'liquidacion/generate' => __DIR__ . '/modules/liquidacion/generate.php',
+    'cobros' => __DIR__ . '/modules/cobros/index.php',
+    'cobros/generate' => __DIR__ . '/modules/cobros/generate.php',
+];
+
+if (!isset($routes[$path])) {
+    http_response_code(404);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'ok' => false,
+        'message' => 'Ruta API no encontrada'
+    ]);
+    exit;
+}
+
+require $routes[$path];
+```
+
+---
+
+## 5) `api/modules/dashboard/index.php`
+
+```php
+<?php
+
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/helpers.php';
+
+try {
+    $pdo = Database::getConnection();
+    $periodoId = getPeriodoId($pdo);
+
+    $sql = "
+        SELECT
+            (SELECT COUNT(*) FROM ocupacion_unidad WHERE estado = 'ACTIVO') AS total_ocupados,
+            (SELECT IFNULL(SUM(monto_alquiler),0) FROM ocupacion_unidad WHERE estado = 'ACTIVO') AS total_alquiler,
+            (SELECT IFNULL(SUM(total_pagar_luz),0) FROM liquidacion_luz_detalle WHERE id_periodo = :periodoId AND estado <> 'ANULADO') AS total_luz,
+            (SELECT IFNULL(SUM(total_cobrar),0) FROM cobros_mensuales WHERE id_periodo = :periodoId AND estado_pago <> 'ANULADO') AS total_cobrar
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['periodoId' => $periodoId]);
+    $data = $stmt->fetch();
+
+    jsonResponse([
+        'ok' => true,
+        'data' => $data
+    ]);
+} catch (Throwable $e) {
+    jsonResponse([
+        'ok' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
+
+---
+
+## 6) `api/modules/recibo/index.php`
+
+```php
+<?php
+
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/helpers.php';
+
+try {
+    $pdo = Database::getConnection();
+    $periodoId = getPeriodoId($pdo);
+
+    $stmt = $pdo->prepare("SELECT * FROM recibos_luz WHERE id_periodo = :id LIMIT 1");
+    $stmt->execute(['id' => $periodoId]);
+    $recibo = $stmt->fetch();
+
+    jsonResponse([
+        'ok' => true,
+        'data' => $recibo
+    ]);
+} catch (Throwable $e) {
+    jsonResponse([
+        'ok' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
+
+---
+
+## 7) `api/modules/lecturas/index.php`
+
+```php
+<?php
+
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/helpers.php';
+
+try {
+    $pdo = Database::getConnection();
+    $periodoId = getPeriodoId($pdo);
+
+    $sql = "
+        SELECT
+            l.id_lectura,
+            u.id_unidad,
+            u.codigo_unidad,
+            u.nombre_unidad,
+            u.piso,
+            l.lectura_anterior,
+            l.lectura_actual,
+            ROUND(GREATEST(l.lectura_actual - l.lectura_anterior, 0), 2) AS consumo,
+            CONCAT(COALESCE(p.nombres,''), ' ', COALESCE(p.apellidos,'')) AS inquilino,
+            o.monto_alquiler
+        FROM lecturas_unidad l
+        INNER JOIN unidades u ON u.id_unidad = l.id_unidad
+        LEFT JOIN ocupacion_unidad o ON o.id_ocupacion = l.id_ocupacion
+        LEFT JOIN personas p ON p.id_persona = o.id_persona
+        WHERE l.id_periodo = :periodoId
+        ORDER BY u.codigo_unidad
+    ";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['periodoId' => $periodoId]);
+
+    jsonResponse([
+        'ok' => true,
+        'data' => $stmt->fetchAll()
+    ]);
+} catch (Throwable $e) {
+    jsonResponse([
+        'ok' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
+
+---
+
+## 8) `api/modules/lecturas/save.php`
+
+```php
+<?php
+
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/helpers.php';
+
+try {
+    $pdo = Database::getConnection();
+    $items = getJsonBody()['items'] ?? [];
+
+    if (!is_array($items) || empty($items)) {
+        jsonResponse(['ok' => false, 'message' => 'No se recibieron lecturas'], 422);
+    }
+
+    $sql = "UPDATE lecturas_unidad SET lectura_actual = :lectura_actual, updated_at = NOW() WHERE id_lectura = :id_lectura";
+    $stmt = $pdo->prepare($sql);
+
+    $pdo->beginTransaction();
+
+    foreach ($items as $item) {
+        $stmt->execute([
+            'lectura_actual' => (float) ($item['lectura_actual'] ?? 0),
+            'id_lectura' => (int) ($item['id_lectura'] ?? 0),
+        ]);
+    }
+
+    $pdo->commit();
+
+    jsonResponse([
+        'ok' => true,
+        'message' => 'Lecturas guardadas correctamente'
+    ]);
+} catch (Throwable $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    jsonResponse([
+        'ok' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
+
+---
+
+## 9) `api/modules/liquidacion/preview.php`
+
+```php
+<?php
+
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/helpers.php';
+
+try {
+    $pdo = Database::getConnection();
+    $periodoId = getPeriodoId($pdo);
+
+    $stmtRecibo = $pdo->prepare("SELECT * FROM recibos_luz WHERE id_periodo = :id LIMIT 1");
+    $stmtRecibo->execute(['id' => $periodoId]);
+    $recibo = $stmtRecibo->fetch();
+
+    $stmt = $pdo->prepare(" 
+        SELECT
+            l.id_lectura,
+            l.id_unidad,
+            l.id_ocupacion,
+            u.codigo_unidad,
+            u.nombre_unidad,
+            CONCAT(COALESCE(p.nombres,''), ' ', COALESCE(p.apellidos,'')) AS inquilino,
+            COALESCE(o.monto_alquiler, 0) AS monto_alquiler,
+            ROUND(GREATEST(l.lectura_actual - l.lectura_anterior, 0), 2) AS consumo_kwh,
+            p.id_persona
+        FROM lecturas_unidad l
+        INNER JOIN unidades u ON u.id_unidad = l.id_unidad
+        LEFT JOIN ocupacion_unidad o ON o.id_ocupacion = l.id_ocupacion AND o.estado = 'ACTIVO'
+        LEFT JOIN personas p ON p.id_persona = o.id_persona
+        WHERE l.id_periodo = :periodoId AND l.id_ocupacion IS NOT NULL
+        ORDER BY u.codigo_unidad
+    ");
+    $stmt->execute(['periodoId' => $periodoId]);
+    $rows = $stmt->fetchAll();
+
+    $totalConsumo = array_sum(array_map(fn($r) => (float) $r['consumo_kwh'], $rows));
+    $cargosComunes = (float) $recibo['total_recibo'] - (float) $recibo['consumo_energia'];
+    $gastoComunPorUnidad = count($rows) > 0 ? $cargosComunes / count($rows) : 0;
+
+    $data = array_map(function ($row) use ($totalConsumo, $recibo, $gastoComunPorUnidad) {
+        $consumo = (float) $row['consumo_kwh'];
+        $porcentaje = $totalConsumo > 0 ? $consumo / $totalConsumo : 0;
+        $montoConsumo = $porcentaje * (float) $recibo['consumo_energia'];
+        $totalLuz = $montoConsumo + $gastoComunPorUnidad;
+
+        return [
+            'id_lectura' => (int) $row['id_lectura'],
+            'id_unidad' => (int) $row['id_unidad'],
+            'id_persona' => (int) $row['id_persona'],
+            'codigo_unidad' => $row['codigo_unidad'],
+            'nombre_unidad' => $row['nombre_unidad'],
+            'inquilino' => $row['inquilino'],
+            'monto_alquiler' => (float) $row['monto_alquiler'],
+            'consumo_kwh' => round($consumo, 2),
+            'porcentaje_participacion' => round($porcentaje, 6),
+            'monto_consumo' => round($montoConsumo, 2),
+            'gasto_comun' => round($gastoComunPorUnidad, 2),
+            'total_pagar_luz' => round($totalLuz, 2),
+            'agua' => 15.00,
+            'total_cobrar' => round((float) $row['monto_alquiler'] + 15 + $totalLuz, 2),
+        ];
+    }, $rows);
+
+    jsonResponse([
+        'ok' => true,
+        'meta' => [
+            'total_consumo' => round($totalConsumo, 2),
+            'cargos_comunes' => round($cargosComunes, 2),
+            'gasto_comun_por_unidad' => round($gastoComunPorUnidad, 2)
+        ],
+        'data' => $data
+    ]);
+} catch (Throwable $e) {
+    jsonResponse([
+        'ok' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
+
+---
+
+## 10) `api/modules/liquidacion/generate.php`
+
+```php
+<?php
+
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/helpers.php';
+
+try {
+    $pdo = Database::getConnection();
+    $periodoId = getPeriodoId($pdo);
+
+    $stmtRecibo = $pdo->prepare("SELECT id_recibo_luz, id_inmueble, consumo_energia, total_recibo FROM recibos_luz WHERE id_periodo = :id LIMIT 1");
+    $stmtRecibo->execute(['id' => $periodoId]);
+    $recibo = $stmtRecibo->fetch();
+
+    if (!$recibo) {
+        throw new RuntimeException('No existe recibo para el periodo');
+    }
+
+    $stmt = $pdo->prepare(" 
+        SELECT
+            l.id_lectura,
+            l.id_unidad,
+            u.codigo_unidad,
+            p.id_persona,
+            ROUND(GREATEST(l.lectura_actual - l.lectura_anterior, 0), 2) AS consumo_kwh
+        FROM lecturas_unidad l
+        INNER JOIN unidades u ON u.id_unidad = l.id_unidad
+        INNER JOIN ocupacion_unidad o ON o.id_ocupacion = l.id_ocupacion AND o.estado = 'ACTIVO'
+        INNER JOIN personas p ON p.id_persona = o.id_persona
+        WHERE l.id_periodo = :periodoId
+        ORDER BY u.codigo_unidad
+    ");
+    $stmt->execute(['periodoId' => $periodoId]);
+    $rows = $stmt->fetchAll();
+
+    $totalConsumo = array_sum(array_map(fn($r) => (float) $r['consumo_kwh'], $rows));
+    $cargosComunes = (float) $recibo['total_recibo'] - (float) $recibo['consumo_energia'];
+    $gastoComunPorUnidad = count($rows) > 0 ? $cargosComunes / count($rows) : 0;
+
+    $pdo->beginTransaction();
+
+    $pdo->prepare("DELETE FROM liquidacion_luz_detalle WHERE id_periodo = :periodoId")
+        ->execute(['periodoId' => $periodoId]);
+
+    $insert = $pdo->prepare(" 
+        INSERT INTO liquidacion_luz_detalle (
+            id_periodo, id_inmueble, id_unidad, id_persona, id_lectura, id_recibo_luz,
+            consumo_kwh, porcentaje_participacion, monto_consumo, gasto_comun, ajuste,
+            total_pagar_luz, estado, observacion
+        ) VALUES (
+            :id_periodo, :id_inmueble, :id_unidad, :id_persona, :id_lectura, :id_recibo_luz,
+            :consumo_kwh, :porcentaje_participacion, :monto_consumo, :gasto_comun, :ajuste,
+            :total_pagar_luz, :estado, :observacion
+        )
+    ");
+
+    foreach ($rows as $row) {
+        $consumo = (float) $row['consumo_kwh'];
+        $porcentaje = $totalConsumo > 0 ? $consumo / $totalConsumo : 0;
+        $montoConsumo = $porcentaje * (float) $recibo['consumo_energia'];
+        $totalLuz = $montoConsumo + $gastoComunPorUnidad;
+
+        $insert->execute([
+            'id_periodo' => $periodoId,
+            'id_inmueble' => (int) $recibo['id_inmueble'],
+            'id_unidad' => (int) $row['id_unidad'],
+            'id_persona' => (int) $row['id_persona'],
+            'id_lectura' => (int) $row['id_lectura'],
+            'id_recibo_luz' => (int) $recibo['id_recibo_luz'],
+            'consumo_kwh' => round($consumo, 2),
+            'porcentaje_participacion' => round($porcentaje, 6),
+            'monto_consumo' => round($montoConsumo, 2),
+            'gasto_comun' => round($gastoComunPorUnidad, 2),
+            'ajuste' => 0,
+            'total_pagar_luz' => round($totalLuz, 2),
+            'estado' => 'GENERADO',
+            'observacion' => 'Generado desde API PHP'
+        ]);
+    }
+
+    $pdo->commit();
+
+    jsonResponse([
+        'ok' => true,
+        'message' => 'Liquidación generada correctamente'
+    ]);
+} catch (Throwable $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    jsonResponse([
+        'ok' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
+
+---
+
+## 11) `api/modules/cobros/index.php`
+
+```php
+<?php
+
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/helpers.php';
+
+try {
+    $pdo = Database::getConnection();
+    $periodoId = getPeriodoId($pdo);
+
+    $stmt = $pdo->prepare(" 
+        SELECT
+            c.id_cobro,
+            u.codigo_unidad,
+            u.nombre_unidad,
+            CONCAT(p.nombres, ' ', p.apellidos) AS inquilino,
+            c.monto_alquiler,
+            c.monto_luz,
+            c.monto_agua,
+            c.total_cobrar,
+            c.estado_pago
+        FROM cobros_mensuales c
+        INNER JOIN unidades u ON u.id_unidad = c.id_unidad
+        INNER JOIN personas p ON p.id_persona = c.id_persona
+        WHERE c.id_periodo = :periodoId
+        ORDER BY u.codigo_unidad
+    ");
+    $stmt->execute(['periodoId' => $periodoId]);
+
+    jsonResponse([
+        'ok' => true,
+        'data' => $stmt->fetchAll()
+    ]);
+} catch (Throwable $e) {
+    jsonResponse([
+        'ok' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
+
+---
+
+## 12) `api/modules/cobros/generate.php`
+
+```php
+<?php
+
+require_once __DIR__ . '/../../config/Database.php';
+require_once __DIR__ . '/../../config/helpers.php';
+
+try {
+    $pdo = Database::getConnection();
+    $periodoId = getPeriodoId($pdo);
+
+    $stmt = $pdo->prepare(" 
+        SELECT
+            ll.id_unidad,
+            ll.id_persona,
+            ll.total_pagar_luz,
+            o.monto_alquiler
+        FROM liquidacion_luz_detalle ll
+        INNER JOIN ocupacion_unidad o
+            ON o.id_unidad = ll.id_unidad
+           AND o.id_persona = ll.id_persona
+           AND o.estado = 'ACTIVO'
+        WHERE ll.id_periodo = :periodoId
+    ");
+    $stmt->execute(['periodoId' => $periodoId]);
+    $rows = $stmt->fetchAll();
+
+    $pdo->beginTransaction();
+
+    $pdo->prepare("DELETE FROM cobros_mensuales WHERE id_periodo = :periodoId")
+        ->execute(['periodoId' => $periodoId]);
+
+    $insert = $pdo->prepare(" 
+        INSERT INTO cobros_mensuales (
+            id_periodo, id_persona, id_unidad, monto_alquiler, monto_luz, monto_agua,
+            monto_gas, otros_conceptos, descuento, mora, total_cobrar,
+            fecha_vencimiento, estado_pago, observacion
+        ) VALUES (
+            :id_periodo, :id_persona, :id_unidad, :monto_alquiler, :monto_luz, :monto_agua,
+            0, 0, 0, 0, :total_cobrar, :fecha_vencimiento, 'PENDIENTE', :observacion
+        )
+    ");
+
+    foreach ($rows as $row) {
+        $total = (float) $row['monto_alquiler'] + (float) $row['total_pagar_luz'] + 15;
+
+        $insert->execute([
+            'id_periodo' => $periodoId,
+            'id_persona' => (int) $row['id_persona'],
+            'id_unidad' => (int) $row['id_unidad'],
+            'monto_alquiler' => round((float) $row['monto_alquiler'], 2),
+            'monto_luz' => round((float) $row['total_pagar_luz'], 2),
+            'monto_agua' => 15,
+            'total_cobrar' => round($total, 2),
+            'fecha_vencimiento' => '2026-04-01',
+            'observacion' => 'Cobro generado desde API PHP'
+        ]);
+    }
+
+    $pdo->commit();
+
+    jsonResponse([
+        'ok' => true,
+        'message' => 'Cobros generados correctamente'
+    ]);
+} catch (Throwable $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    jsonResponse([
+        'ok' => false,
+        'message' => $e->getMessage()
+    ], 500);
+}
+```
+
+---
+
+## 13) `public/index.html`
+
+```html
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alquileres Admin</title>
+  <link rel="stylesheet" href="./assets/css/app.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">A</div>
+        <div>
+          <p class="brand-kicker">Sistema</p>
+          <h1>Alquileres</h1>
+        </div>
+      </div>
+
+      <nav class="menu" id="menu"></nav>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Panel administrativo</p>
+          <h2>Gestión de alquileres y luz</h2>
+        </div>
+        <div class="topbar-actions">
+          <button id="btnPreviewLiquidacion" class="btn btn-light">Previsualizar liquidación</button>
+          <button id="btnGenerarLiquidacion" class="btn btn-dark">Generar liquidación</button>
+          <button id="btnGenerarCobros" class="btn btn-primary">Generar cobros</button>
+        </div>
+      </header>
+
+      <section class="stats" id="stats"></section>
+      <section id="view"></section>
+    </main>
+  </div>
+
+  <script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>
+```
+
+---
+
+## 14) `public/assets/css/app.css`
+
+```css
+:root {
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --primary: #2563eb;
+  --dark: #0f172a;
+  --radius: 18px;
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+}
+
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px;
+}
+
+.brand {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+.brand-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--dark);
+  color: #fff;
+  font-weight: 700;
+}
+.brand-kicker { margin: 0; color: var(--muted); font-size: 12px; }
+.brand h1 { margin: 2px 0 0; font-size: 22px; }
+
+.menu { display: grid; gap: 8px; }
+.menu button {
+  border: 0;
+  border-radius: 16px;
+  padding: 14px 16px;
+  text-align: left;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 600;
+}
+.menu button.active {
+  background: var(--dark);
+  color: #fff;
+}
+.menu button:hover { background: var(--surface-2); }
+.menu button.active:hover { background: var(--dark); }
+
+.content { padding: 28px; }
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+.eyebrow { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+.topbar h2 { margin: 0; font-size: 34px; }
+.topbar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.btn {
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-dark { background: var(--dark); color: white; }
+.btn-light { background: white; color: var(--text); border: 1px solid var(--border); }
+
+.stats {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 24px;
+}
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(226, 232, 240, .6);
+}
+.card-body { padding: 20px; }
+.card-title { margin: 0; font-size: 14px; color: var(--muted); }
+.card-value { margin: 8px 0 0; font-size: 28px; font-weight: 800; }
+.card-desc { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+
+.grid-2 { display: grid; gap: 16px; grid-template-columns: 1.2fr .8fr; }
+.panel { background: var(--surface); border-radius: 24px; padding: 20px; box-shadow: var(--shadow); }
+.panel h3 { margin: 0 0 6px; }
+.panel p.sub { margin: 0 0 18px; color: var(--muted); }
+
+.table-wrap { overflow: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: 14px;
+}
+th { color: var(--muted); font-weight: 700; }
+input.table-input {
+  width: 110px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ecfccb;
+  color: #3f6212;
+  font-size: 12px;
+  font-weight: 700;
+}
+.badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+.list {
+  display: grid;
+  gap: 12px;
+}
+.list-item {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px 16px;
+}
+.kv { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.kv:last-child { border-bottom: 0; }
+
+@media (max-width: 1100px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+  .content { padding: 18px; }
+  .topbar { flex-direction: column; align-items: flex-start; }
+  .stats { grid-template-columns: 1fr; }
+}
+```
+
+---
+
+## 15) `public/assets/js/state.js`
+
+```javascript
+export const STATE = {
+  section: "dashboard",
+  dashboard: null,
+  recibo: null,
+  lecturas: [],
+  previewLiquidacion: null,
+  cobros: [],
+};
+```
+
+---
+
+## 16) `public/assets/js/utils.js`
+
+```javascript
+export function money(value) {
+  return new Intl.NumberFormat("es-PE", {
+    style: "currency",
+    currency: "PEN",
+    minimumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+export function number(value, digits = 2) {
+  return new Intl.NumberFormat("es-PE", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(Number(value || 0));
+}
+```
+
+---
+
+## 17) `public/assets/js/api.js`
+
+```javascript
+const BASE = "../api/router.php?path=";
+
+async function request(path, options = {}) {
+  const response = await fetch(BASE + path, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || !data.ok) {
+    throw new Error(data.message || "Error en la petición");
+  }
+
+  return data;
+}
+
+export const API = {
+  getDashboard: () => request("dashboard"),
+  getRecibo: () => request("recibo"),
+  getLecturas: () => request("lecturas"),
+  saveLecturas: (items) => request("lecturas/save", {
+    method: "POST",
+    body: JSON.stringify({ items }),
+  }),
+  previewLiquidacion: () => request("liquidacion/preview"),
+  generateLiquidacion: () => request("liquidacion/generate", { method: "POST" }),
+  getCobros: () => request("cobros"),
+  generateCobros: () => request("cobros/generate", { method: "POST" }),
+};
+```
+
+---
+
+## 18) `public/assets/js/modules/dashboard.js`
+
+```javascript
+import { money } from "../utils.js";
+
+export function renderDashboard(view, state) {
+  view.innerHTML = `
+    <div class="grid-2">
+      <section class="panel">
+        <h3>Resumen operativo</h3>
+        <p class="sub">Vista rápida del mes actual y la distribución general.</p>
+        <div class="list">
+          <div class="list-item">
+            <strong>Flujo recomendado</strong>
+            <p>1) Registrar lecturas · 2) Generar liquidación · 3) Generar cobros.</p>
+          </div>
+          <div class="list-item">
+            <strong>Estado actual</strong>
+            <p>Este panel ya está conectado a tu base de datos local mediante PHP API.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Indicadores del periodo</h3>
+        <p class="sub">Datos consultados desde la BD.</p>
+        <div class="kv"><span>Total alquiler</span><strong>${money(state.dashboard?.total_alquiler)}</strong></div>
+        <div class="kv"><span>Total luz</span><strong>${money(state.dashboard?.total_luz)}</strong></div>
+        <div class="kv"><span>Total cobrar</span><strong>${money(state.dashboard?.total_cobrar)}</strong></div>
+      </section>
+    </div>
+  `;
+}
+```
+
+---
+
+## 19) `public/assets/js/modules/recibo.js`
+
+```javascript
+import { money, number } from "../utils.js";
+
+export function renderRecibo(view, state) {
+  const r = state.recibo;
+
+  view.innerHTML = `
+    <section class="panel">
+      <h3>Recibo general de luz</h3>
+      <p class="sub">Datos registrados del suministro principal.</p>
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><th>Suministro</th><td>${r.numero_suministro ?? "-"}</td></tr>
+            <tr><th>Lectura anterior general</th><td>${number(r.lectura_anterior_general)}</td></tr>
+            <tr><th>Lectura actual general</th><td>${number(r.lectura_actual_general)}</td></tr>
+            <tr><th>Consumo general</th><td>${number(r.consumo_kwh_general)} kWh</td></tr>
+            <tr><th>Consumo energía</th><td>${money(r.consumo_energia)}</td></tr>
+            <tr><th>IGV</th><td>${money(r.igv)}</td></tr>
+            <tr><th>Total recibo</th><td><strong>${money(r.total_recibo)}</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+```
+
+---
+
+## 20) `public/assets/js/modules/lecturas.js`
+
+```javascript
+import { money, number } from "../utils.js";
+
+export function renderLecturas(view, state, onSave) {
+  view.innerHTML = `
+    <section class="panel">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+        <div>
+          <h3>Registro rápido de lecturas</h3>
+          <p class="sub">Edita lecturas actuales y guarda cambios en la base de datos.</p>
+        </div>
+        <button class="btn btn-primary" id="btnSaveLecturas">Guardar lecturas</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Unidad</th>
+              <th>Inquilino</th>
+              <th>Anterior</th>
+              <th>Actual</th>
+              <th>Consumo</th>
+              <th>Alquiler</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${state.lecturas.map(row => `
+              <tr>
+                <td><strong>${row.codigo_unidad}</strong></td>
+                <td>${row.inquilino || '-'}</td>
+                <td>${number(row.lectura_anterior)}</td>
+                <td>
+                  <input
+                    class="table-input js-lectura"
+                    data-id="${row.id_lectura}"
+                    value="${row.lectura_actual}"
+                  />
+                </td>
+                <td>${number(row.consumo)} kWh</td>
+                <td>${money(row.monto_alquiler)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+
+  document.getElementById("btnSaveLecturas")?.addEventListener("click", () => {
+    const items = [...document.querySelectorAll(".js-lectura")].map((input) => ({
+      id_lectura: Number(input.dataset.id),
+      lectura_actual: Number(input.value || 0),
+    }));
+
+    onSave(items);
+  });
+}
+```
+
+---
+
+## 21) `public/assets/js/modules/liquidacion.js`
+
+```javascript
+import { money, number } from "../utils.js";
+
+export function renderLiquidacion(view, state) {
+  const payload = state.previewLiquidacion;
+
+  view.innerHTML = `
+    <section class="panel">
+      <h3>Previsualización de liquidación</h3>
+      <p class="sub">Distribución del recibo antes de guardar en la BD.</p>
+
+      <div class="stats" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px;">
+        <article class="card"><div class="card-body"><p class="card-title">Consumo total</p><p class="card-value">${number(payload.meta.total_consumo)} kWh</p></div></article>
+        <article class="card"><div class="card-body"><p class="card-title">Cargos comunes</p><p class="card-value">${money(payload.meta.cargos_comunes)}</p></div></article>
+        <article class="card"><div class="card-body"><p class="card-title">Común por unidad</p><p class="card-value">${money(payload.meta.gasto_comun_por_unidad)}</p></div></article>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Unidad</th>
+              <th>Inquilino</th>
+              <th>Consumo</th>
+              <th>% Participación</th>
+              <th>Monto consumo</th>
+              <th>Gasto común</th>
+              <th>Total luz</th>
+              <th>Total cobrar</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${payload.data.map(row => `
+              <tr>
+                <td><strong>${row.codigo_unidad}</strong></td>
+                <td>${row.inquilino}</td>
+                <td>${number(row.consumo_kwh)} kWh</td>
+                <td>${number(row.porcentaje_participacion * 100, 2)}%</td>
+                <td>${money(row.monto_consumo)}</td>
+                <td>${money(row.gasto_comun)}</td>
+                <td><strong>${money(row.total_pagar_luz)}</strong></td>
+                <td><strong>${money(row.total_cobrar)}</strong></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+```
+
+---
+
+## 22) `public/assets/js/modules/cobros.js`
+
+```javascript
+import { money } from "../utils.js";
+
+export function renderCobros(view, state) {
+  view.innerHTML = `
+    <section class="panel">
+      <h3>Cobros generados</h3>
+      <p class="sub">Resultado final grabado en la base de datos.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Unidad</th>
+              <th>Inquilino</th>
+              <th>Alquiler</th>
+              <th>Luz</th>
+              <th>Agua</th>
+              <th>Total</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${state.cobros.map(row => `
+              <tr>
+                <td><strong>${row.codigo_unidad}</strong></td>
+                <td>${row.inquilino}</td>
+                <td>${money(row.monto_alquiler)}</td>
+                <td>${money(row.monto_luz)}</td>
+                <td>${money(row.monto_agua)}</td>
+                <td><strong>${money(row.total_cobrar)}</strong></td>
+                <td><span class="badge pending">${row.estado_pago}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+```
+
+---
+
+## 23) `public/assets/js/app.js`
+
+```javascript
+import { STATE } from "./state.js";
+import { API } from "./api.js";
+import { money, number } from "./utils.js";
+import { renderDashboard } from "./modules/dashboard.js";
+import { renderRecibo } from "./modules/recibo.js";
+import { renderLecturas } from "./modules/lecturas.js";
+import { renderLiquidacion } from "./modules/liquidacion.js";
+import { renderCobros } from "./modules/cobros.js";
+
+const menuItems = [
+  ["dashboard", "Dashboard"],
+  ["recibo", "Recibo de luz"],
+  ["lecturas", "Lecturas"],
+  ["liquidacion", "Liquidación"],
+  ["cobros", "Cobros"],
+];
+
+const $menu = document.getElementById("menu");
+const $stats = document.getElementById("stats");
+const $view = document.getElementById("view");
+
+function renderMenu() {
+  $menu.innerHTML = menuItems.map(([key, label]) => `
+    <button class="${STATE.section === key ? 'active' : ''}" data-section="${key}">${label}</button>
+  `).join("");
+
+  [...$menu.querySelectorAll("button")].forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      STATE.section = btn.dataset.section;
+      await ensureSectionData();
+      render();
+    });
+  });
+}
+
+function renderStats() {
+  $stats.innerHTML = `
+    <article class="card"><div class="card-body"><p class="card-title">Total alquiler mensual</p><p class="card-value">${money(STATE.dashboard?.total_alquiler)}</p><p class="card-desc">Suma de unidades activas</p></div></article>
+    <article class="card"><div class="card-body"><p class="card-title">Luz liquidada</p><p class="card-value">${money(STATE.dashboard?.total_luz)}</p><p class="card-desc">Acumulado del periodo</p></div></article>
+    <article class="card"><div class="card-body"><p class="card-title">Total a cobrar</p><p class="card-value">${money(STATE.dashboard?.total_cobrar)}</p><p class="card-desc">Cobros mensuales generados</p></div></article>
+    <article class="card"><div class="card-body"><p class="card-title">Unidades ocupadas</p><p class="card-value">${number(STATE.dashboard?.total_ocupados, 0)}</p><p class="card-desc">Ocupaciones activas</p></div></article>
+  `;
+}
+
+function render() {
+  renderMenu();
+  renderStats();
+
+  if (STATE.section === "dashboard") {
+    renderDashboard($view, STATE);
+    return;
+  }
+
+  if (STATE.section === "recibo") {
+    renderRecibo($view, STATE);
+    return;
+  }
+
+  if (STATE.section === "lecturas") {
+    renderLecturas($view, STATE, handleSaveLecturas);
+    return;
+  }
+
+  if (STATE.section === "liquidacion") {
+    renderLiquidacion($view, STATE);
+    return;
+  }
+
+  if (STATE.section === "cobros") {
+    renderCobros($view, STATE);
+  }
+}
+
+async function loadBase() {
+  const [dashboard, recibo, lecturas] = await Promise.all([
+    API.getDashboard(),
+    API.getRecibo(),
+    API.getLecturas(),
+  ]);
+
+  STATE.dashboard = dashboard.data;
+  STATE.recibo = recibo.data;
+  STATE.lecturas = lecturas.data;
+}
+
+async function ensureSectionData() {
+  if (STATE.section === "liquidacion") {
+    STATE.previewLiquidacion = await API.previewLiquidacion();
+  }
+
+  if (STATE.section === "cobros") {
+    const cobros = await API.getCobros();
+    STATE.cobros = cobros.data;
+  }
+}
+
+async function handleSaveLecturas(items) {
+  try {
+    await API.saveLecturas(items);
+    alert("Lecturas guardadas correctamente");
+    const lecturas = await API.getLecturas();
+    STATE.lecturas = lecturas.data;
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function bootstrap() {
+  try {
+    await loadBase();
+    render();
+  } catch (error) {
+    $view.innerHTML = `<section class="panel"><h3>Error</h3><p class="sub">${error.message}</p></section>`;
+  }
+}
+
+document.getElementById("btnPreviewLiquidacion")?.addEventListener("click", async () => {
+  try {
+    STATE.section = "liquidacion";
+    STATE.previewLiquidacion = await API.previewLiquidacion();
+    render();
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+document.getElementById("btnGenerarLiquidacion")?.addEventListener("click", async () => {
+  try {
+    await API.generateLiquidacion();
+    const dashboard = await API.getDashboard();
+    STATE.dashboard = dashboard.data;
+    alert("Liquidación generada correctamente");
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+document.getElementById("btnGenerarCobros")?.addEventListener("click", async () => {
+  try {
+    await API.generateCobros();
+    const dashboard = await API.getDashboard();
+    STATE.dashboard = dashboard.data;
+    STATE.section = "cobros";
+    const cobros = await API.getCobros();
+    STATE.cobros = cobros.data;
+    render();
+    alert("Cobros generados correctamente");
+  } catch (error) {
+    alert(error.message);
+  }
+});
+
+bootstrap();
+```
+
+---
+
+## 24) Cómo levantarlo en localhost
+
+### Opción simple
+Coloca la carpeta dentro de `htdocs` si usas XAMPP:
+
+```text
+C:\xampp\htdocs\alquileres-app\
+```
+
+Luego entra a:
+
+```text
+http://localhost/alquileres-app/public/
+```
+
+Y la API responderá por:
+
+```text
+http://localhost/alquileres-app/api/router.php?path=dashboard
+```
+
+---
+
+## 25) Orden correcto de prueba
+
+1. Confirmar que tu BD ya existe y se llama `alquileres_db`.
+2. Ajustar usuario y contraseña en `api/config/config.php`.
+3. Abrir primero:
+
+```text
+http://localhost/alquileres-app/api/router.php?path=dashboard
+```
+
+4. Si responde JSON correcto, abrir:
+
+```text
+http://localhost/alquileres-app/public/
+```
+
+5. Ir a Lecturas.
+6. Editar valores y guardar.
+7. Previsualizar liquidación.
+8. Generar liquidación.
+9. Generar cobros.
+
+---
+
+## 26) Lo que sigue en la siguiente iteración
+
+### Versión 3 sugerida
+- login
+- módulos separados por archivo HTML parcial
+- toast bonito en vez de `alert`
+- modal para editar inquilino y unidad
+- filtro por periodo
+- CRUD completo de personas, unidades y ocupaciones
+- registrar pagos
+- exportar reporte mensual
+
+### También conviene
+- mover el periodo actual a un parámetro dinámico
+- no dejar fijo marzo 2026
+- crear endpoint de periodos
+- crear endpoint de personas/unidades

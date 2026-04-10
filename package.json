@@ -1,0 +1,16 @@
+{
+  "name": "alquileres-app-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "E2E tests for alquileres-app",
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:report": "playwright show-report",
+    "e2e:install": "playwright install"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.32.3",
+    "node-fetch": "2.7.0"
+  }
+}
