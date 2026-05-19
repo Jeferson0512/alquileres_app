@@ -6,6 +6,7 @@ import { renderRecibo } from "./modules/recibo.js";
 import { renderLecturas } from "./modules/lecturas.js";
 import { renderLiquidacion } from "./modules/liquidacion.js";
 import { renderCobros } from "./modules/cobros.js";
+import { renderPeriodos } from "./modules/periodos.js";
 import { renderInquilinos } from "./modules/inquilinos.js";
 import { renderUnidades } from "./modules/unidades.js";
 import { renderOcupaciones } from "./modules/ocupaciones.js";
@@ -248,6 +249,7 @@ const ICONS = {
 
 const MENU_ITEMS = [
   ["dashboard",   "Dashboard"],
+  ["periodos",    "Periodos"],
   ["inquilinos",  "Inquilinos"],
   ["unidades",    "Unidades"],
   ["ocupaciones", "Ocupaciones"],
@@ -260,7 +262,7 @@ const MENU_ITEMS = [
 ];
 
 /* secciones que tienen botón "Nuevo registro" */
-const CRUD_SECTIONS = new Set(["inquilinos", "unidades", "ocupaciones"]);
+const CRUD_SECTIONS = new Set(["periodos", "inquilinos", "unidades", "ocupaciones"]);
 
 /* ── Confirm dialog ──────────────────────────────────── */
 const $confirmOverlay = document.getElementById("confirmOverlay");
@@ -486,6 +488,9 @@ function renderTopbarOps() {
       if (STATE.section === "avisos") {
         html += `<button id="btnConfigCobranza" class="btn btn-light">Configurar cobranza</button>`;
       }
+      if (STATE.section === "cobros") {
+        html += `<button id="btnActualizarCobrosDesdeLiquidacion" class="btn btn-light">Actualizar desde liquidación actual</button>`;
+      }
       if (hasCobros) {
         html += `<button id="btnActualizarCobros" class="btn btn-light">Actualizar cobros desde luz</button>`;
         if (hasPagosRegistrados) {
@@ -542,7 +547,6 @@ function bindTopbarOpsEvents() {
       const [dash, prev] = await Promise.all([API.getDashboard(pid), API.previewLiquidacion(pid)]);
       STATE.dashboard = dash.data;
       STATE.previewLiquidacion = prev;
-      STATE.liquidacionAjustes = {};
       renderStats();
       toast("Liquidación generada correctamente");
     } catch (e) { toast(e.message, 'error'); }
@@ -551,10 +555,19 @@ function bindTopbarOpsEvents() {
   document.getElementById("btnGenerarCobros")?.addEventListener("click", async () => {
     try {
       const pid = STATE.periodoId;
+      const ajustes = await getLiquidacionAjustesPayload();
+      if (ajustes.length > 0) {
+        await API.generateLiquidacion(pid, { ajustes });
+      }
       await API.generateCobros(pid);
-      const [dash, cobros] = await Promise.all([API.getDashboard(pid), API.getCobros(pid)]);
+      const [dash, cobros, prev] = await Promise.all([
+        API.getDashboard(pid),
+        API.getCobros(pid),
+        API.previewLiquidacion(pid).catch(() => null),
+      ]);
       STATE.dashboard = dash.data;
       STATE.cobros = cobros.data;
+      STATE.previewLiquidacion = prev;
       STATE.pagosPeriodoRegistrados = 0;
       renderStats();
       render();
@@ -610,7 +623,8 @@ function bindTopbarOpsEvents() {
       );
       if (!ok) return;
 
-      await API.generateLiquidacion(pid, { ajustes: [] });
+      const ajustes = await getLiquidacionAjustesPayload();
+      await API.generateLiquidacion(pid, { ajustes });
       await API.generateCobros(pid);
 
       const [dash, cobros, prev] = await Promise.all([
@@ -622,11 +636,54 @@ function bindTopbarOpsEvents() {
       STATE.dashboard = dash.data;
       STATE.cobros = cobros.data;
       STATE.previewLiquidacion = prev;
-      STATE.liquidacionAjustes = {};
       STATE.pagosPeriodoRegistrados = 0;
       renderStats();
       render();
       toast("Cobros actualizados con la última data de luz", "success");
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  });
+
+  document.getElementById("btnActualizarCobrosDesdeLiquidacion")?.addEventListener("click", async () => {
+    try {
+      const pid = STATE.periodoId;
+      const ajustes = await getLiquidacionAjustesPayload();
+      if (!STATE.previewLiquidacion || !STATE.previewLiquidacion.data) {
+        toast("No hay liquidación previa disponible para aplicar", "warning");
+        return;
+      }
+
+      const ok = await confirmModal(
+        "Se regenerarán los cobros usando la liquidación actual y los ajustes manuales que hayas ingresado. ¿Deseas continuar?",
+        { label: "Actualizar desde liquidación", destructive: false }
+      );
+      if (!ok) return;
+
+      const pagos = await API.listPagos({ id_periodo: pid });
+      const historialPagos = Array.isArray(pagos.data) ? pagos.data : [];
+      if (historialPagos.length > 0) {
+        renderTopbarOps();
+        toast("Este periodo ya tiene pagos registrados. Usa el botón rojo de actualización forzada que aparece arriba en esta pantalla.", "warning", 8000);
+        return;
+      }
+
+      await API.generateLiquidacion(pid, { ajustes });
+      await API.generateCobros(pid);
+
+      const [dash, cobros, prev] = await Promise.all([
+        API.getDashboard(pid),
+        API.getCobros(pid),
+        API.previewLiquidacion(pid).catch(() => null),
+      ]);
+
+      STATE.dashboard = dash.data;
+      STATE.cobros = cobros.data;
+      STATE.previewLiquidacion = prev;
+      STATE.pagosPeriodoRegistrados = 0;
+      renderStats();
+      render();
+      toast("Cobros actualizados con la liquidación actual", "success");
     } catch (e) {
       toast(e.message, 'error');
     }
@@ -643,6 +700,7 @@ function bindTopbarOpsEvents() {
 
 /* ── Botón "Nuevo registro" ───────────────────────────── */
 $btnNuevo.addEventListener("click", () => {
+  if (STATE.section === "periodos") window._periodoNuevo?.();
   if (STATE.section === "inquilinos") window._inquilinoNuevo?.();
   if (STATE.section === "unidades")  window._unidadNueva?.();
   if (STATE.section === "ocupaciones") window._ocupacionNueva?.();
@@ -690,6 +748,9 @@ function render() {
       break;
     case "lecturas":
       renderLecturas($view, STATE, handleSaveLecturas, isCurrentPeriod());
+      break;
+    case "periodos":
+      renderPeriodos($view, STATE);
       break;
     case "liquidacion":
       renderLiquidacion($view, STATE);
@@ -784,6 +845,13 @@ async function handleSaveRecibo(payload) {
   } catch (e) { toast(e.message, 'error'); }
 }
 
+async function getLiquidacionAjustesPayload() {
+  const ajustes = STATE.liquidacionAjustes || {};
+  return Object.entries(ajustes)
+    .filter(([idUnidad, ajuste]) => Number(idUnidad) > 0 && Number(ajuste) !== 0)
+    .map(([idUnidad, ajuste]) => ({ id_unidad: Number(idUnidad), ajuste: Number(ajuste) }));
+}
+
 async function handleCopyReciboAnterior() {
   try {
     const idx = STATE.periodos.findIndex(p => p.id_periodo === STATE.periodoId);
@@ -829,6 +897,131 @@ async function handleCopyReciboAnterior() {
     toast("Recibo copiado desde el periodo anterior");
   } catch (e) { toast(e.message, 'error'); }
 }
+
+async function handleCreatePeriodo(payload) {
+  try {
+    const res = await API.createPeriodo(payload);
+    const periodos = await API.listPeriodos();
+    STATE.periodos = periodos.data;
+    STATE.periodoId = Number(res.data?.id_periodo || STATE.periodoId || STATE.periodos[0]?.id_periodo || null);
+    await reloadPeriodData();
+    await ensureSectionData();
+    render();
+    toast("Periodo creado correctamente", "success");
+    return res.data;
+  } catch (e) {
+    toast(e.message, "error");
+    throw e;
+  }
+}
+
+async function handleUpdatePeriodo(id, payload) {
+  try {
+    await API.updatePeriodo(id, payload);
+    const periodos = await API.listPeriodos();
+    STATE.periodos = periodos.data;
+    await render();
+    toast("Periodo actualizado correctamente", "success");
+  } catch (e) {
+    toast(e.message, "error");
+    throw e;
+  }
+}
+
+function openPeriodoModal() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const firstDay = `${year}-${month}-01`;
+  const lastDayDate = new Date(year, today.getMonth() + 1, 0);
+  const lastDay = `${year}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(lastDayDate.getDate()).padStart(2, "0")}`;
+
+  openModal(
+    "Crear periodo",
+    `
+      <div class="form-grid">
+        <label>
+          Año
+          <input id="periodoAnio" type="number" min="2000" step="1" value="${year}" class="table-input" />
+        </label>
+        <label>
+          Mes
+          <select id="periodoMes" class="table-input">
+            ${Array.from({ length: 12 }, (_, i) => {
+              const m = i + 1;
+              return `<option value="${m}" ${m === today.getMonth() + 1 ? "selected" : ""}>${String(m).padStart(2, "0")}</option>`;
+            }).join("")}
+          </select>
+        </label>
+        <label>
+          Fecha inicio
+          <input id="periodoInicio" type="date" value="${firstDay}" class="table-input" />
+        </label>
+        <label>
+          Fecha fin
+          <input id="periodoFin" type="date" value="${lastDay}" class="table-input" />
+        </label>
+        <label>
+          Estado
+          <select id="periodoEstado" class="table-input">
+            <option value="ABIERTO" selected>ABIERTO</option>
+            <option value="CERRADO">CERRADO</option>
+          </select>
+        </label>
+        <label style="grid-column: span 2;">
+          Observación
+          <input id="periodoObservacion" type="text" class="table-input" />
+        </label>
+      </div>
+    `,
+    async () => {
+      const anio = Number(document.getElementById("periodoAnio")?.value || 0);
+      const mes = Number(document.getElementById("periodoMes")?.value || 0);
+      const fechaInicio = document.getElementById("periodoInicio")?.value || "";
+      const fechaFin = document.getElementById("periodoFin")?.value || "";
+      const estado = document.getElementById("periodoEstado")?.value || "ABIERTO";
+      const observacion = document.getElementById("periodoObservacion")?.value || null;
+
+      if (anio < 2000 || mes < 1 || mes > 12) {
+        toast("Seleccione un año y mes válidos", "error");
+        return;
+      }
+      if (!fechaInicio || !fechaFin) {
+        toast("Debe indicar fecha de inicio y fin", "error");
+        return;
+      }
+      if (fechaInicio > fechaFin) {
+        toast("La fecha de inicio no puede ser mayor a la fecha de fin", "error");
+        return;
+      }
+
+      await handleCreatePeriodo({
+        anio,
+        mes,
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
+        estado,
+        observacion,
+      });
+      closeModal();
+    }
+  );
+}
+
+window._periodoNuevo = openPeriodoModal;
+window._periodoToggleState = async (id, estado) => {
+  const ok = await confirmModal(`¿Deseas cambiar el estado del periodo #${id} a ${estado}?`, { label: `Cambiar a ${estado}`, destructive: false });
+  if (!ok) return;
+
+  try {
+    await handleUpdatePeriodo(id, { estado });
+    await reloadPeriodData();
+    await ensureSectionData();
+    render();
+  } catch (e) {
+    // ya maneja toast internamente
+  }
+};
 
 /* ── Bootstrap ────────────────────────────────────────── */
 async function bootstrap() {

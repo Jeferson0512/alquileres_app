@@ -3,6 +3,11 @@ import { money, number, toast } from "../utils.js";
 
 let selectedCobroId = null;
 const deudaAnteriorCache = new Map();
+function getAvisoMinimoKwh(config) {
+  const value = Number(config?.minimo_kwh_aviso ?? 13.5);
+  return Number.isFinite(value) && value > 0 ? value : 13.5;
+}
+
 const deudaAnteriorLoading = new Set();
 const DEBT_IGNORE_STORAGE_KEY = "avisos.ignore.deudaAnterior.v1";
 let ignoredDebtByKey = loadIgnoredDebtMap();
@@ -34,7 +39,7 @@ export function renderAvisos(view, state) {
 
       <div class="avisos-layout">
         <div class="avisos-left">
-          ${renderListado(cobros, selected?.id_cobro, state)}
+          ${renderListado(cobros, selected?.id_cobro, config, state)}
         </div>
         <div class="avisos-right">
           ${selected ? renderPreview(selected, config, state) : renderEmpty()}
@@ -193,6 +198,7 @@ function openConfigModal(config, state) {
   $save.onclick = async () => {
     const payload = {
       monto_minimo_luz: parseFloat(document.getElementById("cfgMinimoLuz")?.value  || 0),
+      minimo_kwh_aviso: parseFloat(document.getElementById("cfgMinimoKwhAviso")?.value  || 13.5),
       yape_titular:     document.getElementById("cfgYapeTitular")?.value  || "",
       yape_numero:      document.getElementById("cfgYapeNumero")?.value   || "",
       yape_qr:          document.getElementById("cfgYapeQr")?.value       || "",
@@ -234,6 +240,10 @@ function renderConfigFormHtml(config) {
       <label>
         <span>Minimo de luz (S/)</span>
         <input id="cfgMinimoLuz" type="number" step="0.01" min="0" value="${formatInputNumber(config.monto_minimo_luz)}" />
+      </label>
+      <label>
+        <span>Consumo mínimo para PNG (kWh)</span>
+        <input id="cfgMinimoKwhAviso" type="number" step="0.1" min="0" value="${formatInputNumber(config.minimo_kwh_aviso ?? 13.5)}" />
       </label>
       <label>
         <span>Titular Yape</span>
@@ -280,7 +290,20 @@ function renderConfigFormHtml(config) {
   `;
 }
 
-function renderListado(cobros, selectedId, state) {
+function renderListado(cobros, selectedId, config, state) {
+  const avisoMinimoKwh = getAvisoMinimoKwh(config);
+  if (!cobros.length) {
+    return `
+      <section class="subpanel">
+        <div class="subpanel-head">
+          <h4>Cobros del periodo</h4>
+          <span class="sub">Selecciona uno para generar el aviso</span>
+        </div>
+        <div class="info-callout">No hay cobros con consumo igual o superior a ${avisoMinimoKwh} kWh para este periodo.</div>
+      </section>
+    `;
+  }
+
   return `
     <section class="subpanel">
       <div class="subpanel-head">
@@ -315,6 +338,9 @@ function renderPreview(row, config, state) {
   const otros = Number(row.otros_conceptos || 0);
   const pagado = getPagadoTotal(row);
   const saldoPeriodo = getSaldoPendiente(row);
+  const consumo = Number(row?.consumo_kwh || 0);
+  const avisoMinimoKwh = getAvisoMinimoKwh(config);
+  const isLowConsumo = consumo < avisoMinimoKwh;
   const deudaAnteriorReal = getDeudaAnteriorReal(row, state);
   const deudaAnteriorLoadingNow = isDeudaAnteriorLoading(row, state);
   const deudaAnteriorIgnorada = isDebtIgnored(row, state) && deudaAnteriorReal > 0;
@@ -341,6 +367,11 @@ function renderPreview(row, config, state) {
           <button class="btn btn-light" id="btnDescargarAviso">Descargar PNG</button>
           <button class="btn btn-primary" id="btnCompartirAviso">Compartir</button>
         </div>
+        ${isLowConsumo ? `
+          <div class="aviso-debt-note">
+            <strong>En el PNG este consumo se mostrará como 0 kWh cuando sea menor a ${avisoMinimoKwh}.</strong>
+          </div>
+        ` : ""}
       </div>
 
       ${deudaAnteriorLoadingNow ? `
@@ -493,17 +524,23 @@ function bindAvisosEvents(state) {
     if (!row) return;
 
     const text = buildSummaryText(row, state.configCobranza, state);
-    try {
-      const blob = await generateAvisoPng(row, state.configCobranza, state);
-      const file = new File([blob], buildAvisoFilename(row, state), { type: "image/png" });
+    const consumo = Number(row?.consumo_kwh || 0);
+    const avisoMinimoKwh = getAvisoMinimoKwh(state.configCobranza);
+    const isLowConsumo = consumo < avisoMinimoKwh;
 
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({
-          title: `Cobro ${row.codigo_unidad}`,
-          text,
-          files: [file],
-        });
-        return;
+    try {
+      if (!isLowConsumo) {
+        const blob = await generateAvisoPng(row, state.configCobranza, state);
+        const file = new File([blob], buildAvisoFilename(row, state), { type: "image/png" });
+
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            title: `Cobro ${row.codigo_unidad}`,
+            text,
+            files: [file],
+          });
+          return;
+        }
       }
 
       if (navigator.share) {
@@ -699,6 +736,11 @@ function buildAvisoFilename(row, state) {
 }
 
 async function generateAvisoPng(row, config, state) {
+  const consumo = Number(row?.consumo_kwh || 0);
+  const avisoMinimoKwh = getAvisoMinimoKwh(config);
+  const isLowConsumo = consumo < avisoMinimoKwh;
+  const displayConsumo = isLowConsumo ? 0 : consumo;
+
   const tenantName = formatTenantDisplayName(row);
   const pagado = getPagadoTotal(row);
   const saldoPeriodo = getSaldoPendiente(row);
@@ -788,7 +830,7 @@ async function generateAvisoPng(row, config, state) {
   roundRect(ctx, 120, showBalanceStrip ? 860 : 740, 260, 180, 28, "#f8fafc");
   ctx.fillStyle = "#0f172a";
   ctx.font = "bold 64px Segoe UI";
-  ctx.fillText(number(row.consumo_kwh ?? 0, 2), 170, showBalanceStrip ? 960 : 840);
+  ctx.fillText(number(displayConsumo, 2), 170, showBalanceStrip ? 960 : 840);
   ctx.fillStyle = "#64748b";
   ctx.font = "28px Segoe UI";
   ctx.fillText("kWh del periodo", 170, showBalanceStrip ? 1005 : 885);

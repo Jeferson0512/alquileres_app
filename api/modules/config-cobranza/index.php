@@ -17,6 +17,7 @@ try {
             $row = [
                 'id_inmueble' => $idInmueble,
                 'monto_minimo_luz' => 0,
+                'minimo_kwh_aviso' => 13.5,
                 'yape_titular' => '',
                 'yape_numero' => '',
                 'yape_qr' => '',
@@ -37,6 +38,7 @@ try {
         $payload = [
             'id_inmueble' => $idInmueble,
             'monto_minimo_luz' => round(max((float) ($body['monto_minimo_luz'] ?? 0), 0), 2),
+            'minimo_kwh_aviso' => round(max((float) ($body['minimo_kwh_aviso'] ?? 13.5), 0), 2),
             'yape_titular' => trim((string) ($body['yape_titular'] ?? '')),
             'yape_numero' => trim((string) ($body['yape_numero'] ?? '')),
             'yape_qr' => trim((string) ($body['yape_qr'] ?? '')),
@@ -49,14 +51,15 @@ try {
 
         $sql = "
             INSERT INTO config_cobranza (
-                id_inmueble, monto_minimo_luz, yape_titular, yape_numero, yape_qr,
+                id_inmueble, monto_minimo_luz, minimo_kwh_aviso, yape_titular, yape_numero, yape_qr,
                 banco_nombre, banco_titular, banco_cuenta, banco_cci, mensaje_base
             ) VALUES (
-                :id_inmueble, :monto_minimo_luz, :yape_titular, :yape_numero, :yape_qr,
+                :id_inmueble, :monto_minimo_luz, :minimo_kwh_aviso, :yape_titular, :yape_numero, :yape_qr,
                 :banco_nombre, :banco_titular, :banco_cuenta, :banco_cci, :mensaje_base
             )
             ON DUPLICATE KEY UPDATE
                 monto_minimo_luz = VALUES(monto_minimo_luz),
+                minimo_kwh_aviso = VALUES(minimo_kwh_aviso),
                 yape_titular = VALUES(yape_titular),
                 yape_numero = VALUES(yape_numero),
                 yape_qr = VALUES(yape_qr),

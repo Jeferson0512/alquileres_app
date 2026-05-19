@@ -46,6 +46,14 @@ export const API = {
     method: "POST",
     body: JSON.stringify({ items }),
   }),
+  createPeriodo: (payload) => request("periodos", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }),
+  updatePeriodo: (id, payload) => request(`periodos&id_periodo=${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  }),
   previewLiquidacion: (periodoId) => request(`liquidacion/preview${pid(periodoId)}`),
   generateLiquidacion: (periodoId, payload = {}) => request(`liquidacion/generate${pid(periodoId)}`, {
     method: "POST",
