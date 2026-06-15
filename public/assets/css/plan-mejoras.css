@@ -1,0 +1,290 @@
+:root {
+    --bg: #f6f8fb;
+    --surface: #ffffff;
+    --surface-2: #f1f5f9;
+    --text: #0f172a;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --primary: #2563eb;
+    --dark: #0f172a;
+    --radius: 18px;
+    --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+}
+
+.page {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+}
+
+/* ── HEADER ─────────────────────────────────────────── */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.page-header h1 {
+    margin: 0 0 4px;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.page-header p {
+    margin: 0;
+    color: var(--muted);
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    white-space: nowrap;
+    padding-top: 4px;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* ── CARDS ──────────────────────────────────────────── */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+}
+
+.card h2 {
+    margin: 0 0 14px;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.card > p {
+    color: var(--muted);
+    margin: -6px 0 12px;
+}
+
+/* ── INFO GRID (BD / XAMPP) ─────────────────────────── */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+}
+
+.info-item {
+    background: var(--surface-2);
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.info-item .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--muted);
+    margin-bottom: 4px;
+}
+
+.info-item .value {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.note {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    font-size: 13.5px;
+}
+
+.note.warn {
+    background: #fef3c7;
+    border-color: #fde68a;
+    color: #92400e;
+}
+
+/* ── SIMPLE LISTS ───────────────────────────────────── */
+ul.simple-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+ul.simple-list li {
+    margin-bottom: 6px;
+}
+
+/* ── RISK CARDS ─────────────────────────────────────── */
+.risk-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.risk-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+}
+
+.badge {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    color: #fff;
+    margin-top: 2px;
+}
+
+.badge.critico {
+    background: var(--danger);
+}
+
+.badge.alto {
+    background: var(--warning);
+}
+
+.badge.medio {
+    background: #ca8a04;
+}
+
+.badge.bajo {
+    background: var(--muted);
+}
+
+.risk-item .risk-text strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.risk-item .risk-text span {
+    color: var(--muted);
+    font-size: 13.5px;
+}
+
+/* ── PROGRESS BAR ───────────────────────────────────── */
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.progress-track {
+    background: var(--surface-2);
+    border-radius: 999px;
+    height: 10px;
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+
+.progress-fill {
+    background: var(--primary);
+    height: 100%;
+    width: 0%;
+    transition: width .2s ease;
+}
+
+/* ── PLAN SECTIONS / TASKS ──────────────────────────── */
+.plan-section {
+    margin-bottom: 18px;
+}
+
+.plan-section:last-child {
+    margin-bottom: 0;
+}
+
+.plan-section h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+    margin: 0 0 10px;
+}
+
+.task-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    border-radius: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, opacity .12s;
+}
+
+.task-item:hover {
+    background: var(--surface-2);
+}
+
+.task-item input[type="checkbox"] {
+    margin-top: 3px;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.task-item .task-text strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.task-item .task-text span {
+    color: var(--muted);
+    font-size: 13.5px;
+}
+
+.task-item.done {
+    opacity: .55;
+}
+
+.task-item.done .task-text strong {
+    text-decoration: line-through;
+}
+
+/* ── FOOTER ─────────────────────────────────────────── */
+.page-footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12.5px;
+    margin-top: 24px;
+}

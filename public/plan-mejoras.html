@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plan de mejoras — Alquileres</title>
+  <link rel="stylesheet" href="./assets/css/plan-mejoras.css" />
+</head>
+
+<body>
+  <div class="page">
+
+    <header class="page-header">
+      <div>
+        <h1>Plan de mejoras — Sistema de Alquileres</h1>
+        <p>Diagnóstico del proyecto y hoja de ruta para el cobro de luz, agua, gas y otros servicios.</p>
+      </div>
+      <a class="back-link" href="./index.html">← Volver al sistema</a>
+    </header>
+
+    <!-- Base de datos / XAMPP -->
+    <section class="card">
+      <h2>🗄️ Base de datos y XAMPP</h2>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="label">Base de datos</div>
+          <div class="value">alquileres_db</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Motor</div>
+          <div class="value">MySQL / MariaDB (PDO)</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Host</div>
+          <div class="value">127.0.0.1:3306</div>
+        </div>
+        <div class="info-item">
+          <div class="label">Charset</div>
+          <div class="value">utf8mb4</div>
+        </div>
+      </div>
+      <div class="note">
+        ✅ Apache y MySQL están activos en XAMPP.
+      </div>
+      <div class="note warn">
+        ⚠️ En la carpeta de datos de MySQL existen otras 3 bases que no usa esta app:
+        <strong>alquileres_db_test_20260323</strong>, <strong>admin_alquileres</strong> y
+        <strong>alquileres_saas</strong>. Conviene revisar si todavía se necesitan.
+      </div>
+    </section>
+
+    <!-- Arquitectura actual -->
+    <section class="card">
+      <h2>🏗️ Arquitectura actual</h2>
+      <p>
+        Backend en PHP plano con API REST modular (<code>api/modules/*</code>) y consultas
+        preparadas (PDO). Frontend SPA en JavaScript vanilla (ES6 modules), sin frameworks.
+        Tests E2E con Playwright.
+      </p>
+      <ul class="simple-list">
+        <li>Dashboard — KPIs generales del periodo</li>
+        <li>Periodos — control de ciclos mensuales (ABIERTO / CERRADO / ANULADO)</li>
+        <li>Inquilinos, Unidades, Ocupaciones — propiedades, inquilinos y contratos</li>
+        <li>Recibo de luz, Lecturas, Liquidación — consumo eléctrico y prorrateo con IGV</li>
+        <li>Cobros, Avisos, Tarifas — facturación mensual y avisos de pago</li>
+      </ul>
+    </section>
+
+    <!-- Fortalezas -->
+    <section class="card">
+      <h2>✅ Lo que ya funciona bien</h2>
+      <ul class="simple-list">
+        <li>Separación por conceptos en <code>cobros_mensuales</code> (alquiler, luz, agua, gas, otros, mora, descuento)</li>
+        <li>Cálculo de consumo eléctrico por medidor con prorrateo de gastos comunes e IGV (18%)</li>
+        <li>Control de periodos que evita duplicar o solapar ciclos mensuales</li>
+        <li>Avisos visuales (PNG) listos para compartir por WhatsApp/Yape, con deuda anterior</li>
+        <li>Consultas parametrizadas (PDO) en todo el código — buena protección contra SQL injection</li>
+      </ul>
+    </section>
+
+    <!-- Riesgos / qué falta -->
+    <section class="card">
+      <h2>⚠️ Qué falta / riesgos detectados</h2>
+      <div class="risk-grid">
+        <div class="risk-item">
+          <span class="badge critico">Crítico</span>
+          <div class="risk-text">
+            <strong>Sin autenticación ni roles</strong>
+            <span>Toda la API está abierta: no hay login, sesiones ni usuarios.</span>
+          </div>
+        </div>
+        <div class="risk-item">
+          <span class="badge alto">Alto</span>
+          <div class="risk-text">
+            <strong>"Pagos por concepto" diseñado pero no confirmado en producción</strong>
+            <span>El esquema avanzado ya está escrito en <code>database/pagos_por_concepto_*.sql</code> pero falta desplegarlo.</span>
+          </div>
+        </div>
+        <div class="risk-item">
+          <span class="badge alto">Alto</span>
+          <div class="risk-text">
+            <strong>Mora no automática</strong>
+            <span>El campo <code>mora</code> existe pero se llena manualmente, sin cálculo por días de atraso.</span>
+          </div>
+        </div>
+        <div class="risk-item">
+          <span class="badge medio">Medio</span>
+          <div class="risk-text">
+            <strong>Sin notificaciones automáticas</strong>
+            <span>Los avisos se generan, pero el envío es 100% manual (copiar y compartir).</span>
+          </div>
+        </div>
+        <div class="risk-item">
+          <span class="badge medio">Medio</span>
+          <div class="risk-text">
+            <strong>Sin recibos PDF</strong>
+            <span>Solo se genera PNG vía canvas; no hay comprobantes imprimibles/oficiales.</span>
+          </div>
+        </div>
+        <div class="risk-item">
+          <span class="badge medio">Medio</span>
+          <div class="risk-text">
+            <strong>Dashboard muy básico</strong>
+            <span>Solo 4 KPIs; no hay morosos, históricos ni gráficos de consumo.</span>
+          </div>
+        </div>
+        <div class="risk-item">
+          <span class="badge bajo">Bajo</span>
+          <div class="risk-text">
+            <strong>Archivos sueltos en la raíz del proyecto</strong>
+            <span><code>insertar_enero.php</code>, <code>resumen_enero.php</code>, plantillas TSV/TXT y <code>prueba.html</code> parecen scripts de un solo uso.</span>
+          </div>
+        </div>
+        <div class="risk-item">
+          <span class="badge bajo">Bajo</span>
+          <div class="risk-text">
+            <strong>Sin backups automáticos</strong>
+            <span>Solo existe un dump manual de marzo de <code>alquileres_db</code>.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Plan de mejoras -->
+    <section class="card">
+      <h2>🚀 Plan de mejoras</h2>
+
+      <div class="progress-label">
+        <span>Progreso general</span>
+        <span id="progressText">0 de 0 completados (0%)</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+
+      <div class="plan-section">
+        <h3>Corto plazo</h3>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="corto-1" />
+          <div class="task-text">
+            <strong>Desplegar "pagos por concepto"</strong>
+            <span>Ejecutar el schema, la migración y los guardrails ya escritos en <code>database/</code>, y adaptar <code>generate.php</code> / <code>pagos/index.php</code> para guardar el detalle por concepto.</span>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="corto-2" />
+          <div class="task-text">
+            <strong>Mora automática</strong>
+            <span>Calcular la mora por días de atraso (% o monto fijo), configurable desde <code>config_cobranza</code>.</span>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="corto-3" />
+          <div class="task-text">
+            <strong>Estado de cuenta por inquilino</strong>
+            <span>Vista con la deuda acumulada de todos los periodos abiertos, desglosada por concepto (alquiler, luz, agua, gas...).</span>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="corto-4" />
+          <div class="task-text">
+            <strong>Login básico</strong>
+            <span>Usuario admin con sesión PHP y contraseña hasheada (bcrypt), para cerrar la API abierta.</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="plan-section">
+        <h3>Mediano plazo</h3>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="medio-1" />
+          <div class="task-text">
+            <strong>Recordatorios automáticos</strong>
+            <span>Tarea programada de Windows que, días antes del vencimiento, genere y envíe los avisos (email con PHPMailer o WhatsApp API).</span>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="medio-2" />
+          <div class="task-text">
+            <strong>Dashboard ampliado</strong>
+            <span>Lista de unidades morosas, recaudado vs proyectado del periodo, e histórico de consumo eléctrico (Chart.js).</span>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="medio-3" />
+          <div class="task-text">
+            <strong>Recibos en PDF</strong>
+            <span>Integrar dompdf para generar comprobantes descargables/imprimibles, además del PNG actual.</span>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="medio-4" />
+          <div class="task-text">
+            <strong>Agregar otros servicios</strong>
+            <span>Internet, cable, estacionamiento, limpieza, etc. reutilizando <code>tarifas_servicios</code> / <code>conceptos_cobro</code> — sin cambios de esquema.</span>
+          </div>
+        </label>
+      </div>
+
+      <div class="plan-section">
+        <h3>Largo plazo</h3>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="largo-1" />
+          <div class="task-text">
+            <strong>Backups automáticos</strong>
+            <span>Programar <code>mysqldump</code> periódico de <code>alquileres_db</code>.</span>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="largo-2" />
+          <div class="task-text">
+            <strong>Limpieza de archivos y bases sueltas</strong>
+            <span>Revisar/archivar <code>insertar_enero.php</code>, <code>resumen_enero.php</code>, plantillas TSV/TXT, <code>prueba.html</code> y las bases extra de XAMPP.</span>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="largo-3" />
+          <div class="task-text">
+            <strong>Roles (admin / cobrador)</strong>
+            <span>Una vez exista login, reutilizando los campos <code>registrado_por</code> / <code>reversado_por</code> ya previstos en la auditoría.</span>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="largo-4" />
+          <div class="task-text">
+            <strong>Comprobantes con numeración correlativa</strong>
+            <span>Si se requiere formalidad fiscal (boletas/facturas SUNAT) más allá del <code>numero_recibo</code> actual de luz.</span>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      Generado a partir del análisis del proyecto Alquileres App.
+    </footer>
+
+  </div>
+
+  <script src="./assets/js/plan-mejoras.js"></script>
+</body>
+
+</html>
