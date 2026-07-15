@@ -5,6 +5,7 @@ export const STATE = {
   lecturas: [],
   previewLiquidacion: null,
   liquidacionAjustes: {},
+  cobrosDesincronizados: false,
   cobros: [],
   pagosPeriodoRegistrados: 0,
   inquilinos: [],

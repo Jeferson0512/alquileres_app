@@ -164,6 +164,7 @@ async function openForceRefreshCobrosModal() {
           STATE.cobros = cobros.data;
           STATE.previewLiquidacion = prev;
           STATE.liquidacionAjustes = {};
+          STATE.cobrosDesincronizados = false;
           STATE.pagosPeriodoRegistrados = historialPagos.length;
           closeModal();
           renderStats();
@@ -208,6 +209,7 @@ async function openForceRefreshCobrosModal() {
         STATE.cobros = cobros.data;
         STATE.previewLiquidacion = prev;
         STATE.liquidacionAjustes = {};
+        STATE.cobrosDesincronizados = false;
         STATE.pagosPeriodoRegistrados = Math.max(historialPagos.length, Number(data.pagos_reversados || 0));
         closeModal();
         renderStats();
@@ -245,6 +247,7 @@ const ICONS = {
   ocupaciones: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   tarifas: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><circle cx="12" cy="17" r=".5" fill="currentColor"/></svg>`,
   avisos: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg>`,
+  periodos: `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
 };
 
 const MENU_ITEMS = [
@@ -446,6 +449,7 @@ function renderSidebarPeriod() {
     STATE.pagosPeriodoRegistrados = 0;
     STATE.previewLiquidacion = null;
     STATE.liquidacionAjustes = {};
+    STATE.cobrosDesincronizados = false;
     try {
       await reloadPeriodData();
       await ensureSectionData();
@@ -541,12 +545,13 @@ function bindTopbarOpsEvents() {
           id_unidad: Number(idUnidad),
           ajuste: Number(ajuste || 0),
         }))
-        .filter((item) => item.id_unidad > 0 && Number.isFinite(item.ajuste) && Math.abs(item.ajuste) > 0.0001);
+        .filter((item) => item.id_unidad > 0 && Number.isFinite(item.ajuste));
 
       await API.generateLiquidacion(pid, { ajustes: ajustesPayload });
       const [dash, prev] = await Promise.all([API.getDashboard(pid), API.previewLiquidacion(pid)]);
       STATE.dashboard = dash.data;
       STATE.previewLiquidacion = prev;
+      STATE.cobrosDesincronizados = true;
       renderStats();
       toast("Liquidación generada correctamente");
     } catch (e) { toast(e.message, 'error'); }
@@ -569,6 +574,7 @@ function bindTopbarOpsEvents() {
       STATE.cobros = cobros.data;
       STATE.previewLiquidacion = prev;
       STATE.pagosPeriodoRegistrados = 0;
+      STATE.cobrosDesincronizados = false;
       renderStats();
       render();
       toast("Cobros generados correctamente");
@@ -637,6 +643,7 @@ function bindTopbarOpsEvents() {
       STATE.cobros = cobros.data;
       STATE.previewLiquidacion = prev;
       STATE.pagosPeriodoRegistrados = 0;
+      STATE.cobrosDesincronizados = false;
       renderStats();
       render();
       toast("Cobros actualizados con la última data de luz", "success");
@@ -681,6 +688,7 @@ function bindTopbarOpsEvents() {
       STATE.cobros = cobros.data;
       STATE.previewLiquidacion = prev;
       STATE.pagosPeriodoRegistrados = 0;
+      STATE.cobrosDesincronizados = false;
       renderStats();
       render();
       toast("Cobros actualizados con la liquidación actual", "success");
@@ -848,7 +856,7 @@ async function handleSaveRecibo(payload) {
 async function getLiquidacionAjustesPayload() {
   const ajustes = STATE.liquidacionAjustes || {};
   return Object.entries(ajustes)
-    .filter(([idUnidad, ajuste]) => Number(idUnidad) > 0 && Number(ajuste) !== 0)
+    .filter(([idUnidad, ajuste]) => Number(idUnidad) > 0 && Number.isFinite(Number(ajuste)))
     .map(([idUnidad, ajuste]) => ({ id_unidad: Number(idUnidad), ajuste: Number(ajuste) }));
 }
 
@@ -940,38 +948,38 @@ function openPeriodoModal() {
     "Crear periodo",
     `
       <div class="form-grid">
-        <label>
-          Año
-          <input id="periodoAnio" type="number" min="2000" step="1" value="${year}" class="table-input" />
-        </label>
-        <label>
-          Mes
-          <select id="periodoMes" class="table-input">
+        <div class="form-group">
+          <label>Año</label>
+          <input id="periodoAnio" type="number" min="2000" step="1" value="${year}" />
+        </div>
+        <div class="form-group">
+          <label>Mes</label>
+          <select id="periodoMes">
             ${Array.from({ length: 12 }, (_, i) => {
               const m = i + 1;
               return `<option value="${m}" ${m === today.getMonth() + 1 ? "selected" : ""}>${String(m).padStart(2, "0")}</option>`;
             }).join("")}
           </select>
-        </label>
-        <label>
-          Fecha inicio
-          <input id="periodoInicio" type="date" value="${firstDay}" class="table-input" />
-        </label>
-        <label>
-          Fecha fin
-          <input id="periodoFin" type="date" value="${lastDay}" class="table-input" />
-        </label>
-        <label>
-          Estado
-          <select id="periodoEstado" class="table-input">
+        </div>
+        <div class="form-group">
+          <label>Fecha inicio</label>
+          <input id="periodoInicio" type="date" value="${firstDay}" />
+        </div>
+        <div class="form-group">
+          <label>Fecha fin</label>
+          <input id="periodoFin" type="date" value="${lastDay}" />
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="periodoEstado">
             <option value="ABIERTO" selected>ABIERTO</option>
             <option value="CERRADO">CERRADO</option>
           </select>
-        </label>
-        <label style="grid-column: span 2;">
-          Observación
-          <input id="periodoObservacion" type="text" class="table-input" />
-        </label>
+        </div>
+        <div class="form-group full">
+          <label>Observación</label>
+          <input id="periodoObservacion" type="text" placeholder="Opcional" />
+        </div>
       </div>
     `,
     async () => {

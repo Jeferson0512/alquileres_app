@@ -56,18 +56,24 @@ try {
     $stmt->execute(['periodoId' => $periodoId]);
     $rows = $stmt->fetchAll();
 
-    $stmtAjustes = $pdo->prepare(" 
-        SELECT id_unidad, ajuste
+    $stmtAjustes = $pdo->prepare("
+        SELECT id_unidad, ajuste, consumo_kwh, porcentaje_participacion
         FROM liquidacion_luz_detalle
         WHERE id_periodo = :periodoId
     ");
     $stmtAjustes->execute(['periodoId' => $periodoId]);
     $ajustesByUnidad = [];
+    $previoByUnidad = [];
     foreach ($stmtAjustes->fetchAll() as $ajusteRow) {
-        $ajustesByUnidad[(int) $ajusteRow['id_unidad']] = round((float) ($ajusteRow['ajuste'] ?? 0), 2);
+        $idUnidadAjuste = (int) $ajusteRow['id_unidad'];
+        $ajustesByUnidad[$idUnidadAjuste] = round((float) ($ajusteRow['ajuste'] ?? 0), 2);
+        $previoByUnidad[$idUnidadAjuste] = [
+            'consumo_kwh' => (float) $ajusteRow['consumo_kwh'],
+            'porcentaje_participacion' => (float) $ajusteRow['porcentaje_participacion'],
+        ];
     }
 
-    $rowsLiquidados = array_values(array_filter($rows, fn ($r) => !empty($r['id_ocupacion'])));
+    $rowsLiquidados = array_values(array_filter($rows, fn ($r) => !empty($r['id_ocupacion']) && (float) $r['consumo_kwh'] > 0));
 
     $totalConsumo = array_sum(array_map(fn ($r) => (float) $r['consumo_kwh'], $rowsLiquidados));
     $precioKwh = (float) ($recibo['precio_kwh'] ?? 0);
@@ -84,17 +90,58 @@ try {
 
     $diferenciaComun = round((float) $recibo['total_recibo'] - $montoConsumoTotalRedondeado, 2);
 
-    $data = array_map(function ($row) use ($totalConsumo, $precioKwh, $igvRate, $diferenciaComun, $tarifaAgua, $tarifaGas, $tarifaMant, $ajustesByUnidad) {
+    // Replica la misma logica de "porcentaje congelado" que usa liquidacion/generate.php:
+    // si el consumo de una unidad no cambio desde la ultima vez que se guardo la liquidacion,
+    // su % de participacion se mantiene fijo, para que la previsualizacion coincida exactamente
+    // con lo que se va a guardar al generar/forzar.
+    $sumaPorcentajeCongelado = 0.0;
+    $sumaConsumoCambiadas = 0.0;
+    $esCongelada = [];
+
+    foreach ($rowsLiquidados as $liquidado) {
+        $idUnidadLiq = (int) $liquidado['id_unidad'];
+        $consumoLiq = (float) $liquidado['consumo_kwh'];
+
+        $previo = $previoByUnidad[$idUnidadLiq] ?? null;
+        $sinCambios = $previo !== null && round($previo['consumo_kwh'], 2) === round($consumoLiq, 2);
+        $esCongelada[$idUnidadLiq] = $sinCambios;
+
+        if ($sinCambios) {
+            $sumaPorcentajeCongelado += $previo['porcentaje_participacion'];
+        } else {
+            $sumaConsumoCambiadas += $consumoLiq;
+        }
+    }
+
+    $porcentajeDisponible = max(1 - $sumaPorcentajeCongelado, 0);
+
+    $porcentajesPorUnidad = [];
+    foreach ($rowsLiquidados as $liquidado) {
+        $idUnidadLiq = (int) $liquidado['id_unidad'];
+        $consumoLiq = (float) $liquidado['consumo_kwh'];
+
+        if ($esCongelada[$idUnidadLiq] ?? false) {
+            $porcentajesPorUnidad[$idUnidadLiq] = $previoByUnidad[$idUnidadLiq]['porcentaje_participacion'];
+        } else {
+            $porcentajesPorUnidad[$idUnidadLiq] = $sumaConsumoCambiadas > 0
+                ? $porcentajeDisponible * ($consumoLiq / $sumaConsumoCambiadas)
+                : 0;
+        }
+    }
+
+    $data = array_map(function ($row) use ($precioKwh, $igvRate, $diferenciaComun, $tarifaAgua, $tarifaGas, $tarifaMant, $ajustesByUnidad, $porcentajesPorUnidad) {
         $consumo = (float) $row['consumo_kwh'];
         $participa = !empty($row['id_ocupacion']) && $consumo > 0;
-        $porcentaje = $participa && $totalConsumo > 0 ? $consumo / $totalConsumo : 0;
+        $idUnidadRow = (int) $row['id_unidad'];
+        $porcentaje = $participa ? ($porcentajesPorUnidad[$idUnidadRow] ?? 0) : 0;
         $subtotalConsumo = $participa ? $consumo * $precioKwh : 0;
         $igvConsumo = $participa ? $subtotalConsumo * $igvRate : 0;
         $montoConsumoRedondeado = $participa ? roundUpToTenth($subtotalConsumo + $igvConsumo) : 0;
         $gastoComun = $participa ? ($diferenciaComun * $porcentaje) : 0;
         $ajuste = $participa ? (float) ($ajustesByUnidad[(int) $row['id_unidad']] ?? 0) : 0;
         $totalLuzBase = $participa ? ($montoConsumoRedondeado + $gastoComun) : 0;
-        $totalLuz = $participa ? ($totalLuzBase + $ajuste) : 0;
+        $totalLuzCrudo = $participa ? ($totalLuzBase + $ajuste) : 0;
+        $totalLuz = $totalLuzCrudo > 0 ? roundUpToTenth($totalLuzCrudo) : round($totalLuzCrudo, 2);
         $montoAlquiler = $participa ? (float) $row['monto_alquiler'] : 0;
         $servicios = $participa ? ($tarifaAgua + $tarifaGas + $tarifaMant) : 0;
 

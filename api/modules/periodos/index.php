@@ -80,6 +80,25 @@ try {
             jsonResponse(['ok' => false, 'message' => 'El periodo se superpone con otro periodo existente'], 409);
         }
 
+        $stmtUltimo = $pdo->prepare(
+            "SELECT id_periodo, fecha_fin FROM periodos WHERE estado IN ('ABIERTO', 'CERRADO') ORDER BY fecha_fin DESC LIMIT 1"
+        );
+        $stmtUltimo->execute();
+        $ultimoPeriodo = $stmtUltimo->fetch();
+
+        if ($ultimoPeriodo) {
+            $fechaEsperada = (new DateTime($ultimoPeriodo['fecha_fin']))->modify('+1 day')->format('Y-m-d');
+            if ($fechaInicio !== $fechaEsperada) {
+                jsonResponse([
+                    'ok' => false,
+                    'message' => "La fecha de inicio debe ser {$fechaEsperada} (día siguiente al cierre del último periodo registrado)",
+                    'data' => ['fecha_inicio_sugerida' => $fechaEsperada],
+                ], 409);
+            }
+        }
+
+        $pdo->beginTransaction();
+
         $stmt = $pdo->prepare('INSERT INTO periodos (anio, mes, fecha_inicio, fecha_fin, estado, observacion, created_at) VALUES (:anio, :mes, :fecha_inicio, :fecha_fin, :estado, :observacion, NOW())');
         $stmt->execute([
             ':anio' => $anio,
@@ -90,10 +109,19 @@ try {
             ':observacion' => $observacion,
         ]);
 
+        $nuevoId = (int) $pdo->lastInsertId();
+
+        if ($ultimoPeriodo) {
+            $pdo->prepare("UPDATE periodos SET estado = 'CERRADO' WHERE id_periodo = :id AND estado = 'ABIERTO'")
+                ->execute(['id' => $ultimoPeriodo['id_periodo']]);
+        }
+
+        $pdo->commit();
+
         jsonResponse([
             'ok' => true,
             'message' => 'Periodo creado correctamente',
-            'data' => ['id_periodo' => (int) $pdo->lastInsertId()],
+            'data' => ['id_periodo' => $nuevoId],
         ], 201);
     }
 
@@ -157,6 +185,10 @@ try {
 
     jsonResponse(['ok' => false, 'message' => 'Metodo no permitido'], 405);
 } catch (Throwable $e) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
     jsonResponse([
         'ok' => false,
         'message' => $e->getMessage(),

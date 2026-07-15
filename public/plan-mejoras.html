@@ -263,6 +263,109 @@
       </div>
     </section>
 
+    <!-- Ideas innovadoras (investigacion 2026) -->
+    <section class="card">
+      <h2>💡 Ideas innovadoras (investigación 2026)</h2>
+      <p>Basadas en tendencias actuales de software de gestión de alquileres, submetering de servicios y pagos digitales en Perú. No implementadas todavía — requieren cuentas/credenciales externas o decisiones de diseño antes de programarse.</p>
+
+      <div class="plan-section">
+        <label class="task-item">
+          <input type="checkbox" data-id="innovador-1" />
+          <div class="task-text">
+            <strong>PWA instalable + notificaciones push</strong>
+            <span>Convertir la SPA actual en una app instalable (manifest.json + service worker), sin tienda de apps. Fuente: tendencias PWA 2026.</span>
+            <details>
+              <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
+              <p><strong>Beneficios:</strong> el admin/cobrador la instala en su celular como app real; funciona aunque haya mala señal (cachea pantallas ya visitadas); puede recibir notificaciones push de vencimientos/cobros aunque tenga el navegador cerrado.</p>
+              <p><strong>¿Hay que reescribir el frontend?</strong> No. Se agrega un <code>manifest.json</code>, un ícono, y un <code>service-worker.js</code> que cachea los archivos estáticos (<code>assets/js</code>, <code>assets/css</code>). El código JS actual no cambia.</p>
+              <p><strong>¿Funciona en iPhone?</strong> Sí, Safari soporta instalación desde "Compartir → Agregar a inicio" desde iOS 16.4+; las notificaciones push en iOS requieren que la PWA esté instalada primero (limitación de Apple, no del proyecto).</p>
+              <p><strong>¿Cuesta dinero?</strong> No, es 100% código propio, sin servicio de pago.</p>
+              <p class="fuentes"><strong>Fuentes consultadas:</strong>
+                <a href="https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation" target="_blank" rel="noopener noreferrer">MDN: cómo funciona el modo offline de una PWA</a> y
+                <a href="https://www.fibonce.com/blog/progressive-web-apps-pwa-2026" target="_blank" rel="noopener noreferrer">guía de implementación de PWA 2026</a>, usadas para confirmar que no requiere reescribir el frontend ni tienda de apps.
+              </p>
+            </details>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="innovador-2" />
+          <div class="task-text">
+            <strong>Recordatorios automáticos por WhatsApp Business API</strong>
+            <span>Enviar automáticamente los avisos de vencimiento de contrato y cobros pendientes por WhatsApp, sin compartir manualmente. Fuente: WhatsApp Business API 2026.</span>
+            <details>
+              <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
+              <p><strong>Beneficios:</strong> cero olvidos de avisar a tiempo; el inquilino recibe el mensaje directo en una app que ya usa todos los días; reduce el trabajo manual de "Avisos" a solo revisar, no enviar uno por uno.</p>
+              <p><strong>¿Necesito ser empresa/tener RUC?</strong> Para la API oficial de Meta sí se requiere una cuenta de WhatsApp Business verificada. Existen proveedores intermediarios que simplifican el alta.</p>
+              <p><strong>¿Tiene costo?</strong> Sí, Meta cobra por plantilla de mensaje entregada (no es gratis ilimitado). Hay que decidir el volumen esperado antes de integrarlo.</p>
+              <p><strong>¿Reemplaza el botón "Compartir" actual de Avisos?</strong> No necesariamente — puede convivir: WhatsApp automático para el primer aviso, y el botón manual para reenvíos puntuales.</p>
+              <p class="fuentes"><strong>Fuentes consultadas:</strong>
+                <a href="https://gurusup.com/blog/whatsapp-api-php" target="_blank" rel="noopener noreferrer">tutorial de integración WhatsApp API con PHP (2026)</a> y
+                <a href="https://m.aisensy.com/blog/whatsapp-business-api-guide/" target="_blank" rel="noopener noreferrer">guía completa de WhatsApp Business API (2026)</a>, usadas para confirmar requisitos de cuenta verificada y el modelo de cobro por plantilla.
+              </p>
+            </details>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="innovador-3" />
+          <div class="task-text">
+            <strong>Confirmación automática de pago vía Yape Business API (webhook)</strong>
+            <span>QR dinámico por cobro y confirmación automática de pago, sin conciliación manual. Fuente: Yape Business API, pagos digitales Perú 2026.</span>
+            <details>
+              <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
+              <p><strong>Beneficios:</strong> elimina la conciliación manual de pagos por Yape (hoy 100% manual); reduce errores humanos al registrar pagos; el inquilino paga escaneando un QR específico de su cobro, no un QR genérico.</p>
+              <p><strong>¿Qué necesito para activarlo?</strong> RUC activo, cuenta corriente o de ahorros en BCP, y completar el formulario de afiliación a Yape Business — la aprobación toma entre 3 y 10 días hábiles según la investigación.</p>
+              <p><strong>¿Si no tengo RUC, puedo usarlo?</strong> No, es un requisito del programa Yape Business (es un producto para comercios formales, no para personas naturales).</p>
+              <p><strong>¿Qué pasa con los pagos en efectivo o transferencia?</strong> Siguen funcionando igual que hoy (registro manual); esta mejora solo automatiza el canal Yape.</p>
+              <p class="fuentes"><strong>Fuentes consultadas:</strong>
+                <a href="https://docs.alignet.com/agente-tercero/Working-version/principal" target="_blank" rel="noopener noreferrer">documentación de la API de autorización con Yape</a> y
+                <a href="https://ecoplazaedificaciones.com.pe/blog/yape-plin-pagos-digitales-mercados-peru-2026" target="_blank" rel="noopener noreferrer">panorama de pagos digitales en Perú (2026)</a>, usadas para confirmar requisitos de afiliación (RUC, cuenta BCP) y tiempos de aprobación.
+              </p>
+            </details>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="innovador-4" />
+          <div class="task-text">
+            <strong>Alertas de anomalías de consumo eléctrico</strong>
+            <span>Comparar la lectura nueva contra el histórico de esa unidad y avisar si el consumo se dispara. Fuente: submetering y detección de anomalías 2026.</span>
+            <details>
+              <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
+              <p><strong>Beneficios:</strong> detecta posibles fugas, focos/equipos dañados, o errores de digitación al capturar la lectura, antes de que afecten la liquidación de todos; el aviso aparece en el mismo lugar donde ya revisas las lecturas, no requiere un módulo nuevo.</p>
+              <p><strong>¿Necesita hardware adicional (sensores, medidores inteligentes)?</strong> No, usa los mismos medidores y lecturas manuales que ya registras hoy — es pura comparación estadística contra el histórico.</p>
+              <p><strong>¿Qué tan confiable es con poco historial?</strong> Con 1-2 periodos previos la alerta es menos precisa; mejora a partir del 3er-4to periodo de la misma unidad.</p>
+              <p><strong>¿Bloquea la liquidación si detecta una anomalía?</strong> No, solo es un aviso visual para que el admin revise antes de confirmar — la decisión final siempre es manual.</p>
+              <p class="fuentes"><strong>Fuentes consultadas:</strong>
+                <a href="https://www.energycap.com/utility-bill-energy-management-software/features/tenant-billing-chargebacks/" target="_blank" rel="noopener noreferrer">EnergyCap: facturación y chargebacks a inquilinos</a> y
+                <a href="https://www.setra.com/energy-management/tenant-submetering" target="_blank" rel="noopener noreferrer">Setra: submetering por inquilino</a>, usadas para confirmar que la detección de anomalías se basa en el histórico de consumo, sin hardware adicional.
+              </p>
+            </details>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="innovador-5" />
+          <div class="task-text">
+            <strong>Dashboard con gráficos de consumo e ingresos históricos</strong>
+            <span>Ampliar el dashboard con gráficos de consumo y recaudación vs. proyectado usando Chart.js. Fuente: tendencias de analítica de datos 2026.</span>
+            <details>
+              <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
+              <p><strong>Beneficios:</strong> ver de un vistazo si el consumo general sube o baja mes a mes; identificar unidades morosas recurrentes; argumento visual para decidir si conviene ajustar tarifas.</p>
+              <p><strong>¿Por qué Chart.js y no otra librería?</strong> Porque el proyecto es JS vanilla sin bundler — Chart.js funciona con una sola etiqueta <code>&lt;script src&gt;</code>, sin npm ni proceso de compilación, igual que el resto del frontend.</p>
+              <p><strong>¿Necesita datos nuevos en la base?</strong> No, los datos ya existen en <code>liquidacion_luz_detalle</code> y <code>cobros_mensuales</code> por periodo; el dashboard solo los consulta y grafica.</p>
+              <p><strong>¿Esto reemplaza el plan de "Dashboard ampliado" que ya estaba en el roadmap (mediano-2)?</strong> Lo complementa y lo concreta: ya estaba la idea general, esto define la librería y el enfoque exacto.</p>
+              <p class="fuentes"><strong>Fuentes consultadas:</strong>
+                <a href="https://symbolostic.com/top-10-rental-property-management-software-trends-shaping-2026/" target="_blank" rel="noopener noreferrer">Top 10 tendencias de software de gestión de alquileres (2026)</a> y
+                <a href="https://www.unitconnect.com/rental-property-management-software-trends-for-2026/" target="_blank" rel="noopener noreferrer">tendencias de software de alquileres para 2026 (UnitConnect)</a>, que señalan la analítica de datos como una de las prioridades del sector.
+              </p>
+            </details>
+          </div>
+        </label>
+      </div>
+    </section>
+
     <footer class="page-footer">
       Generado a partir del análisis del proyecto Alquileres App.
     </footer>

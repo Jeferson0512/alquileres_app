@@ -187,6 +187,47 @@ ul.simple-list li {
     background: var(--muted);
 }
 
+.badge.innovador {
+    background: #7c3aed;
+}
+
+/* ── FAQ COLAPSABLE (ideas innovadoras) ─────────────── */
+.task-text details {
+    margin-top: 8px;
+}
+
+.task-text details summary {
+    cursor: pointer;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.task-text details p {
+    margin: 8px 0 0;
+    font-size: 13.5px;
+    color: var(--muted);
+}
+
+.task-text details code {
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 6px;
+    font-size: 12.5px;
+}
+
+.task-text details p.fuentes {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-size: 12.5px;
+}
+
+.task-text details p.fuentes a {
+    color: var(--primary);
+    text-decoration: underline;
+}
+
 .risk-item .risk-text strong {
     display: block;
     margin-bottom: 2px;

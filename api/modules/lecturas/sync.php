@@ -22,12 +22,13 @@ try {
     $unidades = $selUnidades->fetchAll();
 
     $selLectura = $pdo->prepare("SELECT id_lectura, lectura_actual FROM lecturas_unidad WHERE id_periodo = :periodo AND id_unidad = :unidad LIMIT 1");
-    $selPrev = $pdo->prepare(" 
+    $selPrev = $pdo->prepare("
                 SELECT l.lectura_actual
                 FROM lecturas_unidad l
                 INNER JOIN periodos p ON p.id_periodo = l.id_periodo
                 WHERE l.id_unidad = :unidad
-                    AND p.fecha_fin < :fecha_inicio_actual
+                    AND p.fecha_fin <= :fecha_inicio_actual
+                    AND p.id_periodo <> :periodo_actual
                 ORDER BY p.fecha_fin DESC, l.id_lectura DESC
                 LIMIT 1
         ");
@@ -92,6 +93,7 @@ try {
         $selPrev->execute([
             'unidad' => $idUnidad,
             'fecha_inicio_actual' => $fechaInicio,
+            'periodo_actual' => $periodoId,
         ]);
         $prev = $selPrev->fetch();
         $anterior = $prev ? (float) $prev['lectura_actual'] : 0;

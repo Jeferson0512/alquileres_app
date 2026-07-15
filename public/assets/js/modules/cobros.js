@@ -30,6 +30,12 @@ export function renderCobros(view, state) {
       <h3>Cobros generados</h3>
       <p class="sub">Resultado final grabado en la base de datos, incluyendo ajustes de cobro sin alterar la liquidación.</p>
 
+      ${state.cobrosDesincronizados ? `
+        <div class="info-callout" style="margin-bottom:12px;border-color:#f59e0b;background:#fffbeb;color:#92400e;">
+          La liquidación de luz cambió después de generar estos cobros. Pulsa <strong>"Actualizar desde liquidación actual"</strong> o <strong>"Actualizar cobros desde luz"</strong> para reflejar los últimos ajustes.
+        </div>
+      ` : ""}
+
       <div class="cobros-toolbar">
         <input id="cobrosSearch" class="table-input" type="text" placeholder="Buscar por unidad o inquilino" value="${escapeAttr(_filtroTexto)}" />
         <select id="cobrosEstado" class="table-input">
@@ -80,6 +86,7 @@ export function renderCobros(view, state) {
                       <button class="btn btn-light btn-sm" data-detail="${row.id_cobro}">
                         ${expanded ? "Ocultar" : "Detalle"}
                       </button>
+                      <button class="btn btn-light btn-sm" data-servicios="${row.id_cobro}">Servicios</button>
                       ${puedeRegistrarPago ? `<button class="btn btn-primary btn-sm" data-pay="${row.id_cobro}">Registrar pago</button>` : ""}
                       ${String(row.estado_pago || "").toUpperCase() === "PAGADO" ? `<button class="btn btn-light btn-sm" data-summary="${row.id_cobro}">Resumen</button>` : ""}
                     </div>
@@ -108,6 +115,15 @@ export function renderCobros(view, state) {
     btn.addEventListener("click", () => {
       const idCobro = Number(btn.dataset.detail);
       void toggleDetalle(idCobro);
+    });
+  });
+
+  view.querySelectorAll("[data-servicios]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idCobro = Number(btn.dataset.servicios);
+      const row = (_state?.cobros || []).find((x) => Number(x.id_cobro) === idCobro);
+      if (!row) return;
+      void openServiciosOverrideModal(row);
     });
   });
 
@@ -272,6 +288,66 @@ async function openPagoModal(row) {
   }
 
   bindMetodoPagoOperacionHint();
+}
+
+async function openServiciosOverrideModal(row) {
+  let overrides = [];
+  try {
+    const res = await API.getCobrosOverrides(_state.periodoId);
+    overrides = Array.isArray(res.data) ? res.data : [];
+  } catch (_) {
+    overrides = [];
+  }
+
+  const findOverride = (servicio) => overrides.find(
+    (o) => Number(o.id_unidad) === Number(row.id_unidad) && Number(o.id_persona) === Number(row.id_persona) && o.servicio === servicio
+  );
+
+  const aguaOverride = findOverride("AGUA");
+  const gasOverride = findOverride("GAS");
+  const mantOverride = findOverride("MANTENIMIENTO");
+
+  openModal(
+    `Ajustar servicios · ${row.codigo_unidad}`,
+    `
+      <div class="form-grid">
+        <div class="full info-callout">
+          Estos montos se aplican por inquilino y reemplazan la tarifa general solo para este periodo.
+          Después de guardar, usa "Actualizar cobros" para que el cambio se refleje en la tabla de Cobros.
+        </div>
+        <div class="form-group">
+          <label>Agua (S/)</label>
+          <input id="ovrAgua" type="number" min="0" step="0.01" value="${Number(aguaOverride?.monto ?? row.monto_agua ?? 0).toFixed(2)}" />
+        </div>
+        <div class="form-group">
+          <label>Gas (S/)</label>
+          <input id="ovrGas" type="number" min="0" step="0.01" value="${Number(gasOverride?.monto ?? row.monto_gas ?? 0).toFixed(2)}" />
+        </div>
+        <div class="form-group">
+          <label>Mantenimiento (S/)</label>
+          <input id="ovrMant" type="number" min="0" step="0.01" value="${Number(mantOverride?.monto ?? row.otros_conceptos ?? 0).toFixed(2)}" />
+        </div>
+      </div>
+    `,
+    async () => {
+      try {
+        const montoAgua = Number(document.getElementById("ovrAgua")?.value || 0);
+        const montoGas = Number(document.getElementById("ovrGas")?.value || 0);
+        const montoMant = Number(document.getElementById("ovrMant")?.value || 0);
+
+        await Promise.all([
+          API.saveCobroOverride({ id_unidad: row.id_unidad, id_persona: row.id_persona, servicio: "AGUA", monto: montoAgua }, _state.periodoId),
+          API.saveCobroOverride({ id_unidad: row.id_unidad, id_persona: row.id_persona, servicio: "GAS", monto: montoGas }, _state.periodoId),
+          API.saveCobroOverride({ id_unidad: row.id_unidad, id_persona: row.id_persona, servicio: "MANTENIMIENTO", monto: montoMant }, _state.periodoId),
+        ]);
+
+        closeModal();
+        toast("Servicios guardados. Usa 'Actualizar cobros' para aplicar el cambio.", "success");
+      } catch (error) {
+        toast(error.message || "No se pudo guardar el ajuste de servicios", "error");
+      }
+    }
+  );
 }
 
 async function toggleDetalle(idCobro) {

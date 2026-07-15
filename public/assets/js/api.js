@@ -67,6 +67,13 @@ export const API = {
   generateCobros: (periodoId) => request(`cobros/generate${pid(periodoId)}`, { method: "POST" }),
   forceRefreshCobros: (periodoId, payload = {}) => request(`cobros/force-refresh${pid(periodoId)}`, { method: "POST", body: JSON.stringify(payload) }),
 
+  getCobrosOverrides: (periodoId) => request(`cobros/overrides${pid(periodoId)}`),
+  saveCobroOverride: (payload, periodoId) => request(`cobros/overrides${pid(periodoId)}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }),
+  deleteCobroOverride: (id, periodoId) => request(`cobros/overrides&id=${id}${pid(periodoId)}`, { method: "DELETE" }),
+
   listInquilinos: (q = "") => request(`inquilinos${q ? `&q=${encodeURIComponent(q)}` : ""}`),
   getInquilino: (id) => request(`inquilinos&id=${id}`),
   createInquilino: (payload) => request("inquilinos", { method: "POST", body: JSON.stringify(payload) }),
@@ -100,6 +107,8 @@ export const API = {
 
   listTarifas: (idInmueble = 1) => request(`tarifas&id_inmueble=${idInmueble}`),
   updateTarifa: (id, payload) => request(`tarifas&id=${id}`, { method: "PUT", body: JSON.stringify(payload) }),
+
+  getAvisosVencimientos: () => request("avisos/vencimientos"),
 
   getConfigCobranza: (idInmueble = 1) => request(`config-cobranza&id_inmueble=${idInmueble}`),
   saveConfigCobranza: (payload, idInmueble = 1) => request(`config-cobranza&id_inmueble=${idInmueble}`, {

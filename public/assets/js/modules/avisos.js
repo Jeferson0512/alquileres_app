@@ -3,6 +3,8 @@ import { money, number, toast } from "../utils.js";
 
 let selectedCobroId = null;
 const deudaAnteriorCache = new Map();
+let vencimientosContratoCache = null;
+let vencimientosContratoLoading = false;
 function getAvisoMinimoKwh(config) {
   const value = Number(config?.minimo_kwh_aviso ?? 13.5);
   return Number.isFinite(value) && value > 0 ? value : 13.5;
@@ -24,6 +26,7 @@ export function renderAvisos(view, state) {
 
   const selected = cobros.find((row) => row.id_cobro === selectedCobroId) || cobros[0] || null;
   ensureSelectedDebtState(selected, state);
+  ensureVencimientosContrato(state);
 
   view.innerHTML = `
     <section class="panel avisos-panel">
@@ -36,6 +39,8 @@ export function renderAvisos(view, state) {
           El ajuste minimo de luz se suma al cobro sin modificar la liquidacion original.
         </div>
       </div>
+
+      ${renderVencimientosContrato()}
 
       <div class="avisos-layout">
         <div class="avisos-left">
@@ -58,6 +63,39 @@ export function openAvisosConfigModal(state) {
 function ensureSelectedDebtState(selected, state) {
   if (!selected || !state?.periodoId) return;
   void loadDeudaAnterior(selected, state);
+}
+
+function ensureVencimientosContrato(state) {
+  if (vencimientosContratoCache !== null || vencimientosContratoLoading) return;
+  vencimientosContratoLoading = true;
+  API.getAvisosVencimientos()
+    .then((res) => {
+      vencimientosContratoCache = res?.data || [];
+    })
+    .catch((error) => {
+      vencimientosContratoCache = [];
+      console.warn("No se pudo cargar avisos de vencimiento de contrato", error);
+    })
+    .finally(() => {
+      vencimientosContratoLoading = false;
+      renderAvisos(document.getElementById("view"), state);
+    });
+}
+
+function renderVencimientosContrato() {
+  const avisos = vencimientosContratoCache || [];
+  if (!avisos.length) return "";
+
+  return `
+    <div class="vencimientos-contrato-list">
+      ${avisos.map((aviso) => `
+        <div class="info-callout vencimiento-contrato-item ${aviso.nivel === "URGENTE" ? "vencimiento-urgente" : "vencimiento-proximo"}">
+          <strong>${aviso.nivel === "URGENTE" ? "Urgente" : "Próximo a vencer"}:</strong>
+          ${escapeHtml(aviso.mensaje)}
+        </div>
+      `).join("")}
+    </div>
+  `;
 }
 
 async function loadDeudaAnterior(row, state) {

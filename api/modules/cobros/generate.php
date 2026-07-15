@@ -8,6 +8,7 @@ require_once __DIR__ . '/common.php';
 try {
     $pdo = Database::getConnection();
     $periodoId = getPeriodoId($pdo);
+    carryForwardServiceOverride($pdo, $periodoId, 'AGUA');
     $rows = buildCobrosProgramados($pdo, $periodoId);
 
     $stmtPagos = $pdo->prepare(" 

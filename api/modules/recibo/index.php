@@ -50,6 +50,24 @@ try {
         $recibo = $stmt->fetch();
 
         if (!$recibo) {
+            $periodoActual = getPeriodoRow($pdo, $periodoId);
+
+            $stmtReciboPrev = $pdo->prepare("
+                SELECT r.lectura_actual_general
+                FROM recibos_luz r
+                INNER JOIN periodos p ON p.id_periodo = r.id_periodo
+                WHERE p.fecha_fin <= :fecha_inicio_actual
+                  AND r.id_periodo <> :periodo_actual
+                ORDER BY p.fecha_fin DESC, r.id_recibo_luz DESC
+                LIMIT 1
+            ");
+            $stmtReciboPrev->execute([
+                'fecha_inicio_actual' => $periodoActual['fecha_inicio'],
+                'periodo_actual' => $periodoId,
+            ]);
+            $reciboPrev = $stmtReciboPrev->fetch();
+            $lecturaAnteriorPrellenada = $reciboPrev ? (float) $reciboPrev['lectura_actual_general'] : 0;
+
             $recibo = [
                 'id_recibo_luz' => null,
                 'id_inmueble' => 1,
@@ -58,7 +76,7 @@ try {
                 'numero_suministro' => null,
                 'fecha_emision' => null,
                 'fecha_vencimiento' => null,
-                'lectura_anterior_general' => 0,
+                'lectura_anterior_general' => $lecturaAnteriorPrellenada,
                 'lectura_actual_general' => 0,
                 'consumo_kwh_general' => 0,
                 'precio_kwh' => 0,

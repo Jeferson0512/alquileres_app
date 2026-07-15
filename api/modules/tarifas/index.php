@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../config/Database.php';
 require_once __DIR__ . '/../../config/helpers.php';
+require_once __DIR__ . '/common.php';
 
 try {
     $pdo    = Database::getConnection();
@@ -25,6 +26,11 @@ try {
     if ($method === 'PUT') {
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         if (!$id) jsonResponse(['ok' => false, 'message' => 'ID requerido'], 400);
+
+        $stmtBefore = $pdo->prepare("SELECT * FROM tarifas_servicios WHERE id_tarifa = :id LIMIT 1");
+        $stmtBefore->execute(['id' => $id]);
+        $before = $stmtBefore->fetch();
+        if (!$before) jsonResponse(['ok' => false, 'message' => 'Tarifa no encontrada'], 404);
 
         $body = json_decode(file_get_contents('php://input'), true) ?? [];
 
@@ -51,6 +57,12 @@ try {
         $fields[] = 'updated_at = NOW()';
         $sql = 'UPDATE tarifas_servicios SET ' . implode(', ', $fields) . ' WHERE id_tarifa = :id';
         $pdo->prepare($sql)->execute($params);
+
+        $stmtAfter = $pdo->prepare("SELECT * FROM tarifas_servicios WHERE id_tarifa = :id LIMIT 1");
+        $stmtAfter->execute(['id' => $id]);
+        $after = $stmtAfter->fetch();
+
+        createTarifaAudit($pdo, $id, 'ACTUALIZADO', 'ADMIN_UI', $before, $after);
 
         jsonResponse(['ok' => true, 'message' => 'Tarifa actualizada correctamente']);
     }

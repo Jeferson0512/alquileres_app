@@ -825,6 +825,30 @@ input.table-input {
     color: #991b1b;
 }
 
+.ajuste-save-status {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    min-height: 14px;
+}
+
+.ajuste-save-status.status-pendiente {
+    color: #b45309;
+}
+
+.ajuste-save-status.status-guardando {
+    color: #64748b;
+}
+
+.ajuste-save-status.status-guardado {
+    color: #15803d;
+}
+
+.ajuste-save-status.status-error {
+    color: #991b1b;
+}
+
 /* ── TABS DE FILTRO (ocupaciones) ────────────────────── */
 .ocu-filters {
     display: flex;

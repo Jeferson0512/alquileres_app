@@ -31,30 +31,41 @@ function buildCobrosProgramados(PDO $pdo, int $periodoId): array
     $tarifaMant = $tarifas['MANTENIMIENTO'] ?? 0.0;
     $montoMinimoLuz = isset($configCobranza['monto_minimo_luz']) ? (float) $configCobranza['monto_minimo_luz'] : 0.0;
 
-    $stmt = $pdo->prepare(" 
-        SELECT
-            ll.id_unidad,
-            ll.id_persona,
-            ll.total_pagar_luz,
-            o.monto_alquiler
-        FROM liquidacion_luz_detalle ll
-        INNER JOIN lecturas_unidad l ON l.id_lectura = ll.id_lectura
-        INNER JOIN ocupacion_unidad o ON o.id_ocupacion = l.id_ocupacion
-        WHERE ll.id_periodo = :periodoId
+    $stmtOverrides = $pdo->prepare("
+        SELECT id_unidad, id_persona, servicio, monto
+        FROM cobros_overrides_servicio
+        WHERE id_periodo = :periodoId
     ");
-    $stmt->execute(['periodoId' => $periodoId]);
+    $stmtOverrides->execute(['periodoId' => $periodoId]);
+    $overridesByKey = [];
+    foreach ($stmtOverrides->fetchAll() as $override) {
+        $key = buildCobroPeriodoKey((int) $override['id_unidad'], (int) $override['id_persona']) . ':' . $override['servicio'];
+        $overridesByKey[$key] = (float) $override['monto'];
+    }
 
-    $rows = [];
-    foreach ($stmt->fetchAll() as $row) {
-        $montoLuz = round((float) $row['total_pagar_luz'], 2);
-        $ajusteMinimoLuz = $montoMinimoLuz > 0 && $montoLuz < $montoMinimoLuz
-            ? round($montoMinimoLuz - $montoLuz, 2)
-            : 0;
+    $stmtMedidor = $pdo->prepare("
+        SELECT id_unidad_titular, id_unidad_dependiente, porcentaje_dependiente
+        FROM unidades_medidor_compartido
+        WHERE activo = 1
+    ");
+    $stmtMedidor->execute();
+    $medidorPorTitular = [];
+    foreach ($stmtMedidor->fetchAll() as $relacion) {
+        $medidorPorTitular[(int) $relacion['id_unidad_titular']] = [
+            'id_unidad_dependiente' => (int) $relacion['id_unidad_dependiente'],
+            'porcentaje_dependiente' => (float) $relacion['porcentaje_dependiente'],
+        ];
+    }
 
-        $montoAlquiler = round((float) $row['monto_alquiler'], 2);
-        $montoAgua = round($tarifaAgua, 2);
-        $montoGas = round($tarifaGas, 2);
-        $montoOtros = round($tarifaMant, 2);
+    $armarFilaCobro = function (int $idUnidad, int $idPersona, float $montoAlquiler, float $montoLuz, float $ajusteMinimoLuz) use ($overridesByKey, $tarifaAgua, $tarifaGas, $tarifaMant, $fechaVencimiento): array {
+        $montoAlquiler = round($montoAlquiler, 2);
+        $montoLuz = round($montoLuz, 2);
+        $ajusteMinimoLuz = round($ajusteMinimoLuz, 2);
+
+        $keyBase = buildCobroPeriodoKey($idUnidad, $idPersona);
+        $montoAgua = round($overridesByKey["{$keyBase}:AGUA"] ?? $tarifaAgua, 2);
+        $montoGas = round($overridesByKey["{$keyBase}:GAS"] ?? $tarifaGas, 2);
+        $montoOtros = round($overridesByKey["{$keyBase}:MANTENIMIENTO"] ?? $tarifaMant, 2);
         $totalCobrar = round($montoAlquiler + $montoLuz + $ajusteMinimoLuz + $montoAgua + $montoGas + $montoOtros, 2);
 
         $observacion = 'Cobro generado desde API PHP';
@@ -71,10 +82,10 @@ function buildCobrosProgramados(PDO $pdo, int $periodoId): array
             ['codigo' => 'OTROS', 'monto' => $montoOtros, 'descripcion' => 'Otros conceptos', 'orden_visual' => 60],
         ];
 
-        $rows[] = [
-            'key' => buildCobroPeriodoKey((int) $row['id_unidad'], (int) $row['id_persona']),
-            'id_unidad' => (int) $row['id_unidad'],
-            'id_persona' => (int) $row['id_persona'],
+        return [
+            'key' => buildCobroPeriodoKey($idUnidad, $idPersona),
+            'id_unidad' => $idUnidad,
+            'id_persona' => $idPersona,
             'monto_alquiler' => $montoAlquiler,
             'monto_luz' => $montoLuz,
             'ajuste_minimo_luz' => $ajusteMinimoLuz,
@@ -86,6 +97,66 @@ function buildCobrosProgramados(PDO $pdo, int $periodoId): array
             'observacion' => $observacion,
             'detalles' => array_values(array_filter($detalles, static fn(array $detalle): bool => (float) $detalle['monto'] > 0)),
         ];
+    };
+
+    $stmt = $pdo->prepare("
+        SELECT
+            ll.id_unidad,
+            ll.id_persona,
+            ll.total_pagar_luz,
+            o.monto_alquiler
+        FROM liquidacion_luz_detalle ll
+        INNER JOIN lecturas_unidad l ON l.id_lectura = ll.id_lectura
+        INNER JOIN ocupacion_unidad o ON o.id_ocupacion = l.id_ocupacion
+        WHERE ll.id_periodo = :periodoId
+    ");
+    $stmt->execute(['periodoId' => $periodoId]);
+
+    $stmtOcupacionDependiente = $pdo->prepare("
+        SELECT id_persona, monto_alquiler
+        FROM ocupacion_unidad
+        WHERE id_unidad = :idUnidad AND estado = 'ACTIVO'
+        LIMIT 1
+    ");
+
+    $rows = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $idUnidad = (int) $row['id_unidad'];
+        $idPersona = (int) $row['id_persona'];
+        $montoLuzTotal = round((float) $row['total_pagar_luz'], 2);
+        $montoAlquiler = round((float) $row['monto_alquiler'], 2);
+
+        $montoLuzTitular = $montoLuzTotal;
+        $filaDependiente = null;
+        $relacion = $medidorPorTitular[$idUnidad] ?? null;
+
+        if ($relacion !== null && $relacion['porcentaje_dependiente'] > 0) {
+            $stmtOcupacionDependiente->execute(['idUnidad' => $relacion['id_unidad_dependiente']]);
+            $ocupacionDependiente = $stmtOcupacionDependiente->fetch();
+
+            if ($ocupacionDependiente) {
+                $montoLuzDependiente = round($montoLuzTotal * $relacion['porcentaje_dependiente'] / 100, 2);
+                $montoLuzTitular = round($montoLuzTotal - $montoLuzDependiente, 2);
+
+                $filaDependiente = $armarFilaCobro(
+                    $relacion['id_unidad_dependiente'],
+                    (int) $ocupacionDependiente['id_persona'],
+                    (float) $ocupacionDependiente['monto_alquiler'],
+                    $montoLuzDependiente,
+                    0.0
+                );
+            }
+        }
+
+        $ajusteMinimoLuzTitular = $montoMinimoLuz > 0 && $montoLuzTitular < $montoMinimoLuz
+            ? round($montoMinimoLuz - $montoLuzTitular, 2)
+            : 0;
+
+        $rows[] = $armarFilaCobro($idUnidad, $idPersona, $montoAlquiler, $montoLuzTitular, $ajusteMinimoLuzTitular);
+
+        if ($filaDependiente !== null) {
+            $rows[] = $filaDependiente;
+        }
     }
 
     return $rows;
@@ -94,6 +165,71 @@ function buildCobrosProgramados(PDO $pdo, int $periodoId): array
 function buildCobroPeriodoKey(int $idUnidad, int $idPersona): string
 {
     return $idUnidad . ':' . $idPersona;
+}
+
+function carryForwardServiceOverride(PDO $pdo, int $periodoId, string $servicio = 'AGUA'): void
+{
+    $stmtPeriodoActual = $pdo->prepare("SELECT anio, mes FROM periodos WHERE id_periodo = :id LIMIT 1");
+    $stmtPeriodoActual->execute(['id' => $periodoId]);
+    $periodoActual = $stmtPeriodoActual->fetch();
+    if (!$periodoActual) {
+        return;
+    }
+
+    $stmtAnterior = $pdo->prepare("
+        SELECT id_periodo
+        FROM periodos
+        WHERE (anio, mes) < (:anio, :mes)
+        ORDER BY anio DESC, mes DESC
+        LIMIT 1
+    ");
+    $stmtAnterior->execute(['anio' => $periodoActual['anio'], 'mes' => $periodoActual['mes']]);
+    $periodoAnterior = $stmtAnterior->fetch();
+    if (!$periodoAnterior) {
+        return;
+    }
+
+    $stmtRecibo = $pdo->prepare("SELECT id_inmueble FROM recibos_luz WHERE id_periodo = :periodoId LIMIT 1");
+    $stmtRecibo->execute(['periodoId' => $periodoId]);
+    $idInmueble = (int) ($stmtRecibo->fetch()['id_inmueble'] ?? 1);
+
+    $stmtTarifa = $pdo->prepare("SELECT monto FROM tarifas_servicios WHERE id_inmueble = :in AND servicio = :servicio AND activo = 1 LIMIT 1");
+    $stmtTarifa->execute(['in' => $idInmueble, 'servicio' => $servicio]);
+    $tarifaEstandar = (float) ($stmtTarifa->fetch()['monto'] ?? 0);
+
+    $stmtOverridesAnteriores = $pdo->prepare("
+        SELECT id_unidad, id_persona, monto
+        FROM cobros_overrides_servicio
+        WHERE id_periodo = :periodoAnterior AND servicio = :servicio
+    ");
+    $stmtOverridesAnteriores->execute([
+        'periodoAnterior' => $periodoAnterior['id_periodo'],
+        'servicio' => $servicio,
+    ]);
+
+    $stmtUpsert = $pdo->prepare("
+        INSERT INTO cobros_overrides_servicio (id_periodo, id_unidad, id_persona, servicio, monto, observacion)
+        VALUES (:periodo, :unidad, :persona, :servicio, :monto, :observacion)
+        ON DUPLICATE KEY UPDATE monto = :monto2, observacion = :observacion2, updated_at = NOW()
+    ");
+
+    foreach ($stmtOverridesAnteriores->fetchAll() as $overrideAnterior) {
+        $montoAnterior = (float) $overrideAnterior['monto'];
+        if ($montoAnterior <= $tarifaEstandar) {
+            continue;
+        }
+
+        $stmtUpsert->execute([
+            'periodo' => $periodoId,
+            'unidad' => $overrideAnterior['id_unidad'],
+            'persona' => $overrideAnterior['id_persona'],
+            'servicio' => $servicio,
+            'monto' => $montoAnterior,
+            'observacion' => 'Carry-over automático desde periodo anterior',
+            'monto2' => $montoAnterior,
+            'observacion2' => 'Carry-over automático desde periodo anterior',
+        ]);
+    }
 }
 
 function getConceptosActivosMap(PDO $pdo): array

@@ -1,4 +1,8 @@
-import { money, number } from "../utils.js";
+import { money, number, roundUpToTenth, toast } from "../utils.js";
+import { API } from "../api.js";
+
+const _saveTimers = {};
+const _lastSavedAjuste = {};
 
 export function renderLiquidacion(view, state) {
   const payload = state.previewLiquidacion;
@@ -83,7 +87,8 @@ export function renderLiquidacion(view, state) {
             ${payload.data.map((row) => {
               const idUnidad = Number(row.id_unidad || 0);
               const ajuste = row.participa_liquidacion ? Number(ajustesState[idUnidad] || 0) : 0;
-              const totalLuz = Number(row.total_luz_base || row.total_pagar_luz || 0) + ajuste;
+              const totalLuzCrudo = Number(row.total_luz_base || row.total_pagar_luz || 0) + ajuste;
+              const totalLuz = totalLuzCrudo > 0 ? roundUpToTenth(totalLuzCrudo) : totalLuzCrudo;
               const servicios = Number(row.agua || 0) + Number(row.gas || 0) + Number(row.mantenimiento || 0);
               const totalCobrar = Number(row.monto_alquiler || 0) + servicios + totalLuz;
 
@@ -101,7 +106,8 @@ export function renderLiquidacion(view, state) {
                 <td>
                   ${row.participa_liquidacion
                     ? (isCurrentPeriod
-                      ? `<input class="table-input js-liq-ajuste" data-unidad="${idUnidad}" data-base="${Number(row.total_luz_base || row.total_pagar_luz || 0)}" data-alquiler="${Number(row.monto_alquiler || 0)}" data-servicios="${servicios}" value="${Number(ajuste).toFixed(2)}" />`
+                      ? `<input class="table-input js-liq-ajuste" data-unidad="${idUnidad}" data-base="${Number(row.total_luz_base || row.total_pagar_luz || 0)}" data-alquiler="${Number(row.monto_alquiler || 0)}" data-servicios="${servicios}" value="${Number(ajuste).toFixed(2)}" />
+                         <small class="ajuste-save-status" data-status-unidad="${idUnidad}"></small>`
                       : `${money(ajuste)}`)
                     : "-"
                   }
@@ -119,6 +125,11 @@ export function renderLiquidacion(view, state) {
 
   if (isCurrentPeriod) {
     view.querySelectorAll('.js-liq-ajuste').forEach((input) => {
+      const idUnidadInicial = Number(input.dataset.unidad || 0);
+      if (idUnidadInicial && _lastSavedAjuste[idUnidadInicial] === undefined) {
+        _lastSavedAjuste[idUnidadInicial] = Number(input.value || 0);
+      }
+
       input.addEventListener('input', () => {
         const idUnidad = Number(input.dataset.unidad || 0);
         if (!idUnidad) return;
@@ -132,14 +143,82 @@ export function renderLiquidacion(view, state) {
         const base = Number(input.dataset.base || 0);
         const alquiler = Number(input.dataset.alquiler || 0);
         const servicios = Number(input.dataset.servicios || 0);
-        const totalLuz = base + state.liquidacionAjustes[idUnidad];
+        const totalLuzCrudo = base + state.liquidacionAjustes[idUnidad];
+        const totalLuz = totalLuzCrudo > 0 ? roundUpToTenth(totalLuzCrudo) : totalLuzCrudo;
         const totalCobrar = alquiler + servicios + totalLuz;
 
         const totalLuzEl = tr.querySelector('[data-total-luz]');
         const totalCobrarEl = tr.querySelector('[data-total-cobrar]');
         if (totalLuzEl) totalLuzEl.textContent = money(totalLuz);
         if (totalCobrarEl) totalCobrarEl.textContent = money(totalCobrar);
+
+        setAjusteStatus(view, idUnidad, 'pendiente');
+        scheduleAjusteSave(state, view, idUnidad);
+      });
+
+      input.addEventListener('blur', () => {
+        const idUnidad = Number(input.dataset.unidad || 0);
+        if (!idUnidad) return;
+        clearTimeout(_saveTimers[idUnidad]);
+        void saveAjuste(state, view, idUnidad);
       });
     });
+  }
+}
+
+function setAjusteStatus(view, idUnidad, status, detail = '') {
+  const el = view.querySelector(`[data-status-unidad="${idUnidad}"]`);
+  if (!el) return;
+
+  el.classList.remove('status-pendiente', 'status-guardando', 'status-guardado', 'status-error');
+
+  if (status === 'pendiente') {
+    el.textContent = '● sin guardar';
+    el.classList.add('status-pendiente');
+  } else if (status === 'guardando') {
+    el.textContent = 'Guardando...';
+    el.classList.add('status-guardando');
+  } else if (status === 'guardado') {
+    el.textContent = '✓ guardado';
+    el.classList.add('status-guardado');
+    setTimeout(() => {
+      if (el.classList.contains('status-guardado')) el.textContent = '';
+    }, 2500);
+  } else if (status === 'error') {
+    el.textContent = `⚠ no se guardó${detail ? ': ' + detail : ''}`;
+    el.classList.add('status-error');
+  } else {
+    el.textContent = '';
+  }
+}
+
+function scheduleAjusteSave(state, view, idUnidad) {
+  clearTimeout(_saveTimers[idUnidad]);
+  _saveTimers[idUnidad] = setTimeout(() => {
+    void saveAjuste(state, view, idUnidad);
+  }, 900);
+}
+
+async function saveAjuste(state, view, idUnidad) {
+  const ajuste = Number(state.liquidacionAjustes?.[idUnidad] || 0);
+  if (_lastSavedAjuste[idUnidad] === ajuste) {
+    setAjusteStatus(view, idUnidad, 'guardado');
+    return;
+  }
+
+  setAjusteStatus(view, idUnidad, 'guardando');
+
+  const ajustesPayload = Object.entries(state.liquidacionAjustes || {})
+    .map(([id, valor]) => ({ id_unidad: Number(id), ajuste: Number(valor || 0) }))
+    .filter((item) => item.id_unidad > 0 && Number.isFinite(item.ajuste));
+
+  try {
+    await API.generateLiquidacion(state.periodoId, { ajustes: ajustesPayload });
+    _lastSavedAjuste[idUnidad] = ajuste;
+    state.cobrosDesincronizados = true;
+    setAjusteStatus(view, idUnidad, 'guardado');
+  } catch (e) {
+    setAjusteStatus(view, idUnidad, 'error', e.message);
+    toast(`No se pudo guardar el ajuste de la unidad: ${e.message}`, 'error', 6000);
   }
 }

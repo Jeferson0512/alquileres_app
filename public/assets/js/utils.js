@@ -31,6 +31,17 @@ export function money(value) {
   }).format(Number(value || 0));
 }
 
+/**
+ * Redondea hacia arriba al siguiente S/ 0.10, igual que la formula del backend
+ * (api/modules/liquidacion/generate.php y preview.php), para que la previsualizacion
+ * coincida con lo que se va a guardar.
+ */
+export function roundUpToTenth(value) {
+  const n = Number(value || 0);
+  if (n <= 0) return 0;
+  return Math.ceil((n - 0.0000001) * 10) / 10;
+}
+
 export function number(value, digits = 2) {
   return new Intl.NumberFormat("es-PE", {
     minimumFractionDigits: digits,

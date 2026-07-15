@@ -40,7 +40,25 @@ try {
     $pdo = Database::getConnection();
     $periodoId = getPeriodoId($pdo);
     $body = getJsonBody();
-    $ajustesByUnidad = parseAjustesByUnidad($body);
+
+    // Los ajustes no enviados explicitamente en el body conservan su valor previo,
+    // para que regenerar la liquidacion (p.ej. tras actualizar una lectura) no borre
+    // ajustes manuales que el frontend no reenvio.
+    $stmtPrevios = $pdo->prepare("SELECT id_unidad, ajuste, consumo_kwh, porcentaje_participacion FROM liquidacion_luz_detalle WHERE id_periodo = :periodoId");
+    $stmtPrevios->execute(['periodoId' => $periodoId]);
+    $ajustesByUnidad = [];
+    $previoByUnidad = [];
+    foreach ($stmtPrevios->fetchAll() as $rowPrevio) {
+        $idUnidadPrevio = (int) $rowPrevio['id_unidad'];
+        $ajustesByUnidad[$idUnidadPrevio] = (float) $rowPrevio['ajuste'];
+        $previoByUnidad[$idUnidadPrevio] = [
+            'consumo_kwh' => (float) $rowPrevio['consumo_kwh'],
+            'porcentaje_participacion' => (float) $rowPrevio['porcentaje_participacion'],
+        ];
+    }
+    foreach (parseAjustesByUnidad($body) as $idUnidad => $ajusteEnviado) {
+        $ajustesByUnidad[$idUnidad] = $ajusteEnviado;
+    }
 
     $stmtRecibo = $pdo->prepare("SELECT id_recibo_luz, id_inmueble, precio_kwh, total_recibo FROM recibos_luz WHERE id_periodo = :id LIMIT 1");
     $stmtRecibo->execute(['id' => $periodoId]);
@@ -68,7 +86,6 @@ try {
     $stmt->execute(['periodoId' => $periodoId]);
     $rows = $stmt->fetchAll();
 
-    $totalConsumo = array_sum(array_map(fn ($r) => (float) $r['consumo_kwh'], $rows));
     $precioKwh = (float) ($recibo['precio_kwh'] ?? 0);
     $igvRate = 0.18;
 
@@ -82,6 +99,36 @@ try {
     }
 
     $diferenciaComun = round((float) $recibo['total_recibo'] - $montoConsumoTotalRedondeado, 2);
+
+    // Unidades cuyo consumo no cambio desde la ultima generacion mantienen su
+    // porcentaje de participacion congelado, para que actualizar la lectura de
+    // UNA unidad (retiro a mitad de periodo, cambio de cuarto, correccion) no
+    // le mueva el monto a las demas. El % que queda libre (100% menos lo
+    // congelado) se reparte entre las unidades que si cambiaron, en proporcion
+    // a su propio consumo actual.
+    $sumaPorcentajeCongelado = 0.0;
+    $sumaConsumoCambiadas = 0.0;
+    $esCongelada = [];
+
+    foreach ($rows as $row) {
+        $idUnidad = (int) $row['id_unidad'];
+        $consumo = (float) $row['consumo_kwh'];
+        if ($consumo <= 0) {
+            continue;
+        }
+
+        $previo = $previoByUnidad[$idUnidad] ?? null;
+        $sinCambios = $previo !== null && round($previo['consumo_kwh'], 2) === round($consumo, 2);
+        $esCongelada[$idUnidad] = $sinCambios;
+
+        if ($sinCambios) {
+            $sumaPorcentajeCongelado += $previo['porcentaje_participacion'];
+        } else {
+            $sumaConsumoCambiadas += $consumo;
+        }
+    }
+
+    $porcentajeDisponible = max(1 - $sumaPorcentajeCongelado, 0);
 
     $pdo->beginTransaction();
 
@@ -101,17 +148,25 @@ try {
     ");
 
     foreach ($rows as $row) {
+        $idUnidad = (int) $row['id_unidad'];
         $consumo = (float) $row['consumo_kwh'];
         if ($consumo <= 0) {
             continue; // Unidades sin consumo no participan en la facturación
         }
-        $porcentaje = $totalConsumo > 0 ? $consumo / $totalConsumo : 0;
+
+        if ($esCongelada[$idUnidad] ?? false) {
+            $porcentaje = $previoByUnidad[$idUnidad]['porcentaje_participacion'];
+        } else {
+            $porcentaje = $sumaConsumoCambiadas > 0 ? $porcentajeDisponible * ($consumo / $sumaConsumoCambiadas) : 0;
+        }
+
         $subtotalConsumo = $consumo * $precioKwh;
         $igvConsumo = $subtotalConsumo * $igvRate;
         $montoConsumo = roundUpToTenth($subtotalConsumo + $igvConsumo);
         $gastoComun = $diferenciaComun * $porcentaje;
         $ajuste = (float) ($ajustesByUnidad[(int) $row['id_unidad']] ?? 0);
-        $totalLuz = $montoConsumo + $gastoComun + $ajuste;
+        $totalLuzCrudo = $montoConsumo + $gastoComun + $ajuste;
+        $totalLuz = $totalLuzCrudo > 0 ? roundUpToTenth($totalLuzCrudo) : round($totalLuzCrudo, 2);
 
         $insert->execute([
             'id_periodo' => $periodoId,
