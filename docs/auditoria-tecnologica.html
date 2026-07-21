@@ -1,0 +1,963 @@
+<title>Auditoría tecnológica — Alquileres App</title>
+<style>
+  :root{
+    --bg:#F3F4F7; --surface:#FFFFFF; --surface-2:#E8EAF0; --surface-3:#DEE1EA;
+    --ink:#171A21; --ink-2:#4B4F5C; --ink-muted:#7A7E8C; --border:#D8DBE3;
+    --accent:#1D5FA8; --accent-2:#4A8FD1; --accent-soft:#E4EDF9;
+    --good:#1F8A5F; --good-soft:#E4F3EC;
+    --warn:#B7791F; --warn-soft:#F8EFDD;
+    --crit:#B23B3B; --crit-soft:#F7E7E5;
+    --font-display:Georgia,'Iowan Old Style','Palatino Linotype',serif;
+    --font-body:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:'Cascadia Code',Consolas,'SF Mono',Menlo,monospace;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161C; --surface:#1B1E26; --surface-2:#242732; --surface-3:#2C303D;
+      --ink:#E7E9F0; --ink-2:#B7BAC6; --ink-muted:#8A8D9A; --border:#333748;
+      --accent:#6EA6E8; --accent-2:#4A8FD1; --accent-soft:#1E2A3D;
+      --good:#4CAF7D; --good-soft:#173226;
+      --warn:#D9A441; --warn-soft:#332612;
+      --crit:#D9706A; --crit-soft:#331E1C;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14161C; --surface:#1B1E26; --surface-2:#242732; --surface-3:#2C303D;
+    --ink:#E7E9F0; --ink-2:#B7BAC6; --ink-muted:#8A8D9A; --border:#333748;
+    --accent:#6EA6E8; --accent-2:#4A8FD1; --accent-soft:#1E2A3D;
+    --good:#4CAF7D; --good-soft:#173226;
+    --warn:#D9A441; --warn-soft:#332612;
+    --crit:#D9706A; --crit-soft:#331E1C;
+  }
+  :root[data-theme="light"]{
+    --bg:#F3F4F7; --surface:#FFFFFF; --surface-2:#E8EAF0; --surface-3:#DEE1EA;
+    --ink:#171A21; --ink-2:#4B4F5C; --ink-muted:#7A7E8C; --border:#D8DBE3;
+    --accent:#1D5FA8; --accent-2:#4A8FD1; --accent-soft:#E4EDF9;
+    --good:#1F8A5F; --good-soft:#E4F3EC;
+    --warn:#B7791F; --warn-soft:#F8EFDD;
+    --crit:#B23B3B; --crit-soft:#F7E7E5;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body); line-height:1.55; font-size:16px;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--accent-soft); }
+  a{ color:var(--accent); }
+  a:focus-visible, button:focus-visible, summary:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px; border-radius:2px;
+  }
+
+  .shell{ max-width:1080px; margin:0 auto; padding:0 24px 96px; }
+
+  /* ---------- Nav ---------- */
+  nav.toc{
+    position:sticky; top:0; z-index:20; background:var(--bg);
+    border-bottom:1px solid var(--border);
+    backdrop-filter:blur(6px);
+  }
+  nav.toc .inner{
+    max-width:1080px; margin:0 auto; padding:12px 24px;
+    display:flex; gap:4px; overflow-x:auto; scrollbar-width:thin;
+  }
+  nav.toc a{
+    flex:0 0 auto; text-decoration:none; color:var(--ink-2);
+    font-size:13px; padding:6px 12px; border-radius:6px; white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  nav.toc a:hover{ background:var(--surface-2); color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  header.masthead{ padding:56px 0 32px; }
+  .eyebrow{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--accent); margin:0 0 14px;
+  }
+  h1{
+    font-family:var(--font-display); font-weight:400; font-size:clamp(28px,4vw,42px);
+    line-height:1.12; margin:0 0 14px; text-wrap:balance; letter-spacing:-.01em;
+  }
+  .dek{ font-size:17px; color:var(--ink-2); max-width:66ch; margin:0 0 22px; text-wrap:balance; }
+  .meta-row{ display:flex; flex-wrap:wrap; gap:10px 22px; font-size:13px; color:var(--ink-muted); font-family:var(--font-mono); }
+  .meta-row b{ color:var(--ink-2); font-weight:600; }
+
+  /* ---------- Section scaffolding ---------- */
+  section{ padding:52px 0; border-top:1px solid var(--border); }
+  section:first-of-type{ border-top:none; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-num{ font-family:var(--font-mono); font-size:13px; color:var(--ink-muted); }
+  h2{ font-family:var(--font-display); font-weight:400; font-size:28px; margin:0; text-wrap:balance; }
+  .sec-dek{ color:var(--ink-2); max-width:72ch; margin:6px 0 28px; }
+  h3{ font-family:var(--font-display); font-weight:400; font-size:20px; margin:36px 0 10px; }
+  h4.sub{ font-family:var(--font-body); font-weight:700; font-size:15px; margin:26px 0 8px; color:var(--ink); }
+  p{ margin:0 0 14px; max-width:74ch; color:var(--ink); }
+  p.lede{ color: var(--ink-2); }
+  ul, ol{ margin:0 0 14px; padding-left:22px; max-width:74ch; }
+  li{ margin-bottom:6px; }
+  strong{ font-weight:650; }
+  code{ font-family:var(--font-mono); font-size:.92em; background:var(--surface-2); padding:.1em .4em; border-radius:4px; }
+
+  /* ---------- Callout / Resumen ---------- */
+  .callout{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:24px 26px; display:flex; flex-direction:column; gap:14px;
+  }
+  .callout-lead{ font-family:var(--font-display); font-size:19px; line-height:1.4; text-wrap:balance; max-width:none; }
+  .callout-lead b{ color:var(--accent); font-weight:600; }
+  .callout ul{ margin:0; padding-left:20px; max-width:none; }
+  .callout li{ color:var(--ink-2); }
+
+  /* ---------- Diagnóstico grid ---------- */
+  .diag-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:8px; }
+  @media (max-width:720px){ .diag-grid{ grid-template-columns:1fr; } }
+  .diag-card{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:20px 22px; }
+  .diag-card h4{ margin:0 0 12px; font-size:13px; text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono); }
+  .diag-card.pro h4{ color:var(--good); }
+  .diag-card.con h4{ color:var(--crit); }
+  .diag-card ul{ padding-left:18px; margin:0; max-width:none; }
+  .diag-card li{ font-size:14.5px; color:var(--ink-2); }
+  .diag-card li::marker{ color:var(--ink-muted); }
+
+  .evidence{
+    border-left:3px solid var(--accent); background:var(--accent-soft);
+    padding:14px 18px; border-radius:0 8px 8px 0; margin:18px 0; font-size:14.5px; color:var(--ink-2); max-width:none;
+  }
+  .evidence b{ color:var(--ink); }
+  .evidence code{ background:rgba(127,127,127,.18); }
+
+  .factbox{
+    border:1px dashed var(--border); border-radius:8px; padding:12px 16px; margin:14px 0;
+    font-size:13.5px; color:var(--ink-2); background:var(--surface); max-width:none;
+  }
+  .factbox b{ color:var(--ink); }
+
+  /* ---------- Tech cards ---------- */
+  .tech-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:18px; margin-top:24px; }
+  @media (max-width:820px){ .tech-grid{ grid-template-columns:1fr; } }
+  .techcard{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:22px 24px; display:flex; flex-direction:column; gap:14px;
+  }
+  .techcard.current{ outline:2px solid var(--accent-2); outline-offset:-1px; }
+  .tc-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .tc-title{ font-family:var(--font-display); font-size:19px; }
+  .tc-tag{ font-size:13px; color:var(--ink-muted); margin-top:2px; }
+  .pill{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600;
+    padding:4px 10px; border-radius:100px; white-space:nowrap; font-family:var(--font-body);
+  }
+  .pill::before{ content:""; width:6px; height:6px; border-radius:50%; }
+  .pill-good{ background:var(--good-soft); color:var(--good); } .pill-good::before{ background:var(--good); }
+  .pill-warn{ background:var(--warn-soft); color:var(--warn); } .pill-warn::before{ background:var(--warn); }
+  .pill-crit{ background:var(--crit-soft); color:var(--crit); } .pill-crit::before{ background:var(--crit); }
+
+  .meters{ display:flex; flex-direction:column; gap:9px; }
+  .meter-row{ display:grid; grid-template-columns:128px 1fr 34px; align-items:center; gap:10px; }
+  .meter-label{ font-size:12.5px; color:var(--ink-muted); }
+  .meter-track{ height:6px; background:var(--surface-3); border-radius:3px; overflow:hidden; }
+  .meter-fill{ height:100%; background:linear-gradient(90deg,var(--accent-2),var(--accent)); border-radius:3px; width:var(--v); }
+  .meter-val{ font-family:var(--font-mono); font-size:12.5px; color:var(--ink-2); text-align:right; font-variant-numeric:tabular-nums; }
+  .tc-verdict{ font-size:14px; color:var(--ink-2); border-top:1px solid var(--border); padding-top:12px; margin:0; max-width:none; }
+
+  /* ---------- Tables ---------- */
+  .table-wrap{ overflow-x:auto; margin:20px 0; border:1px solid var(--border); border-radius:10px; }
+  table{ border-collapse:collapse; width:100%; font-size:14px; min-width:680px; }
+  thead th{
+    text-align:left; font-family:var(--font-mono); font-size:11.5px; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--ink-muted); background:var(--surface-2);
+    padding:11px 16px; border-bottom:1px solid var(--border); white-space:nowrap;
+  }
+  tbody td{ padding:12px 16px; border-bottom:1px solid var(--border); color:var(--ink-2); vertical-align:top; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:nth-child(even){ background:var(--surface); }
+  tbody tr:nth-child(odd){ background:color-mix(in srgb, var(--surface) 60%, var(--surface-2)); }
+  td.name{ color:var(--ink); font-weight:600; }
+  td.num{ font-family:var(--font-mono); text-align:right; font-variant-numeric:tabular-nums; }
+
+  /* ---------- Details (deep dives) ---------- */
+  details.dive{
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:4px 20px; margin:10px 0;
+  }
+  details.dive summary{
+    cursor:pointer; padding:14px 0; font-weight:650; list-style:none;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  details.dive summary::-webkit-details-marker{ display:none; }
+  details.dive summary::after{
+    content:"+"; font-family:var(--font-mono); font-size:18px; color:var(--ink-muted);
+    flex:0 0 auto; transition:transform .2s ease;
+  }
+  details.dive[open] summary::after{ content:"–"; }
+  details.dive .dive-body{ padding:0 0 18px; color:var(--ink-2); font-size:14.5px; }
+  details.dive .dive-body p{ max-width:none; }
+  details.dive .dive-cols{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px; }
+  @media (max-width:640px){ details.dive .dive-cols{ grid-template-columns:1fr; } }
+  details.dive .dive-cols h5{ font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; font-family:var(--font-mono); margin:0 0 6px; }
+  details.dive .dive-cols.pc h5:first-of-type{ color:var(--good); }
+
+  /* ---------- Bundle cards ---------- */
+  .bundle{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:24px 26px; margin:22px 0;
+  }
+  .bundle-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+  .bundle-title{ font-family:var(--font-display); font-size:20px; }
+  .bundle-num{ font-family:var(--font-mono); color:var(--ink-muted); font-size:14px; margin-right:8px; }
+  .bundle-stack{ font-family:var(--font-mono); font-size:13px; color:var(--accent); margin-top:6px; }
+  .bundle-fit{ font-size:13.5px; color:var(--ink-2); margin-top:10px; max-width:none; }
+  .bundle-cols{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px; }
+  @media (max-width:720px){ .bundle-cols{ grid-template-columns:1fr; } }
+  .bundle-cols h5{ font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-muted); font-family:var(--font-mono); margin:0 0 8px; }
+  .bundle-cols ul{ margin:0; padding-left:18px; max-width:none; }
+  .bundle-cols li{ font-size:14px; color:var(--ink-2); }
+
+  /* ---------- Mermaid wrapper ---------- */
+  .diagram-wrap{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:20px; margin:20px 0; overflow-x:auto;
+  }
+  .diagram-wrap .cap{ font-size:12.5px; color:var(--ink-muted); margin-top:10px; text-align:center; max-width:none; }
+
+  /* ---------- Final recommendation ---------- */
+  .final{
+    background:linear-gradient(180deg, var(--accent-soft), var(--surface) 60%);
+    border:1px solid var(--border); border-radius:14px; padding:32px 30px;
+  }
+  .final .eyebrow{ margin-bottom:10px; }
+  .final h2{ margin-bottom:14px; }
+  .steps{ counter-reset:step; list-style:none; padding:0; margin:18px 0 0; display:flex; flex-direction:column; gap:14px; max-width:none; }
+  .steps li{ counter-increment:step; display:flex; gap:14px; margin:0; }
+  .steps li::before{
+    content:counter(step); font-family:var(--font-mono); font-size:13px; color:var(--accent);
+    background:var(--surface); border:1px solid var(--border); border-radius:50%;
+    width:26px; height:26px; flex:0 0 26px; display:flex; align-items:center; justify-content:center;
+  }
+  .steps .step-body b{ display:block; color:var(--ink); margin-bottom:2px; }
+  .steps .step-body span{ color:var(--ink-2); font-size:14.5px; }
+
+  /* ---------- Sources ---------- */
+  .sources{ columns:2; column-gap:32px; font-size:12.5px; color:var(--ink-muted); }
+  @media (max-width:640px){ .sources{ columns:1; } }
+  .sources li{ margin-bottom:5px; break-inside:avoid; }
+  .sources a{ color:var(--ink-muted); }
+
+  footer{ padding:40px 0 0; color:var(--ink-muted); font-size:13px; }
+
+  @media (prefers-reduced-motion:no-preference){
+    .meter-fill{ transition:width .4s ease; }
+  }
+</style>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#resumen">Resumen</a>
+    <a href="#diagnostico">Stack actual</a>
+    <a href="#frontend">Frontend</a>
+    <a href="#backend">Backend</a>
+    <a href="#runtimes">Runtimes JS</a>
+    <a href="#api">API</a>
+    <a href="#datos">Datos / BaaS</a>
+    <a href="#hosting">Hosting</a>
+    <a href="#servicios">Servicios</a>
+    <a href="#arquitectura">Arquitectura</a>
+    <a href="#combos">Combos</a>
+    <a href="#recomendacion">Recomendación</a>
+    <a href="#fuentes">Fuentes</a>
+  </div>
+</nav>
+
+<div class="shell">
+
+  <header class="masthead">
+    <p class="eyebrow">Auditoría técnica ampliada · Alquileres App</p>
+    <h1>Qué tecnología conviene usar — panorama completo, con investigación de julio 2026</h1>
+    <p class="dek">Segunda pasada, más profunda: se amplió a más de 25 tecnologías de frontend, backend, bases de datos, BaaS y hosting, verificando en internet el estado real de cada una en 2026 (varias guías "clásicas" ya están desactualizadas — se marca explícitamente dónde). Cierra con una propuesta de arquitectura completa y once combos realistas, no cuatro.</p>
+    <div class="meta-row">
+      <span><b>Alcance:</b> 9 unidades, 1 inmueble, 1 administrador</span>
+      <span><b>Código actual:</b> ~5.000 líneas PHP · ~5.000 líneas JS</span>
+      <span><b>Presupuesto:</b> $0 (hosting gratuito)</span>
+      <span><b>Investigación:</b> 20 jul. 2026</span>
+    </div>
+  </header>
+
+  <section id="resumen">
+    <div class="sec-head"><span class="sec-num">00</span><h2>Resumen ejecutivo</h2></div>
+    <div class="callout">
+      <p class="callout-lead">La conclusión no cambió respecto a la primera pasada, pero ahora está mejor fundamentada: <b>Laravel 13 + Vue 3 (Inertia) + MySQL sobre un VPS gratis</b> sigue siendo la mejora con mejor retorno. Lo nuevo de esta investigación es que varias alternativas "obvias" que suelen recomendarse ya no funcionan como se cree en 2026, y aparecieron un par de opciones que vale la pena que conozcas aunque no sean la elección final.</p>
+      <ul>
+        <li><b>Corrección importante de hosting:</b> Fly.io y Railway ya <i>no</i> tienen capa gratuita real (solo créditos de prueba que se agotan), y Oracle Cloud Always Free redujo su límite de 4 OCPU/24GB a 2 OCPU/12GB. Render sigue siendo gratis de verdad, con la salvedad de que el servicio "duerme" tras 15 minutos sin tráfico.</li>
+        <li><b>PlanetScale y Xata eliminaron sus capas gratuitas</b> (2024 y feb. 2026 respectivamente). Si en algún momento leíste que eran buenas opciones gratis, ya no lo son — hoy los reemplazos reales son <b>Neon</b> (Postgres) y <b>Turso</b> (SQLite distribuido).</li>
+        <li><b>InfinityFree es técnicamente incompatible con Laravel</b>, no solo "incómodo": sin SSH no hay Composer/Artisan, y la carpeta <code>vendor/</code> (30-50MB) supera el límite de subida por FTP. Confirma lo que ya sospechábamos: adoptar Laravel implica sí o sí un VPS propio.</li>
+        <li><b>Aparece un candidato nuevo interesante: PocketBase</b> — un solo binario en Go con SQLite embebido, autenticación, panel admin y tiempo real ya incluidos. Para un proyecto de este tamaño, resuelve en un fin de semana lo que a Laravel le toma más tiempo — al costo de quedar atado a un motor de base de datos más limitado para reportes complejos.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="diagnostico">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Diagnóstico del stack actual</h2></div>
+    <p class="sec-dek">PHP plano sin framework ni Composer, JavaScript vanilla sin build, MySQL vía PDO directo. Antes de comparar alternativas, vale ser preciso sobre qué funciona y qué no en lo que ya existe.</p>
+
+    <div class="diag-grid">
+      <div class="diag-card pro">
+        <h4>Lo que funciona bien</h4>
+        <ul>
+          <li>Cero dependencias externas → despliegue trivial en cualquier hosting PHP compartido gratuito, tal como ya documentaste en <code>docs/hosting-gratis.md</code>.</li>
+          <li>Sin build step en el frontend: editás un archivo y recargás. Ideal para iterar solo, sin webpack/vite que mantener.</li>
+          <li>Cobertura E2E con Playwright ya existente — señal de que el proyecto sí valora corrección, no solo velocidad.</li>
+          <li>Módulos bien separados por dominio (<code>api/modules/*</code>), lo que facilita migrar de a uno sin romper el resto.</li>
+        </ul>
+      </div>
+      <div class="diag-card con">
+        <h4>Dónde te va a doler si crece</h4>
+        <ul>
+          <li>Sin ORM ni migraciones: el esquema vive en dumps <code>.sql</code> sueltos en <code>database/</code>, y los "snapshots" de datos (como <code>monto_alquiler</code> copiado en tres tablas) se desincronizan silenciosamente.</li>
+          <li>Cero autenticación en toda la API — cualquier endpoint es público si el servidor es alcanzable.</li>
+          <li>Cero tests unitarios (solo E2E de UI): un bug de cálculo en la liquidación de luz puede pasar desapercibido hasta que el número se ve mal en pantalla.</li>
+          <li>Sin capa de validación centralizada: cada <code>index.php</code> valida a mano lo que reciba (o no lo valida).</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="evidence">
+      <b>Evidencia concreta:</b> el precio de alquiler que se mostraba mal en "Cobros generados" no era un bug de UI — era que <code>ocupacion_unidad.monto_alquiler</code>, <code>cobros_mensuales.monto_alquiler</code> y <code>cobros_mensuales_detalle.monto_programado</code> son tres copias independientes del mismo número, sin ninguna relación que las mantenga sincronizadas. Un ORM con relaciones (Eloquent, Prisma, Lucid) no elimina la necesidad de "cobros congelados en el tiempo" — pero sí obliga a decidir explícitamente cuándo un valor es snapshot y cuándo es referencia viva, en vez de que quede implícito en tres <code>UPDATE</code> sueltos.
+    </div>
+  </section>
+
+  <section id="frontend">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Frontend</h2></div>
+    <p class="sec-dek">Métricas pensadas para <b>este</b> caso: un solo desarrollador, sin equipo, viniendo de vanilla JS + PHP. Se amplió con tres opciones que no estaban en la primera versión: Astro, Qwik y SolidJS.</p>
+
+    <div class="tech-grid">
+      <div class="techcard current">
+        <div class="tc-head">
+          <div><div class="tc-title">Vanilla JS (actual)</div><div class="tc-tag">ES modules, sin build, render por innerHTML</div></div>
+          <span class="pill pill-warn">Viable, con límite</span>
+        </div>
+        <div class="meters">
+          <div class="meter-row"><span class="meter-label">Curva de aprendizaje</span><div class="meter-track"><div class="meter-fill" style="--v:100%"></div></div><span class="meter-val">10/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ecosistema</span><div class="meter-track"><div class="meter-fill" style="--v:20%"></div></div><span class="meter-val">2/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ligereza / hosting</span><div class="meter-track"><div class="meter-fill" style="--v:100%"></div></div><span class="meter-val">10/10</span></div>
+          <div class="meter-row"><span class="meter-label">Encaje con este proyecto</span><div class="meter-track"><div class="meter-fill" style="--v:60%"></div></div><span class="meter-val">6/10</span></div>
+        </div>
+        <p class="tc-verdict">Sostenible hasta donde está hoy (13 módulos). Cada módulo nuevo repite el mismo patrón manual de fetch + innerHTML + listeners; funciona, pero no se reutiliza solo — se copia y pega.</p>
+      </div>
+
+      <div class="techcard">
+        <div class="tc-head">
+          <div><div class="tc-title">Vue.js 3</div><div class="tc-tag">Composition API + Vue Router/Pinia, o Inertia sobre Laravel</div></div>
+          <span class="pill pill-good">Recomendado</span>
+        </div>
+        <div class="meters">
+          <div class="meter-row"><span class="meter-label">Curva de aprendizaje</span><div class="meter-track"><div class="meter-fill" style="--v:80%"></div></div><span class="meter-val">8/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ecosistema</span><div class="meter-track"><div class="meter-fill" style="--v:80%"></div></div><span class="meter-val">8/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ligereza / hosting</span><div class="meter-track"><div class="meter-fill" style="--v:70%"></div></div><span class="meter-val">7/10</span></div>
+          <div class="meter-row"><span class="meter-label">Encaje con este proyecto</span><div class="meter-track"><div class="meter-fill" style="--v:90%"></div></div><span class="meter-val">9/10</span></div>
+        </div>
+        <p class="tc-verdict">El salto más suave desde tu HTML+listeners actual: los templates de Vue son HTML casi literal. Con Inertia.js sobre Laravel ni siquiera construís una API REST separada.</p>
+      </div>
+
+      <div class="techcard">
+        <div class="tc-head">
+          <div><div class="tc-title">React</div><div class="tc-tag">+ Router propio + estado (Zustand/Redux), o Next.js 16</div></div>
+          <span class="pill pill-warn">Viable, más decisiones</span>
+        </div>
+        <div class="meters">
+          <div class="meter-row"><span class="meter-label">Curva de aprendizaje</span><div class="meter-track"><div class="meter-fill" style="--v:60%"></div></div><span class="meter-val">6/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ecosistema</span><div class="meter-track"><div class="meter-fill" style="--v:100%"></div></div><span class="meter-val">10/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ligereza / hosting</span><div class="meter-track"><div class="meter-fill" style="--v:60%"></div></div><span class="meter-val">6/10</span></div>
+          <div class="meter-row"><span class="meter-label">Encaje con este proyecto</span><div class="meter-track"><div class="meter-fill" style="--v:65%"></div></div><span class="meter-val">6.5/10</span></div>
+        </div>
+        <p class="tc-verdict">Ecosistema enorme y el más buscado laboralmente (mayor bolsa de contratación de todo el grupo), pero React en sí no incluye router ni manejo de estado — vos, solo, elegís y mantenés esas piezas.</p>
+      </div>
+
+      <div class="techcard">
+        <div class="tc-head">
+          <div><div class="tc-title">Angular</div><div class="tc-tag">Framework completo, TypeScript + RxJS</div></div>
+          <span class="pill pill-crit">No recomendado aquí</span>
+        </div>
+        <div class="meters">
+          <div class="meter-row"><span class="meter-label">Curva de aprendizaje</span><div class="meter-track"><div class="meter-fill" style="--v:25%"></div></div><span class="meter-val">2.5/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ecosistema</span><div class="meter-track"><div class="meter-fill" style="--v:70%"></div></div><span class="meter-val">7/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ligereza / hosting</span><div class="meter-track"><div class="meter-fill" style="--v:35%"></div></div><span class="meter-val">3.5/10</span></div>
+          <div class="meter-row"><span class="meter-label">Encaje con este proyecto</span><div class="meter-track"><div class="meter-fill" style="--v:25%"></div></div><span class="meter-val">2.5/10</span></div>
+        </div>
+        <p class="tc-verdict">Diseñado para equipos grandes con convenciones estrictas. Para 13 pantallas CRUD mantenidas por una persona, la estructura que impone (NgModules, RxJS, inyección de dependencias) pesa más de lo que resuelve.</p>
+      </div>
+
+      <div class="techcard">
+        <div class="tc-head">
+          <div><div class="tc-title">Svelte 5 / SvelteKit</div><div class="tc-tag">Compila a JS mínimo, runes, sin virtual DOM</div></div>
+          <span class="pill pill-good">Caballo oscuro</span>
+        </div>
+        <div class="meters">
+          <div class="meter-row"><span class="meter-label">Curva de aprendizaje</span><div class="meter-track"><div class="meter-fill" style="--v:85%"></div></div><span class="meter-val">8.5/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ecosistema</span><div class="meter-track"><div class="meter-fill" style="--v:45%"></div></div><span class="meter-val">4.5/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ligereza / hosting</span><div class="meter-track"><div class="meter-fill" style="--v:95%"></div></div><span class="meter-val">9.5/10</span></div>
+          <div class="meter-row"><span class="meter-label">Encaje con este proyecto</span><div class="meter-track"><div class="meter-fill" style="--v:75%"></div></div><span class="meter-val">7.5/10</span></div>
+        </div>
+        <p class="tc-verdict">El bundle final es de los más livianos del grupo (junto a Qwik) — importa en hosting con recursos limitados. Contra: comunidad y bolsa de trabajo más chicas en la región.</p>
+      </div>
+
+      <div class="techcard">
+        <div class="tc-head">
+          <div><div class="tc-title">Astro</div><div class="tc-tag">Islas de interactividad, "ships zero JS" por defecto</div></div>
+          <span class="pill pill-warn">Mal encaje para SPA de gestión</span>
+        </div>
+        <div class="meters">
+          <div class="meter-row"><span class="meter-label">Curva de aprendizaje</span><div class="meter-track"><div class="meter-fill" style="--v:80%"></div></div><span class="meter-val">8/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ecosistema</span><div class="meter-track"><div class="meter-fill" style="--v:60%"></div></div><span class="meter-val">6/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ligereza / hosting</span><div class="meter-track"><div class="meter-fill" style="--v:100%"></div></div><span class="meter-val">10/10</span></div>
+          <div class="meter-row"><span class="meter-label">Encaje con este proyecto</span><div class="meter-track"><div class="meter-fill" style="--v:20%"></div></div><span class="meter-val">2/10</span></div>
+        </div>
+        <p class="tc-verdict">Astro es el rey para landing pages y sitios de contenido (Lighthouse 95-100 de fábrica), pero tu app es casi 100% formularios e interactividad autenticada — el caso exactamente opuesto al que Astro optimiza. Se menciona por completitud, no por encaje.</p>
+      </div>
+
+      <div class="techcard">
+        <div class="tc-head">
+          <div><div class="tc-title">Qwik</div><div class="tc-tag">Resumability — cero hidratación, de Miško Hevery (creador de Angular)</div></div>
+          <span class="pill pill-warn">Prometedor, inmaduro para vos solo</span>
+        </div>
+        <div class="meters">
+          <div class="meter-row"><span class="meter-label">Curva de aprendizaje</span><div class="meter-track"><div class="meter-fill" style="--v:45%"></div></div><span class="meter-val">4.5/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ecosistema</span><div class="meter-track"><div class="meter-fill" style="--v:30%"></div></div><span class="meter-val">3/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ligereza / hosting</span><div class="meter-track"><div class="meter-fill" style="--v:100%"></div></div><span class="meter-val">10/10</span></div>
+          <div class="meter-row"><span class="meter-label">Encaje con este proyecto</span><div class="meter-track"><div class="meter-fill" style="--v:35%"></div></div><span class="meter-val">3.5/10</span></div>
+        </div>
+        <p class="tc-verdict">Técnicamente fascinante (una página compleja puede enviar ~1KB de JS), pero el modelo mental de "resumability" es distinto a todo lo que conocés hoy, y el ecosistema/comunidad todavía es chico para resolver dudas en solitario.</p>
+      </div>
+
+      <div class="techcard">
+        <div class="tc-head">
+          <div><div class="tc-title">SolidJS</div><div class="tc-tag">Reactividad de grano fino, sintaxis JSX tipo React</div></div>
+          <span class="pill pill-warn">Excelente motor, ecosistema chico</span>
+        </div>
+        <div class="meters">
+          <div class="meter-row"><span class="meter-label">Curva de aprendizaje</span><div class="meter-track"><div class="meter-fill" style="--v:65%"></div></div><span class="meter-val">6.5/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ecosistema</span><div class="meter-track"><div class="meter-fill" style="--v:35%"></div></div><span class="meter-val">3.5/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ligereza / hosting</span><div class="meter-track"><div class="meter-fill" style="--v:90%"></div></div><span class="meter-val">9/10</span></div>
+          <div class="meter-row"><span class="meter-label">Encaje con este proyecto</span><div class="meter-track"><div class="meter-fill" style="--v:45%"></div></div><span class="meter-val">4.5/10</span></div>
+        </div>
+        <p class="tc-verdict">~70% más rápido que React en benchmarks de reactividad, con una sintaxis muy familiar si ya conocés JSX. El problema no es la tecnología, es la soledad: ecosistema y comunidad todavía chicos para un solo desarrollador sin equipo de respaldo.</p>
+      </div>
+
+      <div class="techcard">
+        <div class="tc-head">
+          <div><div class="tc-title">htmx + Alpine.js</div><div class="tc-tag">HTML aumentado, sin SPA ni framework JS</div></div>
+          <span class="pill pill-good">Camino intermedio</span>
+        </div>
+        <div class="meters">
+          <div class="meter-row"><span class="meter-label">Curva de aprendizaje</span><div class="meter-track"><div class="meter-fill" style="--v:90%"></div></div><span class="meter-val">9/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ecosistema</span><div class="meter-track"><div class="meter-fill" style="--v:40%"></div></div><span class="meter-val">4/10</span></div>
+          <div class="meter-row"><span class="meter-label">Ligereza / hosting</span><div class="meter-track"><div class="meter-fill" style="--v:95%"></div></div><span class="meter-val">9.5/10</span></div>
+          <div class="meter-row"><span class="meter-label">Encaje con este proyecto</span><div class="meter-track"><div class="meter-fill" style="--v:70%"></div></div><span class="meter-val">7/10</span></div>
+        </div>
+        <p class="tc-verdict">htmx reemplaza tus llamadas fetch+innerHTML por endpoints que devuelven HTML (ideal para CRUDs como Cobros/Ocupaciones); Alpine cubre lo que quede de estado local (modales, filtros). Si tu app es "el usuario hace clic, el servidor responde HTML nuevo" — que describe casi toda tu app hoy — htmx solo puede alcanzar.</p>
+      </div>
+    </div>
+
+    <div class="factbox"><b>Nota sobre Livewire:</b> si el backend termina siendo Laravel, Livewire es la alternativa nativa a htmx/Vue — components PHP con reactividad server-side. Buena experiencia de desarrollo, pero sin JavaScript la página queda completamente inoperable (no hay "progressive enhancement" real), a diferencia de htmx que sigue funcionando en modo degradado.</div>
+  </section>
+
+  <section id="backend">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Backend</h2></div>
+    <p class="sec-dek">Acá está el peso real de la decisión: el backend es lo que define si el bug de sincronización de hoy vuelve a pasar, y qué tan barato sigue siendo desplegar. Se amplió con 7 opciones adicionales investigadas: AdonisJS, Rails, Phoenix/Elixir, Spring Boot, ASP.NET Core y Rust.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Opción</th><th>Lenguaje</th><th>ORM / migraciones</th><th>Auth incluida</th><th>Hosting gratis real</th><th>Encaje aquí</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">PHP plano (actual)</td><td>PHP</td><td>No — SQL a mano</td><td>No existe</td><td>Excelente (compartido)</td><td>Funciona, sin red de seguridad</td></tr>
+          <tr><td class="name">Laravel 13</td><td>PHP</td><td>Eloquent + migraciones</td><td>Breeze/Fortify en minutos</td><td>Requiere VPS</td><td>Mejor relación esfuerzo/beneficio</td></tr>
+          <tr><td class="name">AdonisJS 7</td><td>TypeScript</td><td>Lucid (inspirado en Eloquent)</td><td>Incluida de fábrica</td><td>Bueno (Render/VPS)</td><td>"Laravel para JS", ecosistema 100x más chico que NestJS</td></tr>
+          <tr><td class="name">NestJS</td><td>TypeScript</td><td>Prisma/TypeORM a elección</td><td>Passport.js (a instalar)</td><td>Bueno (Render/VPS)</td><td>Ideal si front también es JS/TS</td></tr>
+          <tr><td class="name">Symfony</td><td>PHP</td><td>Doctrine (verboso)</td><td>Symfony Security (curva alta)</td><td>Requiere VPS</td><td>Robusto, sobredimensionado en solitario</td></tr>
+          <tr><td class="name">FastAPI</td><td>Python</td><td>SQLAlchemy + Alembic</td><td>A elección (fastapi-users)</td><td>Bueno (Render/VPS)</td><td>El más prolijo para lógica de cálculo</td></tr>
+          <tr><td class="name">Django</td><td>Python</td><td>Django ORM + migrations</td><td>Incluida de fábrica</td><td>Bueno (Render/VPS)</td><td>Todo incluido, más pesado</td></tr>
+          <tr><td class="name">Ruby on Rails 8</td><td>Ruby</td><td>Active Record + migrations</td><td>Incluida (Devise/has_secure_password)</td><td>Bueno (Render/VPS)</td><td>"Solid stack" 2026 simplifica mucho el deploy de un solo servidor</td></tr>
+          <tr><td class="name">Phoenix (Elixir)</td><td>Elixir</td><td>Ecto</td><td>A elección</td><td>Bueno (Render/VPS)</td><td>Brilla en tiempo real; no es lo que este proyecto necesita</td></tr>
+          <tr><td class="name">Spring Boot</td><td>Java</td><td>Spring Data JPA</td><td>Spring Security (curva alta)</td><td>Requiere VPS (memoria alta)</td><td>Enterprise-grade, pesado para 1 dev</td></tr>
+          <tr><td class="name">ASP.NET Core</td><td>C#</td><td>Entity Framework Core</td><td>Identity incluida</td><td>Requiere VPS</td><td>Muy eficiente en memoria, ecosistema orientado a Windows/Azure</td></tr>
+          <tr><td class="name">Go (Fiber/Gin/Echo)</td><td>Go</td><td>Manual o GORM</td><td>A elección</td><td>Excelente (bajísimo consumo)</td><td>Máximo rendimiento, mínima productividad CRUD</td></tr>
+          <tr><td class="name">Rust (Axum)</td><td>Rust</td><td>SeaORM/Diesel</td><td>A elección</td><td>Excelente (2-4x menos RAM que Go)</td><td>El más rápido y el de mayor curva de aprendizaje del grupo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Los tres finalistas reales, explicados</h3>
+    <p><b>Laravel 13</b> (versión estable desde marzo 2026; Laravel 12 recibe fixes de seguridad hasta feb. 2027) resuelve directamente la clase de bug que acabamos de corregir: con Eloquent, una relación <code>Ocupacion::cobros()</code> hace explícito si un cobro lee el monto en vivo o lo congela a propósito. PHP 8.4 (el recomendado para Laravel 13 en producción) suma <i>property hooks</i>, que simplifican justo el patrón de accessors/mutators que usarías para esto. Como seguís en PHP, la curva es "un framework nuevo", no "un lenguaje nuevo".</p>
+    <p><b>AdonisJS 7</b> es el hallazgo más interesante de esta ronda de investigación: es literalmente "Laravel, pero en TypeScript" — ORM (Lucid), autenticación, validación y motor de plantillas incluidos de fábrica, con starter kits que traen login/registro funcionando. El problema es su tamaño de comunidad: en mayo de 2026 registró ~97.700 descargas semanales contra ~9.97 millones de NestJS — una brecha de 100 a 1. Si te trabás con algo raro, hay muchísimo menos contenido/Stack Overflow que con Laravel o NestJS.</p>
+    <p><b>NestJS</b> tiene el ecosistema Node más grande y maduro, pero no incluye ORM ni auth — vos armás Prisma/TypeORM + Passport a mano. Tiene sentido si el plan es ir 100% TypeScript en frontend y backend (ver combos), no como mejora aislada del backend actual.</p>
+
+    <h4 class="sub">Por qué no las demás — profundizá si te interesa una en particular</h4>
+
+    <details class="dive">
+      <summary>Symfony <span class="pill pill-warn">Robusto, sobredimensionado</span></summary>
+      <div class="dive-body">
+        <p>Mismo lenguaje que ya conocés (PHP), pero Doctrine es notablemente más verboso que Eloquent y la configuración inicial (bundles, servicios, YAML) tiene una curva más alta. Es el framework preferido para equipos grandes con arquitecturas complejas — para 13 módulos CRUD administrados por una persona, esa inversión no se recupera.</p>
+        <div class="dive-cols pc">
+          <div><h5>A favor</h5><ul><li>El más maduro y probado en producción empresarial</li><li>Ecosistema de "bundles" reutilizables muy amplio</li></ul></div>
+          <div><h5>En contra</h5><ul><li>Curva de configuración inicial alta en solitario</li><li>Doctrine requiere más código que Eloquent para lo mismo</li></ul></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="dive">
+      <summary>FastAPI / Django (Python) <span class="pill pill-warn">Excelentes, otro lenguaje</span></summary>
+      <div class="dive-body">
+        <p>FastAPI genera documentación OpenAPI automática y usa Pydantic para validación — probablemente el stack más "prolijo" del grupo para expresar reglas de negocio como la liquidación proporcional de luz con IGV. Django trae todo incluido (admin panel gratis, auth, ORM) pero es más pesado y opinado. Ambos implican abandonar PHP por completo — solo se justifican si en el futuro el proyecto necesita análisis de datos pesado (pandas, reportes estadísticos), donde Python tiene ventaja real.</p>
+        <div class="dive-cols pc">
+          <div><h5>A favor</h5><ul><li>Mejor lenguaje del grupo para lógica de cálculo/reportes futuros</li><li>Django incluye un panel admin automático generado del modelo</li></ul></div>
+          <div><h5>En contra</h5><ul><li>Reescritura completa del backend, no incremental</li><li>Abandona tu conocimiento PHP acumulado</li></ul></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="dive">
+      <summary>Ruby on Rails 8 <span class="pill pill-warn">Interesante, comunidad más chica en la región</span></summary>
+      <div class="dive-body">
+        <p>En 2026 Rails simplificó agresivamente el despliegue: el "Solid stack" (Solid Queue, Solid Cache, Solid Cable) mueve colas/caché/websockets a la misma base de datos principal, permitiendo correr una app full-stack con un solo servidor y una sola base de datos — exactamente tu escala. "Convention over configuration" reduce mucho el código repetitivo. Contra: la bolsa de desarrolladores Ruby en LatAm es bastante más chica que PHP/JS.</p>
+        <div class="dive-cols pc">
+          <div><h5>A favor</h5><ul><li>El "Solid stack" 2026 encaja perfecto con una app de un solo servidor</li><li>Menos código repetitivo que casi cualquier otro framework del grupo</li></ul></div>
+          <div><h5>En contra</h5><ul><li>Otro lenguaje nuevo (Ruby) para vos</li><li>Comunidad/bolsa laboral más chica que PHP o JS en la región</li></ul></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="dive">
+      <summary>Phoenix (Elixir) <span class="pill pill-crit">No aplica a este problema</span></summary>
+      <div class="dive-body">
+        <p>Phoenix brilla en sistemas concurrentes y en tiempo real (chats, trading, IoT) gracias al modelo de actores de Elixir/BEAM. Tu app es un CRUD de facturación mensual sin necesidad de miles de conexiones simultáneas ni tolerancia a fallos extrema — el problema que Phoenix resuelve mejor que nadie no es el que tenés.</p>
+        <div class="dive-cols pc">
+          <div><h5>A favor</h5><ul><li>Concurrencia y tolerancia a fallos sobresalientes</li><li>Channels nativos para tiempo real</li></ul></div>
+          <div><h5>En contra</h5><ul><li>Ninguna de esas fortalezas aplica a 9 unidades cobrando una vez al mes</li><li>Elixir es el lenguaje menos familiar del grupo para vos</li></ul></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="dive">
+      <summary>Spring Boot (Java) y ASP.NET Core (C#) <span class="pill pill-crit">Enterprise-grade, sobra aquí</span></summary>
+      <div class="dive-body">
+        <p>Ambos son opciones "enterprise" sólidas — Spring Boot con auto-configuración extensa, ASP.NET Core con arranque en menos de un segundo y muy bajo consumo de memoria (~200MB vs 500MB-1GB de Spring). Pero ambos requieren VPS (nada de hosting compartido gratis), tienen la curva de aprendizaje más alta de todo el grupo si no venís de ese ecosistema, y están pensados para aplicaciones bastante más grandes que 13 módulos CRUD.</p>
+        <div class="dive-cols pc">
+          <div><h5>A favor</h5><ul><li>Tooling y tipado robustos, pensados para escalar a equipos grandes</li><li>ASP.NET Core es muy eficiente en memoria</li></ul></div>
+          <div><h5>En contra</h5><ul><li>Curva de aprendizaje alta si no conocés Java/.NET</li><li>Sobredimensionado para el tamaño real de este proyecto</li></ul></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="dive">
+      <summary>Go y Rust <span class="pill pill-crit">Rendimiento que no necesitás, productividad que sí</span></summary>
+      <div class="dive-body">
+        <p>Go (Fiber ~130k req/s, Gin/Echo ~80k req/s en benchmarks) y Rust/Axum (2-4x menos memoria que Go, hasta 40% menos latencia en benchmarks 2026) son objetivamente los más rápidos y livianos del grupo — ideales para un VPS gratis de 1 vCPU. Pero para un CRUD con reglas de negocio (liquidación proporcional, IGV, overrides por inquilino), la productividad de desarrollo importa muchísimo más que los microsegundos de respuesta: 9 unidades jamás van a saturar ningún backend razonable, ni siquiera PHP plano.</p>
+        <div class="dive-cols pc">
+          <div><h5>A favor</h5><ul><li>Rendimiento y consumo de recursos insuperables en el grupo</li><li>Encajan perfecto en un VPS gratis de recursos limitados</li></ul></div>
+          <div><h5>En contra</h5><ul><li>Sin ORM maduro estilo Eloquent (todo más manual)</li><li>La curva de aprendizaje no se justifica para el volumen de este proyecto</li></ul></div>
+        </div>
+      </div>
+    </details>
+
+    <div class="evidence">
+      <b>Caveat de hosting verificado en esta investigación:</b> InfinityFree no tiene SSH, por lo que no hay forma de correr Composer/Artisan en el servidor, y la carpeta <code>vendor/</code> típica de Laravel (30-50MB) excede el límite de subida del administrador de archivos por FTP. No es "incómodo" — es imposible tal como está. Adoptar Laravel implica sí o sí mudarte a un VPS (Oracle Cloud Free) o una PaaS con soporte real de Composer (Render).
+    </div>
+  </section>
+
+  <section id="runtimes">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Runtimes de JavaScript (si el backend termina siendo JS/TS)</h2></div>
+    <p class="sec-dek">Solo relevante si elegís AdonisJS, NestJS o Express — qué motor ejecuta ese código.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Runtime</th><th>Estado 2026</th><th>Cuándo elegirlo</th></tr></thead>
+        <tbody>
+          <tr><td class="name">Node.js</td><td>El más probado — domina el tráfico empresarial</td><td>Opción por defecto, más segura: ecosistema, estabilidad y bolsa de talento sin comparación</td></tr>
+          <tr><td class="name">Bun</td><td>Maduro desde v1.3, ~98% compatible con Node. Anthropic lo adquirió en dic. 2025 para Claude Code</td><td>Arranques en frío casi instantáneos (&lt;10ms vs ~200ms de Node) — interesante en hosting serverless/edge</td></tr>
+          <tr><td class="name">Deno</td><td>Producción real, ya con compatibilidad npm casi total</td><td>Si te importa el modelo de permisos/seguridad estricto y TypeScript nativo sin configurar nada</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Para este proyecto, la elección de runtime es secundaria frente a la de framework: Node.js sigue siendo la opción "aburrida y segura" recomendada para un solo desarrollador sin necesidad de exprimir arranques en frío.</p>
+  </section>
+
+  <section id="api">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Arquitectura de API</h2></div>
+    <p class="sec-dek">Acá la respuesta corta importa más que la tabla: no hace falta cambiar de paradigma, hace falta formalizar el que ya tenés.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Enfoque</th><th>Cuándo se justifica</th><th>Para este proyecto</th></tr></thead>
+        <tbody>
+          <tr><td class="name">REST ad-hoc (actual)</td><td>Un solo cliente, endpoints simples por módulo</td><td>Correcto en esencia; falta documentarlo</td></tr>
+          <tr><td class="name">REST + OpenAPI/Swagger</td><td>Cuando querés docs automáticas y validación de contrato</td><td>La mejora real a implementar (gratis en Laravel con l5-swagger, o nativa en NestJS/FastAPI)</td></tr>
+          <tr><td class="name">GraphQL</td><td>Múltiples clientes con necesidades de datos distintas y consultas anidadas complejas</td><td>Sobredimensionado: un solo frontend, consultas ya simples</td></tr>
+          <tr><td class="name">tRPC</td><td>Monorepo full TypeScript, front y back en el mismo lenguaje, sin generación de código</td><td>Muy buen encaje <i>si</i> elegís la ruta Node/TS de punta a punta (Combo C)</td></tr>
+          <tr><td class="name">gRPC</td><td>Comunicación interna entre microservicios de alto volumen</td><td>No aplica — no hay microservicios ni ese volumen aquí</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>El error común sería leer "GraphQL/tRPC son más modernos" y adoptarlos sin necesidad. GraphQL resuelve <i>"distintos clientes piden distintos subconjuntos de datos"</i> — con un solo frontend, ese problema no existe. tRPC resuelve <i>"quiero tipos compartidos sin generar código"</i>, pero exige que todo el proyecto sea TypeScript de punta a punta; si el backend queda en PHP (Laravel/AdonisJS aparte), tRPC directamente no aplica. La mejora con impacto real y bajo costo es documentar con OpenAPI, sin importar qué framework backend elijas.</p>
+  </section>
+
+  <section id="datos">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Base de datos y BaaS</h2></div>
+    <p class="sec-dek">Se amplió considerablemente: motores SQL clásicos, NoSQL, y "Backend as a Service" (BaaS) — plataformas que empaquetan base de datos + auth + storage juntos.</p>
+
+    <h3>Motores SQL / NoSQL clásicos</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Motor</th><th>A favor</th><th>En contra para este caso</th></tr></thead>
+        <tbody>
+          <tr><td class="name">MySQL / MariaDB (actual)</td><td>Ya funciona; disponible gratis en prácticamente todo hosting PHP; sin motivo funcional para migrar</td><td>Ninguno relevante a esta escala</td></tr>
+          <tr><td class="name">PostgreSQL</td><td>JSONB, constraints y triggers más ricos — útil para las tablas de auditoría de tarifas ya existentes</td><td>Solo tiene sentido si el hosting elegido lo impone (Render, Neon), no como meta en sí misma</td></tr>
+          <tr><td class="name">SQLite</td><td>Cero configuración, ideal para un solo usuario en un solo archivo</td><td>Mal encaje si varias pestañas/dispositivos escriben a la vez (concurrencia web típica)</td></tr>
+          <tr><td class="name">MongoDB (NoSQL)</td><td>Esquema flexible, buen encaje para datos no relacionales</td><td>Tu dominio es intrínsecamente relacional (unidades↔personas↔ocupaciones↔cobros con integridad referencial fuerte); forzarlo a documentos agrega trabajo, no lo quita</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Cambiar de motor SQL sin una razón funcional sería el ejemplo típico de reescritura sin retorno: <b>mantener MySQL/MariaDB</b> y migrar a Postgres solo si una plataforma elegida lo empuja como efecto secundario (no como objetivo).</p>
+
+    <h3>BaaS — base de datos + auth + storage empaquetados</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Plataforma</th><th>Motor</th><th>Capa gratuita real en 2026</th><th>Nota</th></tr></thead>
+        <tbody>
+          <tr><td class="name">Supabase</td><td>PostgreSQL</td><td>500MB DB, 50.000 usuarios activos/mes</td><td>Auth, Storage y Edge Functions incluidos; el más completo del grupo</td></tr>
+          <tr><td class="name">Firebase</td><td>Firestore (NoSQL)</td><td>Generosa pero por uso (Blaze pay-as-you-go)</td><td>Costo predecible más difícil de estimar que el resto</td></tr>
+          <tr><td class="name">Appwrite</td><td>MariaDB internamente</td><td>Proyectos ilimitados, 75.000 MAU, 10GB storage, sin límite de tiempo</td><td>Self-hosted 100% gratis sin restricciones si preferís tu propio VPS</td></tr>
+          <tr><td class="name">PocketBase</td><td>SQLite embebido</td><td>100% gratis y open source — solo pagás el hosting</td><td>Un solo binario Go: auth + panel admin + tiempo real incluidos. Ideal para 1 dev, 1 VPS chico</td></tr>
+          <tr><td class="name">Convex</td><td>Propio (reactivo)</td><td>Base fija desde $25/mes + uso</td><td>Excelente DX pero sin capa gratuita real duradera</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>SQL serverless "edge" — y las que ya no sirven</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Plataforma</th><th>Estado real 2026</th></tr></thead>
+        <tbody>
+          <tr><td class="name">Neon (Postgres)</td><td><span class="pill pill-good">Vigente</span> 0.5GB + 100 horas de cómputo gratis; el reemplazo natural de PlanetScale/Xata</td></tr>
+          <tr><td class="name">Turso (SQLite distribuido)</td><td><span class="pill pill-good">Vigente</span> 5GB + 500M lecturas de fila gratis; útil si algún día necesitás baja latencia multi-región</td></tr>
+          <tr><td class="name">Cloudflare D1</td><td><span class="pill pill-good">Vigente</span> 5GB, 5M lecturas/día, 100K escrituras/día gratis — solo dentro del ecosistema Workers</td></tr>
+          <tr><td class="name">PlanetScale</td><td><span class="pill pill-crit">Ya no es gratis</span> eliminó su capa Hobby en abril de 2024; hoy arranca en $5/mes</td></tr>
+          <tr><td class="name">Xata</td><td><span class="pill pill-crit">Ya no es gratis</span> su producto clásico se retiró el 28 feb. 2026; el relanzamiento es 100% por uso</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Este es el hallazgo más práctico de la investigación en esta capa: <b>si viste una guía recomendando PlanetScale o Xata como "gratis para siempre", está desactualizada.</b> Los reemplazos vigentes hoy son Neon (Postgres) y Turso (SQLite).</p>
+  </section>
+
+  <section id="hosting">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Hosting e infraestructura</h2></div>
+    <p class="sec-dek">Actualización directa sobre tu propio <code>docs/hosting-gratis.md</code>: varias de las plataformas que mencionás ahí cambiaron de condiciones durante 2024-2026.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Opción</th><th>Estado verificado julio 2026</th><th>Sirve para Laravel/AdonisJS?</th></tr></thead>
+        <tbody>
+          <tr><td class="name">InfinityFree</td><td>Vigente y gratis; PHP 8.3 disponible, tope de 30.000 requests/día</td><td><span class="pill pill-crit">No</span> sin SSH no hay Composer/Artisan</td></tr>
+          <tr><td class="name">Oracle Cloud Always Free</td><td><span class="pill pill-warn">Cambió</span> el límite bajó de 4 OCPU/24GB a 2 OCPU/12GB (arquitectura ARM Ampere); cuentas nuevas aún logran aprovisionar el tier alto en algunos casos</td><td><span class="pill pill-good">Sí</span> — VPS real, instalás lo que quieras</td></tr>
+          <tr><td class="name">Render</td><td>Sigue siendo gratis de verdad para web services (512MB RAM); "duerme" tras 15 min sin tráfico</td><td><span class="pill pill-good">Sí</span> con buildpack o Docker</td></tr>
+          <tr><td class="name">Fly.io</td><td><span class="pill pill-crit">Ya no es gratis</span> desde 2024 solo da 2 horas de VM o 7 días de prueba, después tarjeta obligatoria</td><td>— (dejó de ser opción "gratis")</td></tr>
+          <tr><td class="name">Railway</td><td><span class="pill pill-crit">Ya no es gratis</span> ahora es "$5 de crédito" en el plan Hobby, no un tier indefinido</td><td>— (dejó de ser opción "gratis")</td></tr>
+          <tr><td class="name">Cloudflare Workers + Pages + D1 + R2</td><td>Vigente: 100K requests/día, 5GB D1, 10GB R2, cero costo de egreso</td><td><span class="pill pill-crit">No</span> — es un runtime de edge (JS/Wasm), no corre PHP</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Self-hosted PaaS sobre tu propio VPS — la pieza que faltaba en la guía original</h3>
+    <p>Si adoptás Oracle Cloud Always Free como VPS, no hace falta configurar Apache/Nginx/PHP-FPM a mano línea por línea: existen paneles tipo "Vercel para tu propio servidor" que automatizan deploys con Git push, certificados HTTPS y contenedores Docker.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Herramienta</th><th>Notas 2026</th></tr></thead>
+        <tbody>
+          <tr><td class="name">Coolify</td><td>El más popular y con más integraciones "un clic" (280+ servicios); ahora incluye servidor MCP para integración con asistentes de IA; ideal si además querés administrar varios servidores desde un solo panel</td></tr>
+          <tr><td class="name">Dokploy</td><td>El más liviano en consumo de recursos (~350MB RAM idle) — importante en un VPS gratis con memoria limitada; soporte nativo de Docker Compose completo</td></tr>
+          <tr><td class="name">CapRover</td><td>Maduro y estable, pero con soporte limitado para Docker Compose multi-servicio (mejor para apps de un solo contenedor)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Para un VPS gratis con recursos ajustados (2 OCPU/12GB tras el recorte de Oracle), <b>Dokploy</b> es probablemente el que más "presupuesto" de RAM te deja libre para tu propia app.</p>
+  </section>
+
+  <section id="servicios">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Servicios adicionales a evaluar</h2></div>
+    <p class="sec-dek">Estos aplican <b>sin importar</b> qué framework elijas — y algunos son más urgentes que la decisión de framework en sí.</p>
+
+    <h3>Autenticación — el más urgente de todos</h3>
+    <p>Hoy no existe ninguna, en ningún endpoint. Para un solo usuario (vos, el propietario) no hace falta un servicio externo como Auth0/Clerk: alcanza con un login simple basado en sesión (nativo en Laravel/AdonisJS, o unas 30 líneas de PHP con <code>password_hash</code>/sesiones si preferís no migrar de framework todavía). Lo que no es opcional es tener <i>algo</i>, antes de exponer la app a internet como ya estás evaluando en tu guía de hosting.</p>
+
+    <h3>Cobros digitales — Yape / Plin (específico de tu dominio)</h3>
+    <p>Investigando el estado 2026 del ecosistema de pagos peruano: Yape supera los 15 millones de usuarios activos y ya existe interoperabilidad real entre billeteras (Yape↔Plin↔otras) vía QR único. Hay tres niveles de integración posibles para "Avisos"/"Cobros":</p>
+    <ul>
+      <li><b>Nivel 1 (lo que ya tenés):</b> compartir manualmente el QR/monto por WhatsApp — cero integración, cero costo.</li>
+      <li><b>Nivel 2:</b> generar el QR de cobro automáticamente desde el backend (librerías de QR estándar EMV) e incluirlo en el aviso — mejora simple, sin necesidad de gateway de pago.</li>
+      <li><b>Nivel 3:</b> gateway de pago con verificación automática de que el inquilino efectivamente pagó (confirmación vía webhook), típicamente con comisión ~3.99% por transacción — probablemente no se justifica para pagos internos entre el propietario y 9 inquilinos conocidos; tiene sentido para e-commerce con desconocidos, no aquí.</li>
+    </ul>
+    <p>Para este proyecto, el <b>Nivel 2</b> (QR autogenerado, verificación manual como hoy) es el punto óptimo costo/beneficio.</p>
+
+    <h3>Notificaciones para el módulo "Avisos"</h3>
+    <p>Corrección importante sobre WhatsApp Business API en 2026: <b>ya no existe la antigua franja "gratis para las primeras 1.000 conversaciones/mes"</b> — Meta cobra desde el primer mensaje de tipo utilidad/marketing/autenticación (Twilio suma $0.005 por mensaje encima de eso). Solo las conversaciones que <i>inicia el cliente</i> (respuestas dentro de la ventana de 24h) siguen siendo gratis. Para avisos de vencimiento que iniciás vos, el costo real hoy ronda unos pocos centavos de dólar por aviso — bajo pero ya no cero. Alternativa sin costo: email transaccional (Resend, Brevo, ambos con capa gratuita real de varios cientos de envíos/mes).</p>
+
+    <h3>Almacenamiento de archivos</h3>
+    <p><code>public/uploads</code> (los QR de cobranza) vive en disco local. Si en algún momento desplegás en una plataforma con disco efímero (Render, Cloudflare) en vez de un VPS propio, esos archivos <b>se pierden en cada redeploy</b> — ahí conviene mover a almacenamiento de objetos (Cloudflare R2 con 10GB gratis y cero egreso, o Supabase Storage). En un VPS propio (Oracle Cloud) esto no aplica: el disco es persistente.</p>
+
+    <h3>Monitoreo de errores y CI/CD</h3>
+    <p>Cero error tracking hoy — el bug de esta sesión estuvo semanas mostrando un monto incorrecto sin que nada avisara. <b>Sentry</b> (capa gratuita generosa) atraparía excepciones PHP/JS en producción. Ya tenés Playwright configurado: conectarlo a <b>GitHub Actions</b> (gratis para uso personal) correría los E2E en cada push automáticamente.</p>
+
+    <h3>Low-code / no-code — mención breve, por completitud</h3>
+    <p>Herramientas como Retool, Appsmith o n8n pueden generar paneles CRUD sobre una base de datos existente en horas, no días. No se profundiza porque tu dominio tiene reglas de negocio genuinamente complejas (liquidación proporcional de luz con IGV, medidores compartidos, overrides por inquilino) que estas herramientas manejan mal fuera de un CRUD simple — el ahorro de tiempo inicial se pierde rápido peleando contra la herramienta para lógica no estándar.</p>
+  </section>
+
+  <section id="arquitectura">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Arquitectura propuesta (agnóstica de stack)</h2></div>
+    <p class="sec-dek">Independientemente de qué combo elijas más abajo, esta es la forma general que debería tomar el sistema — hoy tu API mezcla routing, validación, acceso a datos y lógica de negocio en el mismo archivo <code>index.php</code> por módulo.</p>
+
+    <div class="diagram-wrap">
+      <pre class="mermaid">
+flowchart TB
+    subgraph Cliente["Cliente"]
+        UI["Frontend (SPA/Inertia/htmx)"]
+    end
+
+    subgraph Servidor["Backend"]
+        GW["Capa HTTP (routing + auth + validación de entrada)"]
+        SVC["Capa de servicios (reglas de negocio: liquidación, cobros, overrides)"]
+        REPO["Capa de datos (ORM / repositorios)"]
+    end
+
+    subgraph Datos["Persistencia"]
+        DB[("MySQL / PostgreSQL")]
+        FILES["Almacenamiento de archivos (QR, recibos)"]
+    end
+
+    subgraph Externos["Servicios externos"]
+        MAIL["Email / WhatsApp (avisos)"]
+        ERR["Sentry (errores)"]
+        CI["GitHub Actions (CI/CD)"]
+    end
+
+    UI -->|"HTTPS + sesión/token"| GW
+    GW --> SVC
+    SVC --> REPO
+    REPO --> DB
+    SVC --> FILES
+    SVC --> MAIL
+    GW -.->|"excepciones"| ERR
+    CI -.->|"deploy + tests"| Servidor
+      </pre>
+      <p class="cap">Tres capas dentro del backend (HTTP → servicios de negocio → datos), en vez de un único archivo por módulo que hace las tres cosas a la vez.</p>
+    </div>
+
+    <h3>Cómo mapea a tus 13 módulos actuales</h3>
+    <p>Esto no requiere inventar nada nuevo: tus carpetas <code>api/modules/*</code> ya son el punto de partida correcto para la separación por dominio. El cambio real es <i>dentro</i> de cada módulo: separar "qué llegó por HTTP" de "qué regla de negocio aplica" de "qué se guarda en la base". Concretamente:</p>
+    <ul>
+      <li><b>Capa HTTP:</b> hoy vive en cada <code>index.php</code> (parseo de <code>$_GET</code>/JSON body). En Laravel serían Controllers + Form Requests; en NestJS, Controllers + DTOs.</li>
+      <li><b>Capa de servicios:</b> hoy vive mezclada en <code>common.php</code> de cada módulo (ej. <code>buildCobrosProgramados()</code>). Aislarla en clases de servicio permite testearla sin HTTP ni base de datos real de por medio.</li>
+      <li><b>Capa de datos:</b> hoy son consultas PDO repetidas en cada archivo. Con un ORM, se centraliza en modelos/repositorios — y es exactamente la capa donde vive la corrección que hicimos hoy (relación explícita entre <code>Ocupacion</code> y <code>Cobro</code>).</li>
+    </ul>
+    <p>Esta separación es independiente del combo elegido: aplica igual si el backend termina siendo Laravel, AdonisJS o Python — es una cuestión de disciplina de código, no de qué lenguaje.</p>
+  </section>
+
+  <section id="combos">
+    <div class="sec-head"><span class="sec-num">10</span><h2>Combos realistas</h2></div>
+    <p class="sec-dek">Frontend, backend, base de datos y hosting no son decisiones independientes — elegir uno condiciona a los otros tres. Once caminos completos y coherentes, ordenados de menor a mayor distancia respecto de lo que tenés hoy.</p>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">01</span>Mantener y reforzar</div><div class="bundle-stack">PHP plano + Composer puntual (validación) + tests unitarios + MySQL</div></div>
+        <span class="pill pill-warn">Mínimo esfuerzo</span>
+      </div>
+      <p class="bundle-fit">Para quien prioriza cero riesgo sobre resolver la causa raíz del bug de hoy.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>Cero curva de aprendizaje adicional</li><li>Cero riesgo de romper lo que ya funciona</li><li>Podés sumar validación (Respect/Validation) sin adoptar un framework completo</li></ul></div>
+        <div><h5>En contra</h5><ul><li>No resuelve la causa raíz: sin ORM, los snapshots van a seguir desincronizándose</li><li>Cada módulo nuevo repite el mismo patrón manual</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">02</span>Evolutivo PHP</div><div class="bundle-stack">Laravel 13 + Vue 3 (Inertia.js) + MySQL + VPS Oracle Cloud Free</div></div>
+        <span class="pill pill-good">Recomendado</span>
+      </div>
+      <p class="bundle-fit">El de mejor relación esfuerzo/beneficio para tu situación puntual — ver recomendación final.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>Reutiliza el 100% de tu conocimiento PHP existente</li><li>Resuelve exactamente el bug de sincronización de hoy</li><li>Inertia evita construir una API REST separada del frontend</li></ul></div>
+        <div><h5>En contra</h5><ul><li>Deja atrás el hosting compartido gratuito instantáneo (InfinityFree)</li><li>Requiere aprender a administrar un VPS Linux propio</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">03</span>Server-rendered puro</div><div class="bundle-stack">Laravel 13 + Livewire/Alpine.js + MySQL + VPS Oracle Cloud Free</div></div>
+        <span class="pill pill-good">Variante sin SPA</span>
+      </div>
+      <p class="bundle-fit">Igual que el Combo 02, pero sin construir una capa de API JSON separada del todo.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>Todo el estado vive en el servidor — menos superficie para bugs de sincronización cliente/servidor</li><li>Un solo lenguaje (PHP) de punta a punta, ni siquiera Vue de por medio</li></ul></div>
+        <div><h5>En contra</h5><ul><li>Sin JavaScript la página queda inoperable (no hay degradación gradual)</li><li>Menos preparado que una SPA si algún día querés una app móvil nativa</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">04</span>Mínimo cambio de paradigma</div><div class="bundle-stack">PHP (plano o con micro-framework tipo Slim) + htmx/Alpine + MySQL</div></div>
+        <span class="pill pill-good">Camino intermedio</span>
+      </div>
+      <p class="bundle-fit">Para quien quiere reducir el JS que mantiene sin adoptar Laravel todavía.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>El servidor sigue devolviendo HTML como hoy — cero SPA que aprender</li><li>Curva de aprendizaje bajísima (htmx son ~14KB de atributos HTML)</li></ul></div>
+        <div><h5>En contra</h5><ul><li>No trae ORM ni auth — seguís necesitando resolver eso por separado</li><li>Ecosistema/comunidad más chicos que cualquier SPA framework</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">05</span>"Laravel para JS"</div><div class="bundle-stack">AdonisJS 7 + Vue o React + PostgreSQL (Neon) + Render</div></div>
+        <span class="pill pill-warn">Interesante, arriesgado por comunidad</span>
+      </div>
+      <p class="bundle-fit">Si querés todo en TypeScript pero con la misma filosofía "todo incluido" de Laravel.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>ORM, auth y validación incluidos de fábrica, igual que Laravel</li><li>Un solo lenguaje (TypeScript) en todo el proyecto</li></ul></div>
+        <div><h5>En contra</h5><ul><li>Comunidad ~100x más chica que NestJS — menos ayuda si te trabás</li><li>Reescritura completa del backend, no incremental</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">06</span>Full JS enterprise</div><div class="bundle-stack">NestJS + Prisma + React o Vue + PostgreSQL (Neon) + Render</div></div>
+        <span class="pill pill-warn">Viable, mayor esfuerzo</span>
+      </div>
+      <p class="bundle-fit">Si el objetivo incluye aprender/mostrar un stack con alta demanda laboral.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>Ecosistema Node más grande y maduro de todo el grupo</li><li>Tipado end-to-end posible (tRPC o cliente generado desde OpenAPI)</li></ul></div>
+        <div><h5>En contra</h5><ul><li>Reescribir el backend completo desde cero</li><li>Abandona por completo el hosting PHP gratuito ya investigado</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">07</span>BaaS gestionado</div><div class="bundle-stack">Supabase (Postgres+Auth+Storage) + Vue/React + Edge Functions</div></div>
+        <span class="pill pill-warn">Rápido, con ataduras</span>
+      </div>
+      <p class="bundle-fit">Máxima velocidad de desarrollo si no te molesta depender de un proveedor.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>Auth y almacenamiento resueltos de fábrica, capa gratuita real</li><li>Base de datos gestionada, sin administrar servidor</li></ul></div>
+        <div><h5>En contra</h5><ul><li>Vendor lock-in fuerte con Supabase</li><li>La lógica de liquidación con IGV vive en funciones serverless con cold starts</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">08</span>BaaS de un solo binario</div><div class="bundle-stack">PocketBase + Vue o htmx ligero + VPS Oracle Cloud Free</div></div>
+        <span class="pill pill-good">El más rápido de montar, para 1 dev</span>
+      </div>
+      <p class="bundle-fit">El hallazgo más interesante de esta investigación: resuelve en un fin de semana lo que a Laravel le toma semanas.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>Auth, panel admin, API REST/realtime y ORM-like ya incluidos en un solo binario Go</li><li>100% gratis y open source, sin límites artificiales de un proveedor cloud</li></ul></div>
+        <div><h5>En contra</h5><ul><li>SQLite embebido: peor encaje que MySQL/Postgres para reportes analíticos complejos a futuro</li><li>Reglas de negocio complejas (liquidación proporcional) requieren "hooks" en Go/JS embebido, un modelo distinto al que conocés</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">09</span>Data-friendly</div><div class="bundle-stack">FastAPI + React o Vue + PostgreSQL + Render</div></div>
+        <span class="pill pill-warn">Bueno si el futuro incluye analítica</span>
+      </div>
+      <p class="bundle-fit">Si en 1-2 años te interesa hacer reportes/proyecciones de ocupación y morosidad con datos.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>Documentación OpenAPI automática de fábrica</li><li>Python es el mejor lenguaje del grupo para análisis de datos futuro (pandas, gráficos)</li></ul></div>
+        <div><h5>En contra</h5><ul><li>Reescritura completa; abandona PHP</li><li>Sin panel admin incluido (a diferencia de Django)</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">10</span>Edge-first serverless</div><div class="bundle-stack">Cloudflare Workers (Hono) + D1 + R2 + SvelteKit</div></div>
+        <span class="pill pill-crit">El más económico en teoría, peor encaje real</span>
+      </div>
+      <p class="bundle-fit">Se incluye por completitud — no se recomienda para este dominio.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>Capa gratuita muy generosa y cero costo de egreso de datos</li><li>Cero servidor que administrar, escala automáticamente</li></ul></div>
+        <div><h5>En contra</h5><ul><li>D1 (SQLite distribuido) maneja peor transacciones multi-tabla complejas que un Postgres/MySQL tradicional</li><li>Ecosistema y modelo mental (Workers, límite de CPU de 10ms por invocación) más alejados de lo que conocés hoy</li></ul></div>
+      </div>
+    </div>
+
+    <div class="bundle">
+      <div class="bundle-head">
+        <div><div class="bundle-title"><span class="bundle-num">11</span>Alto rendimiento</div><div class="bundle-stack">Go (Fiber) o Rust (Axum) + React/Vue + PostgreSQL + VPS</div></div>
+        <span class="pill pill-crit">No recomendado para este caso</span>
+      </div>
+      <p class="bundle-fit">Se incluye para que quede explícito por qué no, no porque sea una opción real aquí.</p>
+      <div class="bundle-cols">
+        <div><h5>A favor</h5><ul><li>Rendimiento y consumo de recursos insuperables del grupo completo</li><li>Correría cómodo hasta en el VPS gratis más chico</li></ul></div>
+        <div><h5>En contra</h5><ul><li>Sin ORM maduro tipo Eloquent — todo el trabajo de validación/relaciones se vuelve manual</li><li>La curva de aprendizaje no se justifica para 9 unidades cobrando una vez al mes</li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="recomendacion">
+    <div class="final">
+      <p class="eyebrow">Veredicto</p>
+      <h2>Ruta recomendada: Combo 02, en pasos independientes del framework primero</h2>
+      <p class="lede">No migres todo de una vez — es alto riesgo para una app que ya está en producción real cobrándole a inquilinos. El orden que más reduce riesgo:</p>
+      <ol class="steps">
+        <li><span class="step-body"><b>Autenticación ya, sin esperar al framework nuevo.</b><span>Es la brecha más urgente y no depende de qué backend elijas después. Un login por sesión de 30-50 líneas en el PHP actual cierra el hueco mientras decidís el resto.</span></span></li>
+        <li><span class="step-body"><b>Sentry (o similar) para dejar de descubrir bugs por pantalla.</b><span>Gratis, se integra en una tarde, y hoy es la única forma de enterarte de un error de cálculo antes que un inquilino.</span></span></li>
+        <li><span class="step-body"><b>Introducir Laravel 13 como "strangler pattern", módulo por módulo.</b><span>Empezá por Cobros/Ocupaciones — el módulo con más lógica de negocio y más riesgo de desincronización — no por el más simple. Ahí el ORM paga su costo de adopción más rápido.</span></span></li>
+        <li><span class="step-body"><b>Vue (vía Inertia) recién cuando el módulo tenga backend Laravel.</b><span>No conviene migrar el frontend antes que su backend correspondiente: quedarías con una SPA moderna llamando a endpoints PHP plano, sin ganar la parte que más valor aporta (validación + ORM del lado servidor).</span></span></li>
+        <li><span class="step-body"><b>Recién ahí, el salto de hosting a un VPS (Oracle Cloud Free, hoy 2 OCPU/12GB) con Dokploy encima.</b><span>Ya lo tenías identificado en tu propia guía como el paso de "mediano/largo plazo" — este plan simplemente lo hace necesario un poco antes, cuando Laravel deje de entrar en hosting compartido. Dokploy automatiza el deploy por Git push sin que tengas que administrar Apache/Nginx a mano.</span></span></li>
+      </ol>
+      <p style="margin-top:20px; max-width:none;"><b>Si en algún punto el tiempo pesa más que aprender Laravel a fondo:</b> el Combo 08 (PocketBase) es la alternativa que más rápido te deja con auth + panel admin + API funcionando, al costo de quedar en SQLite en vez de un motor relacional más robusto para reportes futuros. Vale la pena un fin de semana de prototipo antes de comprometerte con cualquiera de los dos caminos.</p>
+    </div>
+  </section>
+
+  <section id="fuentes">
+    <div class="sec-head"><span class="sec-num">11</span><h2>Fuentes consultadas</h2></div>
+    <p class="sec-dek">Búsquedas realizadas el 20 de julio de 2026. Se listan las fuentes con datos más específicos/verificables citados arriba (versiones, precios, límites de capas gratuitas).</p>
+    <ul class="sources">
+      <li><a href="https://laravel.com/docs/12.x/releases">Laravel — Release Notes (laravel.com)</a></li>
+      <li><a href="https://pegotec.net/php-8-4-and-8-5-in-2026-what-actually-shipped/">PHP 8.4/8.5 en 2026 (pegotec.net)</a></li>
+      <li><a href="https://forum.infinityfree.com/t/how-can-i-run-cli-commands-in-the-cpanel/86746">InfinityFree Forum — CLI/Composer</a></li>
+      <li><a href="https://blog.webhostmost.com/infinityfree-review-2026/">InfinityFree Review 2026 (webhostmost.com)</a></li>
+      <li><a href="https://terminalbytes.com/oracle-cloud-free-tier-changes-2026/">Oracle Cloud Free Tier — cambios 2026 (terminalbytes.com)</a></li>
+      <li><a href="https://render.com/articles/platforms-with-a-real-free-tier-for-developers-in-2026">Plataformas con free tier real 2026 (render.com)</a></li>
+      <li><a href="https://www.saaspricepulse.com/blog/flyio-free-tier-2026">Fly.io Free Tier 2026 (saaspricepulse.com)</a></li>
+      <li><a href="https://hostim.dev/blog/render-vs-railway-vs-fly-pricing/">Render vs Railway vs Fly — pricing 2026 (hostim.dev)</a></li>
+      <li><a href="https://www.codu.co/niall/no-more-free-tier-on-planetscale-here-are-free-alternatives-q4wzqcu9">Fin del free tier de PlanetScale (codu.co)</a></li>
+      <li><a href="https://xata.io/blog/postgres-free-tier">Retiro del free tier de Xata (xata.io)</a></li>
+      <li><a href="https://techsy.io/en/blog/neon-vs-planetscale-vs-turso">Neon vs PlanetScale vs Turso (techsy.io)</a></li>
+      <li><a href="https://developers.cloudflare.com/workers/platform/limits/">Cloudflare Workers — límites (developers.cloudflare.com)</a></li>
+      <li><a href="https://www.buildmvpfast.com/blog/cloudflare-workers-hono-d1-r2-free-fullstack-2026">Stack Cloudflare Workers+D1+R2 2026 (buildmvpfast.com)</a></li>
+      <li><a href="https://solodevstack.com/blog/nestjs-vs-adonisjs-solo-developers">NestJS vs AdonisJS para solo devs (solodevstack.com)</a></li>
+      <li><a href="https://npmtrends.com/adonis-vs-django-vs-laravel-vs-nest-vs-nestjs-vs-node.js-vs-symfony">Descargas npm: Adonis vs Nest vs otros (npmtrends.com)</a></li>
+      <li><a href="https://equantra.in/blog/ruby-on-rails-vs-phoenix-framework-2026">Rails vs Phoenix 2026 (equantra.in)</a></li>
+      <li><a href="https://daily.dev/blog/javascript-runtimes-bun-vs-node-js-vs-deno-comparison/">Bun vs Node vs Deno 2026 (daily.dev)</a></li>
+      <li><a href="https://www.pkgpulse.com/guides/react-vs-solidjs-2026">React vs SolidJS 2026 (pkgpulse.com)</a></li>
+      <li><a href="https://www.javacodegeeks.com/2025/06/qwik-vs-react-vs-solidjs-the-future-of-web-performance.html">Qwik vs React vs SolidJS (javacodegeeks.com)</a></li>
+      <li><a href="https://www.pkgpulse.com/guides/htmx-vs-alpinejs-2026">HTMX vs Alpine.js 2026 (pkgpulse.com)</a></li>
+      <li><a href="https://encore.dev/articles/gin-vs-echo-vs-fiber">Gin vs Echo vs Fiber (encore.dev)</a></li>
+      <li><a href="https://tech-insider.org/rust-vs-go-2026/">Rust vs Go — benchmarks 2026 (tech-insider.org)</a></li>
+      <li><a href="https://dev.to/pockit_tools/rest-vs-graphql-vs-trpc-vs-grpc-in-2026-the-definitive-guide-to-choosing-your-api-layer-1j8m">REST vs GraphQL vs tRPC vs gRPC 2026 (dev.to)</a></li>
+      <li><a href="https://encore.dev/articles/supabase-alternatives">Alternativas a Supabase 2026 (encore.dev)</a></li>
+      <li><a href="https://developer.puter.com/blog/pocketbase-alternatives/">Alternativas a PocketBase (developer.puter.com)</a></li>
+      <li><a href="https://massivegrid.com/blog/dokploy-vs-coolify-vs-caprover/">Dokploy vs Coolify vs CapRover 2026 (massivegrid.com)</a></li>
+      <li><a href="https://robertoargandona.com/yape-y-plin-para-emprendedores-en-peru-como-cobrar-y-crecer-en-2026/">Yape y Plin para emprendedores 2026 (robertoargandona.com)</a></li>
+      <li><a href="https://www.twilio.com/en-us/whatsapp/pricing">WhatsApp Messaging Pricing (twilio.com)</a></li>
+      <li><a href="https://chatarmin.com/en/blog/twilio-whats-app-api">Twilio WhatsApp API — pricing 2026 (chatarmin.com)</a></li>
+    </ul>
+  </section>
+
+  <footer>
+    Auditoría basada en el código actual del repositorio (api/, public/assets/js/, database/), en docs/hosting-gratis.md, y en búsquedas web realizadas el 20 de julio de 2026 (ver Fuentes). Las puntuaciones de los medidores son juicio cualitativo comparativo para este proyecto puntual, no benchmarks universales. Los precios y límites de capas gratuitas cambian con frecuencia — antes de comprometerte con una opción, verificá la página oficial vigente.
+  </footer>
+
+</div>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
+</script>

@@ -70,6 +70,10 @@ npm run e2e:report   # abre el último reporte
 
 El detalle de riesgos conocidos, plan de mejoras por plazo, e ideas innovadoras evaluadas (con investigación de mercado) está en [`public/plan-mejoras.html`](public/plan-mejoras.html) — abrilo directamente en el navegador, tiene un checklist que guarda tu progreso en el propio navegador.
 
+## Auditoría tecnológica
+
+Evaluación de qué stack conviene para este proyecto (frontend, backend, base de datos/BaaS, hosting), con investigación de mercado de julio 2026, arquitectura propuesta y once combos posibles con pros/contras: [`docs/auditoria-tecnologica.html`](docs/auditoria-tecnologica.html) — abrilo directamente en el navegador. También existe una versión interactiva publicada en [claude.ai/code/artifact/3cc0f5a9-1bd8-4453-9f4f-a0a387a2c7b8](https://claude.ai/code/artifact/3cc0f5a9-1bd8-4453-9f4f-a0a387a2c7b8) (puede requerir sesión iniciada en claude.ai); el HTML local en `docs/` es la copia durable que no depende de ese servicio.
+
 ## Pendiente de limpieza
 
 Hay algunos archivos sueltos en la raíz que parecen scripts de un solo uso y están pendientes de archivar o eliminar: `insertar_enero.php`, `resumen_enero.php`, `prueba.html`, `PLANTILLA_HISTORICO.tsv`, `PLANTILLA_HISTORICO_ENERO_FEBRERO.txt`.
