@@ -776,6 +776,13 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>Cero curva de aprendizaje adicional</li><li>Cero riesgo de romper lo que ya funciona</li><li>Podés sumar validación (Respect/Validation) sin adoptar un framework completo</li></ul></div>
         <div><h5>En contra</h5><ul><li>No resuelve la causa raíz: sin ORM, los snapshots van a seguir desincronizándose</li><li>Cada módulo nuevo repite el mismo patrón manual</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p>Sin nuevo framework — solo se suma disciplina. <code>composer require respect/validation</code> para validar entrada en cada <code>index.php</code>, y <code>phpunit/phpunit</code> para fijar el comportamiento actual de las funciones clave (ej. <code>buildCobrosProgramados()</code> en <code>api/modules/cobros/common.php</code>) con tests antes de tocar nada.</p>
+          <p><b>Primer paso concreto:</b> escribir 5-8 tests que reproduzcan el bug de esta sesión (que un cambio en <code>ocupacion_unidad.monto_alquiler</code> se refleje o no en el cobro, según corresponda) para que no vuelva a pasar en silencio. No cambia la estructura de carpetas.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -788,6 +795,20 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>Reutiliza el 100% de tu conocimiento PHP existente</li><li>Resuelve exactamente el bug de sincronización de hoy</li><li>Inertia evita construir una API REST separada del frontend</li></ul></div>
         <div><h5>En contra</h5><ul><li>Deja atrás el hosting compartido gratuito instantáneo (InfinityFree)</li><li>Requiere aprender a administrar un VPS Linux propio</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p><code>laravel new alquileres --starter-kit=vue</code> instala Laravel 13 con Inertia + Vue 3 ya conectados (el mismo starter kit oficial también ofrece <code>react</code>, <code>svelte</code> o <code>livewire</code> con el mismo comando — Inertia funciona igual de bien con cualquiera de las cuatro, así que elegir React en vez de Vue acá no cuesta nada de la ventaja "sin API separada").</p>
+          <p><b>Orden de migración por módulo:</b></p>
+          <ol>
+            <li><b>Unidades y Personas</b> — CRUD simple, ideal para aprender el patrón Eloquent sin presión.</li>
+            <li><b>Ocupaciones</b> — introduce la primera relación real (<code>Persona::hasMany(Ocupacion::class)</code>).</li>
+            <li><b>Cobros/Liquidación</b> — el módulo con más lógica; <code>Ocupacion::hasMany(Cobro::class)</code> reemplaza a mano lo que hoy hace <code>buildCobrosProgramados()</code>. Acá es donde el ORM paga su costo de adopción.</li>
+            <li>El resto de los módulos.</li>
+          </ol>
+          <p>Auth con <code>laravel/breeze</code> (login funcionando en minutos). Estructura resultante: <code>app/Models/*.php</code>, <code>app/Http/Controllers/*.php</code>, <code>resources/js/Pages/*.vue</code> (o <code>.tsx</code> si elegís React) — cada carpeta de <code>api/modules/</code> se vuelve un Controller + un Model + una carpeta de páginas.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -800,6 +821,13 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>Todo el estado vive en el servidor — menos superficie para bugs de sincronización cliente/servidor</li><li>Un solo lenguaje (PHP) de punta a punta, ni siquiera Vue de por medio</li></ul></div>
         <div><h5>En contra</h5><ul><li>Sin JavaScript la página queda inoperable (no hay degradación gradual)</li><li>Menos preparado que una SPA si algún día querés una app móvil nativa</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p>Mismo <code>laravel new</code>, pero con <code>--starter-kit=livewire</code>. Cada módulo se vuelve un componente <code>app/Livewire/Cobros/Index.php</code> + su vista <code>resources/views/livewire/cobros/index.blade.php</code> — sin rutas API que mantener aparte, todo el estado vive en el componente PHP.</p>
+          <p><b>Primer paso concreto:</b> convertir primero "Avisos" (el módulo más simple, sin lógica de cálculo) para aprender el patrón de componentes Livewire antes de tocar Cobros/Liquidación.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -812,6 +840,13 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>El servidor sigue devolviendo HTML como hoy — cero SPA que aprender</li><li>Curva de aprendizaje bajísima (htmx son ~14KB de atributos HTML)</li></ul></div>
         <div><h5>En contra</h5><ul><li>No trae ORM ni auth — seguís necesitando resolver eso por separado</li><li>Ecosistema/comunidad más chicos que cualquier SPA framework</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p>No requiere Composer ni Node: sumás <code>&lt;script src="htmx.org"&gt;</code> y Alpine.js a <code>public/index.html</code>. En cada <code>api/modules/X/index.php</code>, revisás si llegó el header <code>HX-Request</code> y, si sí, devolvés un fragmento HTML (ej. las <code>&lt;tr&gt;</code> de la tabla) en vez del JSON actual.</p>
+          <p><b>Primer paso concreto:</b> convertir "Cobros" (la tabla que vimos hoy) para que "Registrar pago" haga un <code>hx-post</code> que devuelva solo la fila actualizada, sin recargar toda la tabla ni reescribir <code>public/assets/js/modules/cobros.js</code> completo.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -824,6 +859,13 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>ORM, auth y validación incluidos de fábrica, igual que Laravel</li><li>Un solo lenguaje (TypeScript) en todo el proyecto</li></ul></div>
         <div><h5>En contra</h5><ul><li>Comunidad ~100x más chica que NestJS — menos ayuda si te trabás</li><li>Reescritura completa del backend, no incremental</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p><code>npm create adonisjs@latest -- --kit=api</code> instala el esqueleto; <code>node ace configure @adonisjs/lucid</code> agrega el ORM. Los modelos (<code>app/models/unidad.ts</code>, <code>ocupacion.ts</code>, <code>cobro.ts</code>) usan decoradores muy similares a Eloquent. <code>node ace make:migration</code> por tabla replica tu esquema actual.</p>
+          <p><b>Riesgo a presupuestar:</b> no es técnico sino de soporte — si te trabás con algo específico de Lucid, hay mucho menos contenido en español/inglés que para Laravel. Calculá más tiempo leyendo código fuente de la librería que tutoriales.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -836,6 +878,13 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>Ecosistema Node más grande y maduro de todo el grupo</li><li>Tipado end-to-end posible (tRPC o cliente generado desde OpenAPI)</li></ul></div>
         <div><h5>En contra</h5><ul><li>Reescribir el backend completo desde cero</li><li>Abandona por completo el hosting PHP gratuito ya investigado</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p><code>nest new alquileres-api</code> + <code>npx prisma init</code>. El <code>schema.prisma</code> define tus 13 tablas (<code>prisma db pull</code> puede generarlo automáticamente leyendo tu MySQL actual). Cada módulo Nest (<code>src/cobros/cobros.module.ts</code>, <code>.controller.ts</code>, <code>.service.ts</code>) mapea 1:1 a una carpeta de <code>api/modules/</code> actual.</p>
+          <p><b>Nota sobre frontend:</b> tanto React como Vue funcionan igual de bien contra esta API. Si te interesa React específicamente por la opción de expandir a mobile más adelante (React Native), este es el combo donde más sentido tiene esa elección — ya estás asumiendo el costo completo de reescribir el backend, así que no perdés nada extra.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -848,6 +897,13 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>Auth y almacenamiento resueltos de fábrica, capa gratuita real</li><li>Base de datos gestionada, sin administrar servidor</li></ul></div>
         <div><h5>En contra</h5><ul><li>Vendor lock-in fuerte con Supabase</li><li>La lógica de liquidación con IGV vive en funciones serverless con cold starts</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p>Creás el proyecto en supabase.com y en el SQL Editor pegás tu esquema actual traducido a Postgres (los tipos son casi idénticos; lo único que cambia es <code>AUTO_INCREMENT</code> → <code>GENERATED ALWAYS AS IDENTITY</code>). El frontend usa el cliente <code>@supabase/supabase-js</code> directo, sin backend propio, para los CRUDs simples (Unidades, Personas).</p>
+          <p>La liquidación de luz con IGV — la única lógica que no podés dejarle al cliente por seguridad — va en una <b>Edge Function</b> (Deno/TypeScript) que Supabase expone como endpoint HTTP propio.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -860,6 +916,13 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>Auth, panel admin, API REST/realtime y ORM-like ya incluidos en un solo binario Go</li><li>100% gratis y open source, sin límites artificiales de un proveedor cloud</li></ul></div>
         <div><h5>En contra</h5><ul><li>SQLite embebido: peor encaje que MySQL/Postgres para reportes analíticos complejos a futuro</li><li>Reglas de negocio complejas (liquidación proporcional) requieren "hooks" en Go/JS embebido, un modelo distinto al que conocés</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p>Bajás <code>pocketbase.exe</code>, corrés <code>./pocketbase serve</code>, y desde el panel admin (<code>127.0.0.1:8090/_/</code>) creás una "collection" por tabla (unidades, personas, ocupacion_unidad, cobros_mensuales...) con sus campos y relaciones a mano, sin escribir SQL.</p>
+          <p>La lógica de negocio (liquidación proporcional) va en <code>pb_hooks/main.pb.js</code>, un archivo JavaScript que corre dentro del mismo binario cuando se crea/edita un registro — es el único punto real de curva de aprendizaje del combo, porque es un patrón de "hooks" distinto a todo lo que conocés hoy.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -872,6 +935,13 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>Documentación OpenAPI automática de fábrica</li><li>Python es el mejor lenguaje del grupo para análisis de datos futuro (pandas, gráficos)</li></ul></div>
         <div><h5>En contra</h5><ul><li>Reescritura completa; abandona PHP</li><li>Sin panel admin incluido (a diferencia de Django)</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p><code>fastapi</code> + <code>sqlalchemy</code> + <code>alembic</code>. Cada tabla es una clase Python en <code>app/models/</code>, cada módulo un router (<code>app/routers/cobros.py</code>) incluido en <code>main.py</code>. La documentación OpenAPI se genera sola en <code>/docs</code> apenas levantás el servidor.</p>
+          <p><b>Cuándo arrancar por acá:</b> si en paralelo ya estás pensando en reportes de morosidad/ocupación con pandas — no tiene sentido como reemplazo aislado del backend actual sin ese objetivo de datos.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -884,6 +954,12 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>Capa gratuita muy generosa y cero costo de egreso de datos</li><li>Cero servidor que administrar, escala automáticamente</li></ul></div>
         <div><h5>En contra</h5><ul><li>D1 (SQLite distribuido) maneja peor transacciones multi-tabla complejas que un Postgres/MySQL tradicional</li><li>Ecosistema y modelo mental (Workers, límite de CPU de 10ms por invocación) más alejados de lo que conocés hoy</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p><code>wrangler d1 create</code> + <code>wrangler.toml</code> con el binding. Se incluye por transparencia, pero migrar acá implica reescribir tanto el backend (Hono/TypeScript) como traducir todo el esquema a D1 (SQLite) — con el mismo problema de concurrencia/transacciones multi-tabla ya señalado. No se detalla más porque no es un camino que valga la pena recorrer para este proyecto.</p>
+        </div>
+      </details>
     </div>
 
     <div class="bundle">
@@ -896,6 +972,12 @@ flowchart TB
         <div><h5>A favor</h5><ul><li>Rendimiento y consumo de recursos insuperables del grupo completo</li><li>Correría cómodo hasta en el VPS gratis más chico</li></ul></div>
         <div><h5>En contra</h5><ul><li>Sin ORM maduro tipo Eloquent — todo el trabajo de validación/relaciones se vuelve manual</li><li>La curva de aprendizaje no se justifica para 9 unidades cobrando una vez al mes</li></ul></div>
       </div>
+      <details class="dive">
+        <summary>Ver propuesta de implementación</summary>
+        <div class="dive-body">
+          <p><code>go mod init</code> + Fiber, o <code>cargo new</code> + Axum. Implementaría cada módulo como un handler + struct manual (sin ORM), con toda la validación de relaciones escrita a mano — exactamente el tipo de trabajo que Laravel/Eloquent te ahorra. No se detalla más porque el veredicto de la auditoría ya es "no recomendado" para este caso.</p>
+        </div>
+      </details>
     </div>
   </section>
 
@@ -956,8 +1038,3 @@ flowchart TB
   </footer>
 
 </div>
-
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: true, securityLevel: 'loose' });
-</script>
