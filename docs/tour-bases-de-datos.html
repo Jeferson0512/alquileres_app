@@ -1,0 +1,667 @@
+<title>Tour de bases de datos — instalación y cómo se ven</title>
+<style>
+  :root{
+    --bg:#F3F4F7; --surface:#FFFFFF; --surface-2:#E8EAF0; --surface-3:#DEE1EA;
+    --ink:#171A21; --ink-2:#4B4F5C; --ink-muted:#7A7E8C; --border:#D8DBE3;
+    --accent:#1D5FA8; --accent-2:#4A8FD1; --accent-soft:#E4EDF9;
+    --good:#1F8A5F; --good-soft:#E4F3EC;
+    --warn:#B7791F; --warn-soft:#F8EFDD;
+    --crit:#B23B3B; --crit-soft:#F7E7E5;
+    --font-display:Georgia,'Iowan Old Style','Palatino Linotype',serif;
+    --font-body:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:'Cascadia Code',Consolas,'SF Mono',Menlo,monospace;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161C; --surface:#1B1E26; --surface-2:#242732; --surface-3:#2C303D;
+      --ink:#E7E9F0; --ink-2:#B7BAC6; --ink-muted:#8A8D9A; --border:#333748;
+      --accent:#6EA6E8; --accent-2:#4A8FD1; --accent-soft:#1E2A3D;
+      --good:#4CAF7D; --good-soft:#173226;
+      --warn:#D9A441; --warn-soft:#332612;
+      --crit:#D9706A; --crit-soft:#331E1C;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14161C; --surface:#1B1E26; --surface-2:#242732; --surface-3:#2C303D;
+    --ink:#E7E9F0; --ink-2:#B7BAC6; --ink-muted:#8A8D9A; --border:#333748;
+    --accent:#6EA6E8; --accent-2:#4A8FD1; --accent-soft:#1E2A3D;
+    --good:#4CAF7D; --good-soft:#173226;
+    --warn:#D9A441; --warn-soft:#332612;
+    --crit:#D9706A; --crit-soft:#331E1C;
+  }
+  :root[data-theme="light"]{
+    --bg:#F3F4F7; --surface:#FFFFFF; --surface-2:#E8EAF0; --surface-3:#DEE1EA;
+    --ink:#171A21; --ink-2:#4B4F5C; --ink-muted:#7A7E8C; --border:#D8DBE3;
+    --accent:#1D5FA8; --accent-2:#4A8FD1; --accent-soft:#E4EDF9;
+    --good:#1F8A5F; --good-soft:#E4F3EC;
+    --warn:#B7791F; --warn-soft:#F8EFDD;
+    --crit:#B23B3B; --crit-soft:#F7E7E5;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-body); line-height:1.55; font-size:16px; -webkit-font-smoothing:antialiased; }
+  a{ color:var(--accent); }
+  a:focus-visible, summary:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; border-radius:2px; }
+  .shell{ max-width:1080px; margin:0 auto; padding:0 24px 96px; }
+
+  nav.toc{ position:sticky; top:0; z-index:20; background:var(--bg); border-bottom:1px solid var(--border); backdrop-filter:blur(6px); }
+  nav.toc .inner{ max-width:1080px; margin:0 auto; padding:12px 24px; display:flex; gap:4px; overflow-x:auto; }
+  nav.toc a{ flex:0 0 auto; text-decoration:none; color:var(--ink-2); font-size:13px; padding:6px 12px; border-radius:6px; white-space:nowrap; }
+  nav.toc a:hover{ background:var(--surface-2); color:var(--ink); }
+
+  header.masthead{ padding:56px 0 32px; }
+  .eyebrow{ font-family:var(--font-mono); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); margin:0 0 14px; }
+  h1{ font-family:var(--font-display); font-weight:400; font-size:clamp(28px,4vw,40px); line-height:1.15; margin:0 0 14px; text-wrap:balance; }
+  .dek{ font-size:17px; color:var(--ink-2); max-width:66ch; margin:0 0 22px; text-wrap:balance; }
+  .meta-row{ display:flex; flex-wrap:wrap; gap:10px 22px; font-size:13px; color:var(--ink-muted); font-family:var(--font-mono); }
+
+  section{ padding:48px 0; border-top:1px solid var(--border); }
+  section:first-of-type{ border-top:none; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; flex-wrap:wrap; }
+  .sec-num{ font-family:var(--font-mono); font-size:13px; color:var(--ink-muted); }
+  h2{ font-family:var(--font-display); font-weight:400; font-size:26px; margin:0; text-wrap:balance; }
+  .sec-dek{ color:var(--ink-2); max-width:72ch; margin:6px 0 24px; }
+  p{ margin:0 0 14px; max-width:74ch; }
+  ul, ol{ margin:0 0 14px; padding-left:22px; max-width:74ch; }
+  li{ margin-bottom:5px; }
+  code{ font-family:var(--font-mono); font-size:.9em; background:var(--surface-2); padding:.1em .4em; border-radius:4px; }
+  strong{ font-weight:650; }
+
+  .callout{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:22px 24px; }
+  .callout p{ max-width:none; }
+  .callout ul{ max-width:none; margin:8px 0 0; }
+
+  .pill{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600; padding:4px 10px; border-radius:100px; white-space:nowrap; }
+  .pill::before{ content:""; width:6px; height:6px; border-radius:50%; }
+  .pill-good{ background:var(--good-soft); color:var(--good); } .pill-good::before{ background:var(--good); }
+  .pill-warn{ background:var(--warn-soft); color:var(--warn); } .pill-warn::before{ background:var(--warn); }
+  .pill-crit{ background:var(--crit-soft); color:var(--crit); } .pill-crit::before{ background:var(--crit); }
+  .pill-mono{ font-family:var(--font-mono); background:var(--surface-2); color:var(--ink-2); }
+
+  /* ---- DB entry ---- */
+  .db-entry{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:26px 28px; margin:24px 0; }
+  .db-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:6px; }
+  .db-title{ font-family:var(--font-display); font-size:22px; }
+  .db-tag{ font-size:13.5px; color:var(--ink-muted); margin-top:3px; }
+  .db-cols{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:18px; align-items:start; }
+  @media (max-width:860px){ .db-cols{ grid-template-columns:1fr; } }
+  .db-cols h4{ font-size:12px; text-transform:uppercase; letter-spacing:.06em; font-family:var(--font-mono); color:var(--ink-muted); margin:0 0 10px; }
+  .steps-list{ counter-reset:s; list-style:none; padding:0; margin:0; max-width:none; }
+  .steps-list li{ counter-increment:s; display:flex; gap:10px; margin-bottom:10px; font-size:14px; color:var(--ink-2); }
+  .steps-list li::before{ content:counter(s); font-family:var(--font-mono); font-size:11px; color:var(--accent); background:var(--accent-soft); border-radius:50%; width:19px; height:19px; flex:0 0 19px; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .steps-list code{ display:inline-block; margin-top:3px; }
+  .fit-note{ font-size:13.5px; color:var(--ink-2); border-top:1px solid var(--border); margin-top:18px; padding-top:14px; max-width:none; }
+  .fit-note b{ color:var(--ink); }
+
+  /* ---- Mock browser frame ---- */
+  .mock{ border:1px solid var(--border); border-radius:10px; overflow:hidden; background:var(--surface-2); font-size:12px; }
+  .mock-bar{ display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--surface-3); border-bottom:1px solid var(--border); }
+  .mock-dots{ display:flex; gap:5px; }
+  .mock-dots span{ width:8px; height:8px; border-radius:50%; background:var(--ink-muted); opacity:.35; }
+  .mock-url{ font-family:var(--font-mono); font-size:10.5px; color:var(--ink-muted); background:var(--surface); border:1px solid var(--border); border-radius:5px; padding:3px 8px; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .mock-body{ display:grid; grid-template-columns:100px 1fr; min-height:190px; }
+  .mock-side{ background:var(--surface); border-right:1px solid var(--border); padding:8px 0; }
+  .mock-side .item{ padding:6px 12px; font-size:11px; color:var(--ink-muted); border-left:2px solid transparent; }
+  .mock-side .item.on{ color:var(--ink); font-weight:600; background:var(--accent-soft); border-left-color:var(--accent); }
+  .mock-main{ background:var(--surface); padding:10px 12px; overflow:auto; }
+  .mock-main .mhead{ font-size:11px; font-weight:700; color:var(--ink); margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+  .mock-btn{ font-family:var(--font-mono); font-size:9.5px; background:var(--accent); color:#fff; padding:2px 7px; border-radius:4px; }
+
+  .mock-table{ width:100%; border-collapse:collapse; font-size:10.5px; }
+  .mock-table th{ text-align:left; background:var(--surface-2); color:var(--ink-muted); padding:5px 8px; font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .mock-table td{ padding:5px 8px; border-bottom:1px solid var(--border); color:var(--ink-2); white-space:nowrap; }
+  .mock-table tr:nth-child(even) td{ background:var(--surface-2); }
+
+  .mock-tree .node{ padding:3px 0 3px 14px; color:var(--ink-2); position:relative; }
+  .mock-tree .node.l2{ padding-left:26px; }
+  .mock-tree .node.l3{ padding-left:38px; color:var(--ink-muted); }
+  .mock-tree .node b{ color:var(--ink); }
+
+  .mock-query{ background:var(--ink); color:#B9D2F0; font-family:var(--font-mono); font-size:10.5px; padding:8px 10px; border-radius:6px; margin-bottom:8px; white-space:pre; overflow-x:auto; }
+  :root[data-theme="light"] .mock-query, @media (prefers-color-scheme:light){ .mock-query{ background:#1E2430; } }
+
+  .mock-doc{ background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; margin-bottom:6px; font-family:var(--font-mono); font-size:10px; color:var(--ink-2); }
+  .mock-doc .k{ color:var(--accent); }
+
+  .mock-cards{ display:flex; gap:8px; flex-wrap:wrap; }
+  .mock-card{ background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-size:10.5px; color:var(--ink-2); min-width:90px; }
+  .mock-card b{ display:block; color:var(--ink); font-size:11px; margin-bottom:2px; }
+
+  footer{ padding:40px 0 0; color:var(--ink-muted); font-size:13px; }
+</style>
+
+<nav class="toc">
+  <div class="inner">
+    <a href="#intro">Por dónde empezar</a>
+    <a href="#mysql">MySQL/MariaDB</a>
+    <a href="#postgres">PostgreSQL</a>
+    <a href="#mongodb">MongoDB</a>
+    <a href="#sqlite">SQLite</a>
+    <a href="#pocketbase">PocketBase</a>
+    <a href="#supabase">Supabase</a>
+    <a href="#neon">Neon</a>
+    <a href="#firebase">Firebase</a>
+    <a href="#appwrite">Appwrite</a>
+    <a href="#convex">Convex</a>
+    <a href="#turso">Turso</a>
+    <a href="#d1">Cloudflare D1</a>
+  </div>
+</nav>
+
+<div class="shell">
+  <header class="masthead">
+    <p class="eyebrow">Complemento de la auditoría tecnológica</p>
+    <h1>Tour de bases de datos: instalación y cómo se ven por dentro</h1>
+    <p class="dek">Las doce opciones mencionadas en la auditoría, agrupadas por cómo se instalan (servidor local, un solo binario, o solo una cuenta en la nube). Cada una incluye pasos reales de instalación y una recreación fiel de su interfaz — no son capturas de pantalla literales (las interfaces cambian de versión en versión), pero sí reproducen con precisión dónde está cada cosa.</p>
+    <div class="meta-row">
+      <span>12 tecnologías</span>
+      <span>4 grupos por modelo de instalación</span>
+      <span>Investigación: 20 jul. 2026</span>
+    </div>
+  </header>
+
+  <section id="intro">
+    <div class="sec-head"><span class="sec-num">00</span><h2>Por dónde empezar según lo que ya decidimos</h2></div>
+    <div class="callout">
+      <p>No hace falta instalar las doce. Según la auditoría, estas son las que realmente importan para tu situación:</p>
+      <ul>
+        <li><b>MySQL/MariaDB</b> — ya la tenés corriendo en XAMPP; el tour es para que conozcas <b>phpMyAdmin</b> a fondo, ya que hoy es tu única ventana a la base de datos.</li>
+        <li><b>PostgreSQL + pgAdmin</b> — si algún día seguís el Combo 07 o 09 (Supabase/FastAPI), o simplemente querés comparar motores en tu propia PC.</li>
+        <li><b>PocketBase</b> — para probar el Combo 08 en un fin de semana, tal como sugiere la recomendación final.</li>
+        <li><b>Supabase</b> y <b>Neon</b> — para probar el Combo 07 (BaaS gestionado) sin instalar nada, solo con una cuenta gratuita.</li>
+      </ul>
+      <p style="margin-top:10px;">El resto (MongoDB, SQLite, Firebase, Appwrite, Convex, Turso, Cloudflare D1) están igual de completos abajo, por si te interesa explorarlos o simplemente entender por qué quedaron descartados en la auditoría.</p>
+    </div>
+  </section>
+
+  <section id="mysql">
+    <div class="sec-head"><span class="sec-num">01</span><h2>MySQL / MariaDB</h2><span class="pill pill-good">Ya la tenés</span></div>
+    <p class="sec-dek">Servidor local clásico. La administrás con <b>phpMyAdmin</b>, que ya viene dentro de tu XAMPP.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">phpMyAdmin</div><div class="db-tag">Panel web de administración incluido en XAMPP</div></div><span class="pill pill-mono">localhost/phpmyadmin</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Cómo abrirla (ya instalada)</h4>
+          <ol class="steps-list">
+            <li>Con Apache y MySQL corriendo en el panel de XAMPP, abrí el navegador.</li>
+            <li>Entrá a <code>http://localhost/phpmyadmin</code></li>
+            <li>En la columna izquierda vas a ver <code>alquileres_db</code> — hacé clic para desplegar sus tablas.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">localhost/phpmyadmin</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item">information_schema</div>
+                <div class="item on">alquileres_db</div>
+                <div class="item" style="padding-left:20px">unidades</div>
+                <div class="item" style="padding-left:20px">ocupacion_unidad</div>
+                <div class="item" style="padding-left:20px">cobros_mensuales</div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">unidades — Examinar <span class="mock-btn">SQL</span></div>
+                <table class="mock-table">
+                  <tr><th>id_unidad</th><th>codigo_unidad</th><th>tarifa_alquiler_base</th></tr>
+                  <tr><td>12</td><td>302</td><td>600.00</td></tr>
+                  <tr><td>13</td><td>401</td><td>360.00</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>Lo que ya sabés hacer sin darte cuenta:</b> la pestaña "SQL" arriba de cualquier tabla es exactamente donde ejecuté los <code>UPDATE</code> que corrigieron el precio de la unidad 302 esta sesión — todo lo que hicimos por línea de comandos también se puede hacer clickeando ahí.</p>
+    </div>
+  </section>
+
+  <section id="postgres">
+    <div class="sec-head"><span class="sec-num">02</span><h2>PostgreSQL + pgAdmin</h2><span class="pill pill-warn">Instalación nueva</span></div>
+    <p class="sec-dek">El motor relacional más rico en funciones del grupo. Se administra con pgAdmin 4, un panel muy similar en espíritu a phpMyAdmin pero más denso en opciones.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">pgAdmin 4</div><div class="db-tag">Se instala junto con PostgreSQL o por separado</div></div><span class="pill pill-mono">app de escritorio</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Instalación en Windows</h4>
+          <ol class="steps-list">
+            <li>Descargá el instalador desde <code>postgresql.org/download/windows</code> (incluye pgAdmin 4 por defecto).</li>
+            <li>Corré el <code>.exe</code>, elegí puerto (5432 por defecto) y contraseña del usuario <code>postgres</code>.</li>
+            <li>Al terminar, se abre pgAdmin desde el menú inicio — te pide esa misma contraseña para conectar al "Server" local.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">pgAdmin 4 — Object Explorer</div></div>
+            <div class="mock-body">
+              <div class="mock-side" style="width:120px;">
+                <div class="mock-tree">
+                  <div class="node"><b>Servers</b></div>
+                  <div class="node l2">PostgreSQL 17</div>
+                  <div class="node l3">alquileres_db</div>
+                  <div class="node l3">Schemas ▸ public</div>
+                  <div class="node l3">Tables (13)</div>
+                </div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">Query Tool <span class="mock-btn">▶ Execute</span></div>
+                <div class="mock-query">SELECT codigo_unidad, tarifa_alquiler_base
+FROM unidades WHERE codigo_unidad = '302';</div>
+                <table class="mock-table">
+                  <tr><th>codigo_unidad</th><th>tarifa_alquiler_base</th></tr>
+                  <tr><td>302</td><td>600.00</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>Diferencia clave con phpMyAdmin:</b> el árbol de la izquierda tiene un nivel más (Servidor → Base → Esquema → Tabla) porque Postgres organiza todo dentro de "schemas". La pestaña "Query Tool" es el equivalente directo a la pestaña "SQL" de phpMyAdmin.</p>
+    </div>
+  </section>
+
+  <section id="mongodb">
+    <div class="sec-head"><span class="sec-num">03</span><h2>MongoDB + Compass</h2><span class="pill pill-crit">Descartada en la auditoría</span></div>
+    <p class="sec-dek">Se incluye por completitud — tu dominio es relacional, no de documentos, así que no aplica aquí. Igual vale conocer cómo se ve, porque es muy distinta a las anteriores.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">MongoDB Compass</div><div class="db-tag">Cliente gráfico oficial, se instala junto con MongoDB Community</div></div><span class="pill pill-mono">app de escritorio</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Instalación en Windows</h4>
+          <ol class="steps-list">
+            <li>Descargá el instalador <code>.msi</code> desde <code>mongodb.com/try/download/community</code>.</li>
+            <li>Elegí setup "Complete" y marcá la casilla "Install MongoDB Compass" (viene tildada por defecto).</li>
+            <li>Al terminar, Compass abre solo y te ofrece conectar a <code>mongodb://localhost:27017</code>.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">Compass — localhost:27017</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item on">alquileres</div>
+                <div class="item" style="padding-left:20px">cobros</div>
+                <div class="item" style="padding-left:20px">unidades</div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">cobros — Documents</div>
+                <div class="mock-doc">{ <span class="k">"_id"</span>: ObjectId("..."), <span class="k">"unidad"</span>: "302",
+  <span class="k">"inquilino"</span>: "Christian Moya",
+  <span class="k">"montos"</span>: { <span class="k">"alquiler"</span>: 600, <span class="k">"luz"</span>: 39.7 } }</div>
+                <div class="mock-doc">{ <span class="k">"_id"</span>: ObjectId("..."), <span class="k">"unidad"</span>: "401", ... }</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>La diferencia visual que importa:</b> no hay filas/columnas fijas como en phpMyAdmin/pgAdmin — cada "documento" es un bloque tipo JSON que puede tener campos distintos entre sí. Cómodo para datos irregulares, incómodo quirúrgico para algo como "el total de un cobro debe sumar exactamente sus 6 conceptos", que en SQL se garantiza con una simple relación.</p>
+    </div>
+  </section>
+
+  <section id="sqlite">
+    <div class="sec-head"><span class="sec-num">04</span><h2>SQLite + DB Browser</h2><span class="pill pill-warn">Un solo archivo</span></div>
+    <p class="sec-dek">No es un servidor — es un archivo <code>.db</code> en tu disco. Lo abrís con un visor liviano.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">DB Browser for SQLite</div><div class="db-tag">Visor/editor gratuito, sin instalar ningún servidor</div></div><span class="pill pill-mono">app portable</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Instalación</h4>
+          <ol class="steps-list">
+            <li>Descargá desde <code>sqlitebrowser.org</code> (hay versión portable, sin instalador).</li>
+            <li>Abrí la app → "Open Database" → elegí cualquier archivo <code>.sqlite</code>/<code>.db</code>.</li>
+            <li>Si no tenés uno, "New Database" crea un archivo vacío al instante.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">DB Browser — alquileres.db</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item on">Browse Data</div>
+                <div class="item">Database Structure</div>
+                <div class="item">Execute SQL</div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">Table: unidades ▾</div>
+                <table class="mock-table">
+                  <tr><th>id_unidad</th><th>codigo_unidad</th><th>tarifa_alquiler_base</th></tr>
+                  <tr><td>12</td><td>302</td><td>600.0</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>Por qué no aplica aquí:</b> perfecto para una app de un solo usuario en una sola PC, pero tu app la usan varios inquilinos/pestañas al mismo tiempo desde un servidor web — justo el escenario donde SQLite (archivo único, un escritor a la vez) empieza a incomodar.</p>
+    </div>
+  </section>
+
+  <section id="pocketbase">
+    <div class="sec-head"><span class="sec-num">05</span><h2>PocketBase</h2><span class="pill pill-good">Combo 08 de la auditoría</span></div>
+    <p class="sec-dek">Un ejecutable de ~15MB que es servidor + base de datos + panel admin, todo junto. El más rápido de "instalar" de toda la lista: no instala nada, solo lo ejecutás.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">Panel admin de PocketBase</div><div class="db-tag">Se abre solo en el navegador al iniciar el binario</div></div><span class="pill pill-mono">127.0.0.1:8090/_/</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Instalación (Windows)</h4>
+          <ol class="steps-list">
+            <li>Descargá el <code>.zip</code> para Windows desde <code>pocketbase.io/docs</code> — es un solo <code>pocketbase.exe</code>.</li>
+            <li>Descomprimilo en una carpeta y abrí una terminal ahí.</li>
+            <li>Corré: <code>./pocketbase.exe serve</code></li>
+            <li>Abrí <code>http://127.0.0.1:8090/_/</code> — la primera vez te pide crear la cuenta admin (email + contraseña).</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">127.0.0.1:8090/_/</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item on">Collections</div>
+                <div class="item" style="padding-left:20px">unidades</div>
+                <div class="item" style="padding-left:20px">cobros</div>
+                <div class="item">Auth (usuarios)</div>
+                <div class="item">Logs</div>
+                <div class="item">Settings</div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">unidades <span class="mock-btn">+ New record</span></div>
+                <table class="mock-table">
+                  <tr><th>id</th><th>codigo_unidad</th><th>tarifa_alquiler_base</th></tr>
+                  <tr><td>rec_9x2f</td><td>302</td><td>600</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>Lo más distinto:</b> "Collections" en la barra izquierda son tus tablas, pero se crean con un formulario visual (nombre de campo + tipo: texto, número, relación, archivo) en vez de escribir <code>CREATE TABLE</code>. La pestaña "Auth" ya te da usuarios/login funcionando sin escribir una línea de código — es la pieza que hoy no tenés en absoluto.</p>
+    </div>
+  </section>
+
+  <section id="supabase">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Supabase</h2><span class="pill pill-good">Combo 07 de la auditoría</span></div>
+    <p class="sec-dek">Nada que instalar en tu PC: creás cuenta gratis y trabajás desde el navegador (Supabase Studio). Por dentro corre PostgreSQL real.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">Supabase Studio</div><div class="db-tag">Dashboard web de tu proyecto</div></div><span class="pill pill-mono">supabase.com/dashboard</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Cómo empezar</h4>
+          <ol class="steps-list">
+            <li>Entrá a <code>supabase.com</code> → "Start your project" → login con GitHub.</li>
+            <li>"New Project" → elegí nombre, contraseña de base y región (elegí una cercana a Perú, ej. São Paulo).</li>
+            <li>Esperá ~2 minutos mientras aprovisiona el proyecto — te lleva directo al Studio.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">supabase.com/dashboard/project/…</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item on">Table Editor</div>
+                <div class="item">SQL Editor</div>
+                <div class="item">Authentication</div>
+                <div class="item">Storage</div>
+                <div class="item">Edge Functions</div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">unidades ▾ ×  cobros_mensuales × <span class="mock-btn">+ Insert</span></div>
+                <table class="mock-table">
+                  <tr><th>id_unidad</th><th>codigo_unidad</th><th>tarifa_alquiler_base</th></tr>
+                  <tr><td>12</td><td>302</td><td>600.00</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>Lo más parecido a lo que ya conocés:</b> "Table Editor" es casi idéntico en espíritu a la vista "Examinar" de phpMyAdmin, pero editable tipo planilla de Excel. La novedad real está en "Authentication" (login de usuarios) y "Storage" (subida de archivos) — ambos resueltos sin escribir backend, algo que en tu stack actual no existe en absoluto.</p>
+    </div>
+  </section>
+
+  <section id="neon">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Neon</h2><span class="pill pill-good">Reemplazo vigente de PlanetScale</span></div>
+    <p class="sec-dek">PostgreSQL "serverless" con una idea distintiva: podés crear una copia completa de tu base (una "branch") en segundos, como una rama de git.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">Neon Console</div><div class="db-tag">Dashboard web + SQL Editor integrado</div></div><span class="pill pill-mono">console.neon.tech</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Cómo empezar</h4>
+          <ol class="steps-list">
+            <li>Entrá a <code>neon.tech</code> → "Sign up" (GitHub/Google).</li>
+            <li>"Create a project" → nombre + versión de Postgres (17 recomendada).</li>
+            <li>Te da la cadena de conexión al toque; el SQL Editor ya está listo para usar sin instalar cliente alguno.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">console.neon.tech/app/projects/…</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item">Branches</div>
+                <div class="item on">SQL Editor</div>
+                <div class="item">Tables</div>
+                <div class="item">Monitoring</div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">main ▾ <span class="mock-btn">▶ Run</span></div>
+                <div class="mock-query">SELECT * FROM unidades
+WHERE codigo_unidad = '302';</div>
+                <table class="mock-table">
+                  <tr><th>codigo_unidad</th><th>tarifa_alquiler_base</th></tr>
+                  <tr><td>302</td><td>600.00</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>La pieza que no tiene ningún otro de la lista:</b> "Branches" arriba de todo te deja duplicar toda la base (con datos y todo) en segundos para probar una migración riesgosa sin miedo a romper la real — algo que con MySQL/phpMyAdmin implica un backup manual completo.</p>
+    </div>
+  </section>
+
+  <section id="firebase">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Firebase</h2><span class="pill pill-crit">Descartada en la auditoría</span></div>
+    <p class="sec-dek">La consola de Google para Firestore (su base NoSQL). Se incluye por completitud — el costo por uso es menos predecible que las demás BaaS.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">Firebase Console</div><div class="db-tag">Panel web de Google Cloud</div></div><span class="pill pill-mono">console.firebase.google.com</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Cómo empezar</h4>
+          <ol class="steps-list">
+            <li>Entrá con una cuenta Google a <code>console.firebase.google.com</code>.</li>
+            <li>"Add project" → nombre → Google genera un ID único.</li>
+            <li>En el menú "Build" → "Firestore Database" → "Create database" → elegí ubicación.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">console.firebase.google.com/project/…</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item">Authentication</div>
+                <div class="item on">Firestore Database</div>
+                <div class="item">Storage</div>
+                <div class="item">Functions</div>
+              </div>
+              <div class="mock-main">
+                <div class="mock-tree">
+                  <div class="node"><b>cobros</b> (colección)</div>
+                  <div class="node l2">doc_a1b2</div>
+                  <div class="node l3">unidad: "302"</div>
+                  <div class="node l3">alquiler: 600</div>
+                  <div class="node l2">doc_c3d4</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>Diferencia visual clave:</b> navegás por un árbol de "colección → documento → campo" en vez de una grilla de filas/columnas — se parece más a explorar carpetas que a ver una tabla. Cómodo para apps móviles con datos jerárquicos, incómodo para reportes tipo "total cobrado por unidad este mes" que en SQL es una sola consulta.</p>
+    </div>
+  </section>
+
+  <section id="appwrite">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Appwrite</h2><span class="pill pill-warn">Cloud o self-hosted</span></div>
+    <p class="sec-dek">Similar en espíritu a Supabase/Firebase, con la ventaja de poder auto-hospedarlo gratis en tu propio VPS sin límites artificiales.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">Appwrite Console</div><div class="db-tag">Cloud (appwrite.io) o self-hosted vía Docker</div></div><span class="pill pill-mono">cloud.appwrite.io</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Self-hosted en un VPS (Docker)</h4>
+          <ol class="steps-list">
+            <li><code>docker run -it --rm --volume /var/run/docker.sock:/var/run/docker.sock --volume "$(pwd)"/appwrite:/usr/src/code/appwrite:rw --entrypoint="install" appwrite/appwrite:1.9.5</code></li>
+            <li>El instalador web corre en el puerto 20080; esperá ~30s y abrí <code>http://tu-servidor</code>.</li>
+            <li>Wizard de 4 pasos: dominio, base de datos (MariaDB o MongoDB), y creación de la cuenta admin.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">cloud.appwrite.io/console/project-…</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item">Auth</div>
+                <div class="item on">Databases</div>
+                <div class="item">Storage</div>
+                <div class="item">Functions</div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">Databases</div>
+                <div class="mock-cards">
+                  <div class="mock-card"><b>unidades</b>9 documentos</div>
+                  <div class="mock-card"><b>cobros_mensuales</b>63 documentos</div>
+                  <div class="mock-card"><b>personas</b>10 documentos</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>Requisito real a tener en cuenta:</b> auto-hospedado necesita mínimo 4GB de RAM (corre ~20 contenedores Docker) — en un VPS gratis de Oracle con 12GB alcanza cómodo, pero descartá probarlo en una máquina chica.</p>
+    </div>
+  </section>
+
+  <section id="convex">
+    <div class="sec-head"><span class="sec-num">10</span><h2>Convex</h2><span class="pill pill-crit">Sin capa gratuita duradera</span></div>
+    <p class="sec-dek">Base de datos "reactiva" pensada para apps en tiempo real. Se incluye por completitud del panorama BaaS.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">Convex Dashboard</div><div class="db-tag">Panel web, deploy vía CLI</div></div><span class="pill pill-mono">dashboard.convex.dev</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Cómo empezar</h4>
+          <ol class="steps-list">
+            <li><code>npm create convex@latest</code> en tu proyecto.</li>
+            <li>El CLI abre el navegador para loguearte y crear el deployment.</li>
+            <li><code>npx convex dev</code> sincroniza tu esquema/funciones y abre el dashboard.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">dashboard.convex.dev/d/…</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item on">Data</div>
+                <div class="item">Functions</div>
+                <div class="item">Logs</div>
+                <div class="item">Schedules</div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">cobros <span class="mock-btn">Filter</span></div>
+                <table class="mock-table">
+                  <tr><th>unidad</th><th>alquiler</th><th>total</th></tr>
+                  <tr><td>302</td><td>600</td><td>684.70</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>Por qué no avanza más en la auditoría:</b> el modelo (funciones TypeScript reactivas en vez de SQL) es potente para apps colaborativas en vivo, pero no aporta nada específico a un cobro mensual que se genera una vez al mes — y sin capa gratuita duradera, no compite con Neon/Supabase para este caso.</p>
+    </div>
+  </section>
+
+  <section id="turso">
+    <div class="sec-head"><span class="sec-num">11</span><h2>Turso</h2><span class="pill pill-good">Vigente, más CLI que dashboard</span></div>
+    <p class="sec-dek">SQLite "distribuido" — a diferencia de las demás BaaS, la experiencia principal es por terminal, no por panel web.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">Turso CLI</div><div class="db-tag">Panel web más simple; lo fuerte es la terminal</div></div><span class="pill pill-mono">turso db shell</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Cómo empezar</h4>
+          <ol class="steps-list">
+            <li><code>curl -sSfL https://get.tur.so/install.sh | bash</code></li>
+            <li><code>turso auth signup</code> (o login si ya tenés cuenta).</li>
+            <li><code>turso db create alquileres</code> → <code>turso db shell alquileres</code> te abre un prompt SQL directo.</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">terminal — turso db shell alquileres</div></div>
+            <div class="mock-body" style="grid-template-columns:1fr;">
+              <div class="mock-main">
+                <div class="mock-query">alquileres&gt; SELECT codigo_unidad, tarifa_alquiler_base
+       FROM unidades WHERE codigo_unidad='302';
+codigo_unidad  tarifa_alquiler_base
+302            600.0
+alquileres&gt; _</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>La diferencia más honesta de toda la lista:</b> no hay una grilla clickeable tipo Supabase — es una terminal SQL directa (o clientes de terceros no oficiales como DB Pro). Encaja mejor si ya te sentís cómodo en línea de comandos que si preferís todo con mouse.</p>
+    </div>
+  </section>
+
+  <section id="d1">
+    <div class="sec-head"><span class="sec-num">12</span><h2>Cloudflare D1</h2><span class="pill pill-crit">No corre PHP — solo por completitud</span></div>
+    <p class="sec-dek">SQLite dentro del ecosistema Cloudflare Workers. Se administra por CLI (Wrangler) con un panel web de apoyo.</p>
+    <div class="db-entry">
+      <div class="db-head"><div><div class="db-title">Wrangler CLI + Cloudflare Dashboard</div><div class="db-tag">CLI principal, dashboard como complemento visual</div></div><span class="pill pill-mono">wrangler d1</span></div>
+      <div class="db-cols">
+        <div>
+          <h4>Cómo empezar</h4>
+          <ol class="steps-list">
+            <li><code>npm install -g wrangler</code> → <code>wrangler login</code>.</li>
+            <li><code>wrangler d1 create alquileres-db</code> — te da un ID para tu <code>wrangler.toml</code>.</li>
+            <li>También podés crearla sin CLI: dashboard de Cloudflare → Workers &amp; Pages → D1 → "Create Database".</li>
+          </ol>
+        </div>
+        <div>
+          <h4>Cómo se ve</h4>
+          <div class="mock">
+            <div class="mock-bar"><div class="mock-dots"><span></span><span></span><span></span></div><div class="mock-url">dash.cloudflare.com/…/workers/d1</div></div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="item on">Tables</div>
+                <div class="item">Console</div>
+                <div class="item">Settings</div>
+              </div>
+              <div class="mock-main">
+                <div class="mhead">unidades</div>
+                <table class="mock-table">
+                  <tr><th>id_unidad</th><th>codigo_unidad</th><th>tarifa_alquiler_base</th></tr>
+                  <tr><td>12</td><td>302</td><td>600</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="fit-note"><b>Por qué queda fuera de tu decisión real:</b> D1 solo existe dentro de Cloudflare Workers (JavaScript/WASM) — no hay forma de correr tu PHP actual ahí. Solo sería relevante si en algún momento reescribís todo en el Combo 10 (edge-first), que la auditoría ya marca como mal encaje para tu dominio.</p>
+    </div>
+  </section>
+
+  <footer>
+    Guía complementaria a <code>docs/auditoria-tecnologica.html</code>. Las interfaces mostradas son recreaciones simplificadas y fieles a la distribución real de cada panel (basadas en documentación oficial de julio 2026), no capturas de pantalla literales — las versiones exactas cambian con el tiempo, pero la ubicación de cada elemento (sidebar de tablas/colecciones, editor SQL, grilla de resultados) es representativa de lo que vas a encontrar al instalarlas.
+  </footer>
+</div>
