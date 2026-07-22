@@ -2,11 +2,11 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Index({ usuarios, roles }) {
+export default function Index({ usuarios, roles, personasDisponibles }) {
     const { flash, auth } = usePage().props;
     const [creating, setCreating] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '', email: '', password: '', rol: roles[roles.length - 1] ?? '',
+        name: '', email: '', password: '', rol: roles[roles.length - 1] ?? '', id_persona: '',
     });
 
     const puede = (p) => auth.permissions.includes(p);
@@ -31,9 +31,14 @@ export default function Index({ usuarios, roles }) {
 
             <div className="mb-4 flex items-center justify-between">
                 {puede('usuarios.asignar_rol') && (
-                    <Link href={route('usuarios.roles')} className="text-sm font-medium text-primary hover:text-primary-dark">
-                        Roles y permisos →
-                    </Link>
+                    <div className="flex gap-4">
+                        <Link href={route('usuarios.roles')} className="text-sm font-medium text-primary hover:text-primary-dark">
+                            Roles y permisos →
+                        </Link>
+                        <Link href={route('usuarios.perfil-campos')} className="text-sm font-medium text-primary hover:text-primary-dark">
+                            Campos del perfil →
+                        </Link>
+                    </div>
                 )}
                 {puede('usuarios.crear') && !creating && (
                     <button onClick={() => setCreating(true)} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark">
@@ -66,6 +71,18 @@ export default function Index({ usuarios, roles }) {
                         </select>
                         {errors.rol && <p className="mt-1 text-xs text-danger">{errors.rol}</p>}
                     </div>
+                    {data.rol === 'Inquilino' && (
+                        <div>
+                            <label className="block text-xs font-medium text-gray-500">Inquilino (persona) *</label>
+                            <select value={data.id_persona} onChange={(e) => setData('id_persona', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm">
+                                <option value="">-- elegir --</option>
+                                {personasDisponibles.map((p) => (
+                                    <option key={p.id_persona} value={p.id_persona}>{p.nombres} {p.apellidos}</option>
+                                ))}
+                            </select>
+                            {errors.id_persona && <p className="mt-1 text-xs text-danger">{errors.id_persona}</p>}
+                        </div>
+                    )}
                     <div className="col-span-2 flex gap-2 sm:col-span-4">
                         <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
                         <button type="button" onClick={() => { setCreating(false); reset(); }} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>

@@ -82,7 +82,7 @@ CREATE TABLE `cobros_mensuales` (
   CONSTRAINT `fk_cobro_periodo` FOREIGN KEY (`id_periodo`) REFERENCES `periodos` (`id_periodo`),
   CONSTRAINT `fk_cobro_persona` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`),
   CONSTRAINT `fk_cobro_unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidades` (`id_unidad`)
-) ENGINE=InnoDB AUTO_INCREMENT=474 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=477 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -108,7 +108,7 @@ CREATE TABLE `cobros_mensuales_detalle` (
   CONSTRAINT `fk_cobro_detalle_cobro` FOREIGN KEY (`id_cobro`) REFERENCES `cobros_mensuales` (`id_cobro`),
   CONSTRAINT `fk_cobro_detalle_concepto` FOREIGN KEY (`id_concepto`) REFERENCES `conceptos_cobro` (`id_concepto`),
   CONSTRAINT `chk_cobro_detalle_monto_no_cero` CHECK (`monto_programado` <> 0)
-) ENGINE=InnoDB AUTO_INCREMENT=947 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=956 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -302,7 +302,7 @@ CREATE TABLE `lecturas_unidad` (
   CONSTRAINT `fk_lectura_ocupacion` FOREIGN KEY (`id_ocupacion`) REFERENCES `ocupacion_unidad` (`id_ocupacion`),
   CONSTRAINT `fk_lectura_periodo` FOREIGN KEY (`id_periodo`) REFERENCES `periodos` (`id_periodo`),
   CONSTRAINT `fk_lectura_unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidades` (`id_unidad`)
-) ENGINE=InnoDB AUTO_INCREMENT=132 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=134 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -343,7 +343,7 @@ CREATE TABLE `liquidacion_luz_detalle` (
   CONSTRAINT `fk_liq_persona` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`),
   CONSTRAINT `fk_liq_recibo` FOREIGN KEY (`id_recibo_luz`) REFERENCES `recibos_luz` (`id_recibo_luz`),
   CONSTRAINT `fk_liq_unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidades` (`id_unidad`)
-) ENGINE=InnoDB AUTO_INCREMENT=878 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=880 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -358,7 +358,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -445,7 +445,7 @@ CREATE TABLE `ocupacion_unidad` (
   KEY `idx_ocupacion_fechas` (`fecha_inicio`,`fecha_fin`),
   CONSTRAINT `fk_ocupacion_persona` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`),
   CONSTRAINT `fk_ocupacion_unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidades` (`id_unidad`)
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -477,7 +477,7 @@ CREATE TABLE `pagos` (
   KEY `idx_pagos_estado` (`estado`),
   KEY `idx_pagos_origen` (`origen_registro`),
   CONSTRAINT `fk_pago_cobro` FOREIGN KEY (`id_cobro`) REFERENCES `cobros_mensuales` (`id_cobro`)
-) ENGINE=InnoDB AUTO_INCREMENT=110 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=111 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -569,7 +569,7 @@ CREATE TABLE `pagos_auditoria` (
   KEY `idx_pago_auditoria_pago` (`id_pago`),
   KEY `idx_pago_auditoria_accion_fecha` (`accion`,`created_at`),
   CONSTRAINT `fk_pago_auditoria_pago` FOREIGN KEY (`id_pago`) REFERENCES `pagos` (`id_pago`)
-) ENGINE=InnoDB AUTO_INCREMENT=269 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=272 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -595,7 +595,7 @@ CREATE TABLE `pagos_detalle` (
   CONSTRAINT `fk_pago_detalle_cobro_detalle` FOREIGN KEY (`id_cobro_detalle`) REFERENCES `cobros_mensuales_detalle` (`id_cobro_detalle`),
   CONSTRAINT `fk_pago_detalle_pago` FOREIGN KEY (`id_pago`) REFERENCES `pagos` (`id_pago`),
   CONSTRAINT `chk_pago_detalle_monto_positivo` CHECK (`monto_aplicado` > 0)
-) ENGINE=InnoDB AUTO_INCREMENT=270 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=273 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -970,7 +970,26 @@ CREATE TABLE `personas` (
   UNIQUE KEY `uq_persona_documento` (`tipo_documento`,`numero_documento`),
   KEY `idx_personas_nombre` (`apellidos`,`nombres`),
   KEY `idx_personas_estado` (`estado`)
-) ENGINE=InnoDB AUTO_INCREMENT=40 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `profile_fields`
+--
+
+DROP TABLE IF EXISTS `profile_fields`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `profile_fields` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `code` varchar(40) NOT NULL,
+  `label` varchar(100) NOT NULL,
+  `required` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `profile_fields_code_unique` (`code`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1047,7 +1066,7 @@ CREATE TABLE `roles` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `roles_name_guard_name_unique` (`name`,`guard_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1140,7 +1159,7 @@ CREATE TABLE `unidades` (
   KEY `idx_unidades_piso` (`piso`),
   KEY `idx_unidades_estado` (`estado`),
   CONSTRAINT `fk_unidades_inmueble` FOREIGN KEY (`id_inmueble`) REFERENCES `inmuebles` (`id_inmueble`)
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1164,7 +1183,7 @@ CREATE TABLE `unidades_medidor_compartido` (
   KEY `idx_medidor_titular` (`id_unidad_titular`),
   CONSTRAINT `fk_medidor_dependiente` FOREIGN KEY (`id_unidad_dependiente`) REFERENCES `unidades` (`id_unidad`),
   CONSTRAINT `fk_medidor_titular` FOREIGN KEY (`id_unidad_titular`) REFERENCES `unidades` (`id_unidad`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1176,6 +1195,7 @@ DROP TABLE IF EXISTS `users`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `users` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_persona` int(10) unsigned DEFAULT NULL,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
   `email_verified_at` timestamp NULL DEFAULT NULL,
@@ -1184,8 +1204,10 @@ CREATE TABLE `users` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `users_email_unique` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  UNIQUE KEY `users_email_unique` (`email`),
+  UNIQUE KEY `users_id_persona_unique` (`id_persona`),
+  CONSTRAINT `users_id_persona_foreign` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1299,4 +1321,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-22  0:52:10
+-- Dump completed on 2026-07-22  2:09:25

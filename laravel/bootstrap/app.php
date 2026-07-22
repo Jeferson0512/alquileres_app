@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'perfil.completo' => \App\Http\Middleware\EnsurePerfilCompleto::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

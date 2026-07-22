@@ -10,7 +10,10 @@ use App\Http\Controllers\LecturaController;
 use App\Http\Controllers\LiquidacionController;
 use App\Http\Controllers\OcupacionController;
 use App\Http\Controllers\PagoController;
+use App\Http\Controllers\PerfilCampoController;
 use App\Http\Controllers\PeriodoController;
+use App\Http\Controllers\PortalController;
+use App\Http\Controllers\PortalPerfilController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReciboController;
@@ -113,6 +116,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/usuarios/roles', [RolePermissionController::class, 'index'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles');
     Route::post('/usuarios/roles', [RolePermissionController::class, 'store'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.store');
     Route::patch('/usuarios/roles/toggle', [RolePermissionController::class, 'toggle'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.toggle');
+    Route::get('/usuarios/perfil-campos', [PerfilCampoController::class, 'index'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.perfil-campos');
+    Route::patch('/usuarios/perfil-campos/{campo}', [PerfilCampoController::class, 'update'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.perfil-campos.update');
+});
+
+// Portal de Inquilinos (solo lectura) -- fuera del panel admin, sin el
+// catalogo de permisos {modulo}.{accion}, gateado solo por rol.
+Route::middleware(['auth', 'role:Inquilino'])->prefix('portal')->name('portal.')->group(function () {
+    Route::get('/completar-perfil', [PortalPerfilController::class, 'edit'])->name('perfil.completar');
+    Route::patch('/completar-perfil', [PortalPerfilController::class, 'update'])->name('perfil.actualizar');
+
+    Route::middleware('perfil.completo')->group(function () {
+        Route::get('/', [PortalController::class, 'index'])->name('index');
+    });
 });
 
 require __DIR__.'/auth.php';

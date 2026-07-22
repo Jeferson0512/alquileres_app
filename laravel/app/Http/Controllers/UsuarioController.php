@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Persona;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +19,10 @@ class UsuarioController extends Controller
             'usuarios' => User::with('roles:id,name')->orderBy('name')->get(['id', 'name', 'email'])
                 ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email, 'rol' => $u->roles->first()?->name]),
             'roles' => Role::orderBy('name')->pluck('name'),
+            'personasDisponibles' => Persona::inquilinos()
+                ->whereDoesntHave('user')
+                ->orderBy('nombres')
+                ->get(['id_persona', 'nombres', 'apellidos']),
         ]);
     }
 
@@ -28,12 +33,14 @@ class UsuarioController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', Password::min(8)],
             'rol' => ['required', 'string', 'exists:roles,name'],
+            'id_persona' => ['required_if:rol,Inquilino', 'nullable', 'integer', 'exists:personas,id_persona', 'unique:users,id_persona'],
         ]);
 
         $usuario = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => $data['password'],
+            'id_persona' => $data['id_persona'] ?? null,
         ]);
         $usuario->assignRole($data['rol']);
 

@@ -283,6 +283,40 @@ class CobroService
         })->all();
     }
 
+    /**
+     * Historial completo de cobros de UN inquilino (todos los periodos, no
+     * uno solo) para el portal de solo lectura. A diferencia de
+     * listarParaPeriodo(), no calcula deuda_anterior cruzada entre cobros
+     * -- al listar todos los periodos de una vez, el saldo_pendiente propio
+     * de cada fila ya cuenta la historia completa.
+     */
+    public function listarParaPersona(int $idPersona): array
+    {
+        $rows = DB::table('cobros_mensuales as c')
+            ->join('periodos as per', 'per.id_periodo', '=', 'c.id_periodo')
+            ->join('unidades as u', 'u.id_unidad', '=', 'c.id_unidad')
+            ->where('c.id_persona', $idPersona)
+            ->where('c.estado_pago', '!=', 'ANULADO')
+            ->orderByDesc('per.anio')->orderByDesc('per.mes')
+            ->get([
+                'c.id_cobro', 'c.id_periodo', 'per.anio', 'per.mes',
+                'c.id_unidad', 'u.codigo_unidad', 'u.nombre_unidad',
+                'c.monto_alquiler', 'c.monto_luz', 'c.ajuste_minimo_luz',
+                'c.monto_agua', 'c.monto_gas', 'c.otros_conceptos', 'c.total_cobrar',
+                'c.fecha_vencimiento', 'c.estado_pago',
+            ]);
+
+        return $rows->map(function ($row) {
+            $pagadoTotal = (float) Pago::where('id_cobro', $row->id_cobro)->where('estado', 'REGISTRADO')->sum('monto_pagado');
+            $saldoPendiente = max((float) $row->total_cobrar - $pagadoTotal, 0);
+
+            return array_merge((array) $row, [
+                'pagado_total' => round($pagadoTotal, 2),
+                'saldo_pendiente' => round($saldoPendiente, 2),
+            ]);
+        })->all();
+    }
+
     // -------------------- forceRefresh --------------------
 
     private function detalleCodesByCobro(array $cobroIds): array
