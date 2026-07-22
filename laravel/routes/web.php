@@ -1,8 +1,13 @@
 <?php
 
+use App\Http\Controllers\CobroController;
+use App\Http\Controllers\CobroOverrideController;
 use App\Http\Controllers\ConfigCobranzaController;
 use App\Http\Controllers\InquilinoController;
 use App\Http\Controllers\LecturaController;
+use App\Http\Controllers\LiquidacionController;
+use App\Http\Controllers\OcupacionController;
+use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReciboController;
@@ -70,6 +75,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/recibo', [ReciboController::class, 'index'])->middleware('permission:recibo.ver')->name('recibo.index');
     Route::post('/recibo', [ReciboController::class, 'store'])->middleware('permission:recibo.editar')->name('recibo.store');
     Route::post('/recibo/copiar-anterior', [ReciboController::class, 'copyFromPrevious'])->middleware('permission:recibo.editar')->name('recibo.copiar-anterior');
+
+    // Ocupaciones
+    Route::get('/ocupaciones', [OcupacionController::class, 'index'])->middleware('permission:ocupaciones.ver')->name('ocupaciones.index');
+    Route::post('/ocupaciones', [OcupacionController::class, 'store'])->middleware('permission:ocupaciones.crear')->name('ocupaciones.store');
+    Route::patch('/ocupaciones/{ocupacion}', [OcupacionController::class, 'update'])->middleware('permission:ocupaciones.crear')->name('ocupaciones.update');
+    Route::delete('/ocupaciones/{ocupacion}', [OcupacionController::class, 'destroy'])->middleware('permission:ocupaciones.finalizar')->name('ocupaciones.destroy');
+
+    // Liquidación
+    Route::get('/liquidacion', [LiquidacionController::class, 'index'])->middleware('permission:liquidacion.ver')->name('liquidacion.index');
+    Route::post('/liquidacion/generar', [LiquidacionController::class, 'generar'])->middleware('permission:liquidacion.generar')->name('liquidacion.generar');
+
+    // Cobros
+    Route::get('/cobros', [CobroController::class, 'index'])->middleware('permission:cobros.ver')->name('cobros.index');
+    Route::get('/cobros/detalle', [CobroController::class, 'detail'])->middleware('permission:cobros.ver')->name('cobros.detalle');
+    Route::post('/cobros/generar', [CobroController::class, 'generar'])->middleware('permission:cobros.generar')->name('cobros.generar');
+    Route::post('/cobros/forzar-actualizacion', [CobroController::class, 'forceRefresh'])->middleware('permission:cobros.forzar_actualizacion')->name('cobros.forzar');
+    Route::post('/cobros/overrides', [CobroOverrideController::class, 'store'])->middleware('permission:cobros.generar')->name('cobros.overrides.store');
+    Route::delete('/cobros/overrides/{override}', [CobroOverrideController::class, 'destroy'])->middleware('permission:cobros.generar')->name('cobros.overrides.destroy');
+
+    // Pagos
+    Route::post('/pagos', [PagoController::class, 'store'])->middleware('permission:cobros.pagos.registrar')->name('pagos.store');
+    Route::post('/pagos/{pago}/reversa', [PagoController::class, 'reversa'])->middleware('permission:cobros.pagos.anular')->name('pagos.reversa');
+    Route::get('/pagos/{pago}/auditoria', [PagoController::class, 'auditoria'])->middleware('permission:cobros.ver')->name('pagos.auditoria');
 });
 
 require __DIR__.'/auth.php';
