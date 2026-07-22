@@ -76,6 +76,10 @@ Evaluación de qué stack conviene para este proyecto (frontend, backend, base d
 
 Complemento con instalación y tour visual de las 12 bases de datos/BaaS mencionadas en la auditoría: [`docs/tour-bases-de-datos.html`](docs/tour-bases-de-datos.html) (también publicado en [claude.ai/code/artifact/ab04c366-2536-45a1-9bcb-8b5642693dc5](https://claude.ai/code/artifact/ab04c366-2536-45a1-9bcb-8b5642693dc5)).
 
+## Migración a Laravel + React + TailAdmin (en curso)
+
+Documento de requerimientos (usuarios/roles, casos de uso, catálogo de permisos, sistema de diseño) que guía la migración: [`docs/requerimientos-proyecto.md`](docs/requerimientos-proyecto.md). El plan de migración por fases vive en `C:\Users\Jeferson\.claude\plans\streamed-inventing-kay.md`.
+
 ## Pendiente de limpieza
 
 Hay algunos archivos sueltos en la raíz que parecen scripts de un solo uso y están pendientes de archivar o eliminar: `insertar_enero.php`, `resumen_enero.php`, `prueba.html`, `PLANTILLA_HISTORICO.tsv`, `PLANTILLA_HISTORICO_ENERO_FEBRERO.txt`.
