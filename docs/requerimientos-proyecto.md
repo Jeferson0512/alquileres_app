@@ -37,7 +37,7 @@
 | **Admin** | El propietario/administrador (vos) | Acceso total a los 13 módulos |
 | **Supervisor** | Alguien que ayuda a operar (lecturas, pagos) | Sin acceso a tarifas, usuarios, ni anulación de pagos |
 | **Propietario** | Dueño de un inmueble, si en el futuro hay varios con dueños distintos | Ve solo lo de su(s) inmueble(s) — **no implementado en esta fase**, solo reservado el rol |
-| **Inquilino** | Hoy es solo un dato (`personas`), no un usuario del sistema | **Candidato a usuario futuro**: login propio para ver su estado de cuenta desde el celular (conecta con la idea de app móvil en React Native evaluada en la auditoría). **Fuera de alcance de esta migración.** |
+| **Inquilino** | Ya es un usuario del sistema | **Implementado** (post-migración): portal web de solo lectura — ve su unidad, alquiler vigente, historial de cobros/saldo y avisos de vencimiento de su propio contrato. Cuenta creada por el Admin desde Usuarios, vinculada a su `Persona` (`users.id_persona`). Al primer ingreso (y en cada ingreso mientras falte algo) debe completar los datos de perfil marcados obligatorios en Usuarios → Campos del perfil (`profile_fields`, hoy celular y dirección). Si su ocupación deja de estar ACTIVO (contrato finalizado/anulado), se le cierra la sesión automáticamente en la siguiente visita. La app móvil nativa (React Native) sigue fuera de alcance — ver punto 8. |
 
 ## 3. Casos de uso principales
 
@@ -126,7 +126,8 @@ usuarios.ver | usuarios.crear | usuarios.asignar_rol
 
 ## 8. Fuera de alcance de esta migración (backlog documentado)
 
-- Login de inquilinos / app móvil para ellos.
+- App móvil nativa (React Native) para inquilinos — el portal web (ver punto 2) cubre la necesidad inmediata; la app nativa queda como proyecto aparte si se decide construirla.
 - Multi-inmueble con dueños (`PROPIETARIO`) distintos operando en paralelo.
 - Integración real de pasarela de pago — hoy solo se reserva la tabla `payment_gateway_transactions` con un campo `provider` genérico; elegir entre Mercado Pago, Culqi o Niubiz e integrar su SDK queda para después.
 - Buscador global y centro de notificaciones en el layout.
+- **Prorrateo por días cuando un inquilino se muda a mitad de periodo** (auditado, pendiente de diseño): hoy el sistema **no prorratea nada por calendario** — el alquiler y las tarifas fijas (agua/gas/mantenimiento) se cobran completos por mes sin importar cuántos días ocupó la unidad; lo único que ya varía naturalmente es la luz, porque se cobra por consumo real de kWh, no por días. Si alguien se va a mitad de mes, el resultado depende de si se le registró o no una lectura final ese periodo — no hay una regla explícita. Este vacío es preexistente a toda esta migración (no se introdujo ni se corrigió acá) y afecta a Ocupaciones/Liquidación/Cobros en conjunto — queda pendiente de auditar y diseñar en una sesión propia antes de tocar esa lógica.

@@ -121,8 +121,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Portal de Inquilinos (solo lectura) -- fuera del panel admin, sin el
-// catalogo de permisos {modulo}.{accion}, gateado solo por rol.
-Route::middleware(['auth', 'role:Inquilino'])->prefix('portal')->name('portal.')->group(function () {
+// catalogo de permisos {modulo}.{accion}, gateado solo por rol. La
+// ocupacion.activa corre primero: si el contrato ya finalizo, ni siquiera
+// llega a completar-perfil, se le cierra la sesion directamente.
+Route::middleware(['auth', 'role:Inquilino', 'ocupacion.activa'])->prefix('portal')->name('portal.')->group(function () {
     Route::get('/completar-perfil', [PortalPerfilController::class, 'edit'])->name('perfil.completar');
     Route::patch('/completar-perfil', [PortalPerfilController::class, 'update'])->name('perfil.actualizar');
 

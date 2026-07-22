@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'perfil.completo' => \App\Http\Middleware\EnsurePerfilCompleto::class,
+            'ocupacion.activa' => \App\Http\Middleware\EnsureOcupacionActiva::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
