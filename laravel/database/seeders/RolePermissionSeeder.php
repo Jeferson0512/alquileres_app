@@ -39,6 +39,8 @@ class RolePermissionSeeder extends Seeder
         'config_cobranza.ver', 'config_cobranza.editar',
 
         'usuarios.ver', 'usuarios.crear', 'usuarios.asignar_rol',
+
+        'consultas.ver', 'consultas.gestionar',
     ];
 
     /**

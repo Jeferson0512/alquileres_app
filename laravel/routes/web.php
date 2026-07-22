@@ -4,7 +4,9 @@ use App\Http\Controllers\AvisoController;
 use App\Http\Controllers\CobroController;
 use App\Http\Controllers\CobroOverrideController;
 use App\Http\Controllers\ConfigCobranzaController;
+use App\Http\Controllers\ContactInquiryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\InquilinoController;
 use App\Http\Controllers\LecturaController;
 use App\Http\Controllers\LiquidacionController;
@@ -21,18 +23,11 @@ use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\UnidadController;
 use App\Http\Controllers\UnidadMedidorCompartidoController;
 use App\Http\Controllers\UsuarioController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::get('/', [LandingController::class, 'index'])->name('landing');
+Route::post('/contacto', [LandingController::class, 'store'])->name('landing.contacto');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'permission:dashboard.ver'])
@@ -118,6 +113,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/usuarios/roles/toggle', [RolePermissionController::class, 'toggle'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.toggle');
     Route::get('/usuarios/perfil-campos', [PerfilCampoController::class, 'index'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.perfil-campos');
     Route::patch('/usuarios/perfil-campos/{campo}', [PerfilCampoController::class, 'update'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.perfil-campos.update');
+
+    // Consultas (del landing page publico)
+    Route::get('/consultas', [ContactInquiryController::class, 'index'])->middleware('permission:consultas.ver')->name('consultas.index');
+    Route::patch('/consultas/{consulta}', [ContactInquiryController::class, 'update'])->middleware('permission:consultas.gestionar')->name('consultas.update');
 });
 
 // Portal de Inquilinos (solo lectura) -- fuera del panel admin, sin el

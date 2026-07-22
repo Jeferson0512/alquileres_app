@@ -82,7 +82,7 @@ CREATE TABLE `cobros_mensuales` (
   CONSTRAINT `fk_cobro_periodo` FOREIGN KEY (`id_periodo`) REFERENCES `periodos` (`id_periodo`),
   CONSTRAINT `fk_cobro_persona` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`),
   CONSTRAINT `fk_cobro_unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidades` (`id_unidad`)
-) ENGINE=InnoDB AUTO_INCREMENT=477 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=479 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -108,7 +108,7 @@ CREATE TABLE `cobros_mensuales_detalle` (
   CONSTRAINT `fk_cobro_detalle_cobro` FOREIGN KEY (`id_cobro`) REFERENCES `cobros_mensuales` (`id_cobro`),
   CONSTRAINT `fk_cobro_detalle_concepto` FOREIGN KEY (`id_concepto`) REFERENCES `conceptos_cobro` (`id_concepto`),
   CONSTRAINT `chk_cobro_detalle_monto_no_cero` CHECK (`monto_programado` <> 0)
-) ENGINE=InnoDB AUTO_INCREMENT=956 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=962 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -187,6 +187,29 @@ CREATE TABLE `config_cobranza` (
   PRIMARY KEY (`id_config`),
   UNIQUE KEY `uk_config_cobranza_inmueble` (`id_inmueble`)
 ) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `contact_inquiries`
+--
+
+DROP TABLE IF EXISTS `contact_inquiries`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `contact_inquiries` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(150) NOT NULL,
+  `email` varchar(150) DEFAULT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  `message` text NOT NULL,
+  `unit_id` int(10) unsigned DEFAULT NULL,
+  `status` enum('NUEVO','CONTACTADO','DESCARTADO') NOT NULL DEFAULT 'NUEVO',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `contact_inquiries_unit_id_foreign` (`unit_id`),
+  CONSTRAINT `contact_inquiries_unit_id_foreign` FOREIGN KEY (`unit_id`) REFERENCES `unidades` (`id_unidad`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -358,7 +381,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -414,7 +437,7 @@ CREATE TABLE `modules` (
   UNIQUE KEY `uq_module_code` (`code`),
   KEY `idx_module_parent` (`parent_module_id`),
   CONSTRAINT `fk_module_parent` FOREIGN KEY (`parent_module_id`) REFERENCES `modules` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -436,7 +459,7 @@ CREATE TABLE `ocupacion_unidad` (
   `observacion` varchar(255) DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp(),
-  `activa_flag` tinyint(4) GENERATED ALWAYS AS (if(`estado` = 'ACTIVO',`id_unidad`,NULL)) STORED,
+  `activa_flag` int(10) unsigned GENERATED ALWAYS AS (if(`estado` = 'ACTIVO',`id_unidad`,NULL)) STORED,
   PRIMARY KEY (`id_ocupacion`),
   UNIQUE KEY `uq_ocupacion_unidad_activa` (`id_unidad`,`activa_flag`),
   KEY `idx_ocupacion_unidad` (`id_unidad`),
@@ -445,7 +468,7 @@ CREATE TABLE `ocupacion_unidad` (
   KEY `idx_ocupacion_fechas` (`fecha_inicio`,`fecha_fin`),
   CONSTRAINT `fk_ocupacion_persona` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`),
   CONSTRAINT `fk_ocupacion_unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidades` (`id_unidad`)
-) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -942,7 +965,7 @@ CREATE TABLE `permissions` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=39 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -970,7 +993,7 @@ CREATE TABLE `personas` (
   UNIQUE KEY `uq_persona_documento` (`tipo_documento`,`numero_documento`),
   KEY `idx_personas_nombre` (`apellidos`,`nombres`),
   KEY `idx_personas_estado` (`estado`)
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=51 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1159,7 +1182,7 @@ CREATE TABLE `unidades` (
   KEY `idx_unidades_piso` (`piso`),
   KEY `idx_unidades_estado` (`estado`),
   CONSTRAINT `fk_unidades_inmueble` FOREIGN KEY (`id_inmueble`) REFERENCES `inmuebles` (`id_inmueble`)
-) ENGINE=InnoDB AUTO_INCREMENT=48 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1207,7 +1230,7 @@ CREATE TABLE `users` (
   UNIQUE KEY `users_email_unique` (`email`),
   UNIQUE KEY `users_id_persona_unique` (`id_persona`),
   CONSTRAINT `users_id_persona_foreign` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id_persona`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1321,4 +1344,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-22  2:09:25
+-- Dump completed on 2026-07-22  2:45:12

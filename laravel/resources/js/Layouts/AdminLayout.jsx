@@ -2,7 +2,7 @@ import Dropdown from '@/Components/Dropdown';
 import { Link, usePage } from '@inertiajs/react';
 import {
     Bell, Building2, Calculator, Calendar, ChevronDown, Gauge, KeyRound,
-    LayoutDashboard, Menu, Receipt, Settings, Tag, UserCog, Users, Wallet, Zap,
+    LayoutDashboard, Menu, MessageSquare, Receipt, Settings, Tag, UserCog, Users, Wallet, Zap,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -28,6 +28,7 @@ const MODULE_ICONS = {
     tarifas: Tag,
     config_cobranza: Settings,
     usuarios: UserCog,
+    consultas: MessageSquare,
 };
 
 function moduleToPath(code) {
