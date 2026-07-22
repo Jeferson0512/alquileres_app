@@ -11,6 +11,7 @@ use App\Http\Controllers\LiquidacionController;
 use App\Http\Controllers\OcupacionController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PeriodoController;
+use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\TarifaController;
@@ -109,6 +110,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/usuarios', [UsuarioController::class, 'index'])->middleware('permission:usuarios.ver')->name('usuarios.index');
     Route::post('/usuarios', [UsuarioController::class, 'store'])->middleware('permission:usuarios.crear')->name('usuarios.store');
     Route::patch('/usuarios/{usuario}/rol', [UsuarioController::class, 'asignarRol'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.asignar-rol');
+    Route::get('/usuarios/roles', [RolePermissionController::class, 'index'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles');
+    Route::patch('/usuarios/roles/toggle', [RolePermissionController::class, 'toggle'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.toggle');
 });
 
 require __DIR__.'/auth.php';

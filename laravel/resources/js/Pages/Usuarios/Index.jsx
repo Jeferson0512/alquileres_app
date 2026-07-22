@@ -1,5 +1,5 @@
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function Index({ usuarios, roles }) {
@@ -29,9 +29,14 @@ export default function Index({ usuarios, roles }) {
 
             {flash?.success && <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>}
 
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex items-center justify-between">
+                {puede('usuarios.asignar_rol') && (
+                    <Link href={route('usuarios.roles')} className="text-sm font-medium text-primary hover:text-primary-dark">
+                        Roles y permisos →
+                    </Link>
+                )}
                 {puede('usuarios.crear') && !creating && (
-                    <button onClick={() => setCreating(true)} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark">
+                    <button onClick={() => setCreating(true)} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark">
                         Nuevo usuario
                     </button>
                 )}
