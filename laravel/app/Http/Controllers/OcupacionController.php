@@ -8,6 +8,7 @@ use App\Models\Unidad;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
@@ -57,6 +58,40 @@ class OcupacionController extends Controller
         }
     }
 
+    /**
+     * Valida los campos de alta de cuenta (si vinieron) ANTES de tocar la
+     * base de datos -- se llama antes de abrir la transaccion para que un
+     * error de validacion nunca deje una ocupacion creada/editada a medias
+     * sin su usuario.
+     */
+    private function validarDatosUsuarioPortal(Request $request, int $idPersona): ?array
+    {
+        if (!$request->boolean('crear_usuario')) {
+            return null;
+        }
+
+        if (User::where('id_persona', $idPersona)->exists()) {
+            throw ValidationException::withMessages(['usuario_email' => 'Este inquilino ya tiene una cuenta de acceso al portal.']);
+        }
+
+        return $request->validate([
+            'usuario_email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'usuario_password' => ['required', Password::min(8)],
+        ]);
+    }
+
+    private function crearUsuarioPortal(int $idPersona, array $usuarioData): void
+    {
+        $persona = Persona::find($idPersona);
+        $usuario = User::create([
+            'name' => trim($persona->nombres.' '.$persona->apellidos),
+            'email' => $usuarioData['usuario_email'],
+            'password' => $usuarioData['usuario_password'],
+            'id_persona' => $idPersona,
+        ]);
+        $usuario->assignRole('Inquilino');
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate($this->rules());
@@ -68,30 +103,17 @@ class OcupacionController extends Controller
             $this->assertSinActivaSolapada($data['id_unidad']);
         }
 
-        $crearUsuario = $request->boolean('crear_usuario');
-        $usuarioData = $crearUsuario ? $request->validate([
-            'usuario_email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'usuario_password' => ['required', Password::min(8)],
-        ]) : null;
+        $usuarioData = $this->validarDatosUsuarioPortal($request, $data['id_persona']);
 
-        if ($crearUsuario && User::where('id_persona', $data['id_persona'])->exists()) {
-            throw ValidationException::withMessages(['usuario_email' => 'Este inquilino ya tiene una cuenta de acceso al portal.']);
-        }
+        DB::transaction(function () use ($data, $usuarioData) {
+            OcupacionUnidad::create($data);
 
-        OcupacionUnidad::create($data);
+            if ($usuarioData) {
+                $this->crearUsuarioPortal($data['id_persona'], $usuarioData);
+            }
+        });
 
-        if ($usuarioData) {
-            $persona = Persona::find($data['id_persona']);
-            $usuario = User::create([
-                'name' => trim($persona->nombres.' '.$persona->apellidos),
-                'email' => $usuarioData['usuario_email'],
-                'password' => $usuarioData['usuario_password'],
-                'id_persona' => $data['id_persona'],
-            ]);
-            $usuario->assignRole('Inquilino');
-        }
-
-        return back()->with('success', $crearUsuario
+        return back()->with('success', $usuarioData
             ? 'Ocupación creada y acceso al portal habilitado correctamente'
             : 'Ocupación creada correctamente');
     }
@@ -107,9 +129,19 @@ class OcupacionController extends Controller
             $this->assertSinActivaSolapada($data['id_unidad'], $ocupacion->id_ocupacion);
         }
 
-        $ocupacion->update($data);
+        $usuarioData = $this->validarDatosUsuarioPortal($request, $data['id_persona']);
 
-        return back()->with('success', 'Ocupación actualizada correctamente');
+        DB::transaction(function () use ($ocupacion, $data, $usuarioData) {
+            $ocupacion->update($data);
+
+            if ($usuarioData) {
+                $this->crearUsuarioPortal($data['id_persona'], $usuarioData);
+            }
+        });
+
+        return back()->with('success', $usuarioData
+            ? 'Ocupación actualizada y acceso al portal habilitado correctamente'
+            : 'Ocupación actualizada correctamente');
     }
 
     public function destroy(OcupacionUnidad $ocupacion): RedirectResponse

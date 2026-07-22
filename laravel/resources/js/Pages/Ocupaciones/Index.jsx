@@ -98,7 +98,7 @@ export default function Index({ ocupaciones, unidades, inquilinos }) {
                         </select>
                         {errors.id_unidad && data.estado === 'ACTIVO' && <p className="mt-1 text-xs text-danger">{errors.id_unidad}</p>}
                     </div>
-                    {editing === 'new' && data.id_persona && (
+                    {data.id_persona && (
                         <div className="col-span-2 rounded-lg border border-primary-light bg-primary-light/30 p-3 sm:col-span-4">
                             {personaYaTieneUsuario ? (
                                 <p className="text-xs text-gray-600">Este inquilino ya tiene una cuenta de acceso al portal.</p>

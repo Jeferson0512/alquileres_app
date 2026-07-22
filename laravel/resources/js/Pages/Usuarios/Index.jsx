@@ -70,6 +70,9 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
                             {roles.map((r) => <option key={r} value={r}>{r}</option>)}
                         </select>
                         {errors.rol && <p className="mt-1 text-xs text-danger">{errors.rol}</p>}
+                        {data.rol !== 'Inquilino' && (
+                            <p className="mt-1 text-xs text-gray-400">Elige "Inquilino" para vincular esta cuenta a un inquilino ya registrado.</p>
+                        )}
                     </div>
                     {data.rol === 'Inquilino' && (
                         <div>
@@ -81,6 +84,9 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
                                 ))}
                             </select>
                             {errors.id_persona && <p className="mt-1 text-xs text-danger">{errors.id_persona}</p>}
+                            {personasDisponibles.length === 0 && (
+                                <p className="mt-1 text-xs text-warning">No hay inquilinos sin cuenta todavía — todos ya tienen acceso o falta crear su ocupación.</p>
+                            )}
                         </div>
                     )}
                     <div className="col-span-2 flex gap-2 sm:col-span-4">
