@@ -251,6 +251,7 @@ class CobroService
             ->orderBy('u.codigo_unidad')
             ->get([
                 'c.id_cobro', 'c.id_persona', 'c.id_unidad', 'u.codigo_unidad', 'u.nombre_unidad',
+                'p.nombres', 'p.apellidos',
                 DB::raw("CONCAT(p.nombres, ' ', p.apellidos) as inquilino"),
                 'll.consumo_kwh', 'c.monto_alquiler', 'c.monto_luz', 'c.ajuste_minimo_luz',
                 'c.monto_agua', 'c.monto_gas', 'c.otros_conceptos', 'c.total_cobrar',

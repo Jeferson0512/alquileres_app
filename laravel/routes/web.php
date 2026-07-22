@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AvisoController;
 use App\Http\Controllers\CobroController;
 use App\Http\Controllers\CobroOverrideController;
 use App\Http\Controllers\ConfigCobranzaController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InquilinoController;
 use App\Http\Controllers\LecturaController;
 use App\Http\Controllers\LiquidacionController;
@@ -27,9 +29,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified', 'permission:dashboard.ver'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -98,6 +100,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/pagos', [PagoController::class, 'store'])->middleware('permission:cobros.pagos.registrar')->name('pagos.store');
     Route::post('/pagos/{pago}/reversa', [PagoController::class, 'reversa'])->middleware('permission:cobros.pagos.anular')->name('pagos.reversa');
     Route::get('/pagos/{pago}/auditoria', [PagoController::class, 'auditoria'])->middleware('permission:cobros.ver')->name('pagos.auditoria');
+
+    // Avisos
+    Route::get('/avisos', [AvisoController::class, 'index'])->middleware('permission:avisos.ver')->name('avisos.index');
 });
 
 require __DIR__.'/auth.php';
