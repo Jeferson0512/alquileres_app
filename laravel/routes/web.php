@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\ConfigCobranzaController;
 use App\Http\Controllers\InquilinoController;
+use App\Http\Controllers\LecturaController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\UnidadController;
 use App\Http\Controllers\UnidadMedidorCompartidoController;
@@ -58,6 +60,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/unidades/{unidad}', [UnidadController::class, 'destroy'])->middleware('permission:unidades.editar')->name('unidades.destroy');
     Route::post('/unidades/medidor-compartido', [UnidadMedidorCompartidoController::class, 'store'])->middleware('permission:unidades.editar')->name('unidades.medidor.store');
     Route::delete('/unidades/medidor-compartido/{medidorCompartido}', [UnidadMedidorCompartidoController::class, 'destroy'])->middleware('permission:unidades.editar')->name('unidades.medidor.destroy');
+
+    // Lecturas
+    Route::get('/lecturas', [LecturaController::class, 'index'])->middleware('permission:lecturas.ver')->name('lecturas.index');
+    Route::post('/lecturas', [LecturaController::class, 'save'])->middleware('permission:lecturas.registrar')->name('lecturas.save');
+    Route::post('/lecturas/sync', [LecturaController::class, 'sync'])->middleware('permission:lecturas.sincronizar')->name('lecturas.sync');
+
+    // Recibo de luz
+    Route::get('/recibo', [ReciboController::class, 'index'])->middleware('permission:recibo.ver')->name('recibo.index');
+    Route::post('/recibo', [ReciboController::class, 'store'])->middleware('permission:recibo.editar')->name('recibo.store');
+    Route::post('/recibo/copiar-anterior', [ReciboController::class, 'copyFromPrevious'])->middleware('permission:recibo.editar')->name('recibo.copiar-anterior');
 });
 
 require __DIR__.'/auth.php';
