@@ -16,6 +16,7 @@ use App\Http\Controllers\ReciboController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\UnidadController;
 use App\Http\Controllers\UnidadMedidorCompartidoController;
+use App\Http\Controllers\UsuarioController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -103,6 +104,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Avisos
     Route::get('/avisos', [AvisoController::class, 'index'])->middleware('permission:avisos.ver')->name('avisos.index');
+
+    // Usuarios
+    Route::get('/usuarios', [UsuarioController::class, 'index'])->middleware('permission:usuarios.ver')->name('usuarios.index');
+    Route::post('/usuarios', [UsuarioController::class, 'store'])->middleware('permission:usuarios.crear')->name('usuarios.store');
+    Route::patch('/usuarios/{usuario}/rol', [UsuarioController::class, 'asignarRol'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.asignar-rol');
 });
 
 require __DIR__.'/auth.php';
