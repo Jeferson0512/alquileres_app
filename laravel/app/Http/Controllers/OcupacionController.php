@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\OcupacionUnidad;
 use App\Models\Persona;
 use App\Models\Unidad;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -23,7 +25,9 @@ class OcupacionController extends Controller
         return Inertia::render('Ocupaciones/Index', [
             'ocupaciones' => $ocupacions,
             'unidades' => Unidad::where('estado', 'ACTIVO')->orderBy('codigo_unidad')->get(['id_unidad', 'codigo_unidad', 'nombre_unidad']),
-            'inquilinos' => Persona::inquilinos()->where('estado', 'ACTIVO')->orderBy('apellidos')->get(['id_persona', 'nombres', 'apellidos']),
+            'inquilinos' => Persona::inquilinos()->where('estado', 'ACTIVO')->orderBy('apellidos')
+                ->withExists('user')
+                ->get(['id_persona', 'nombres', 'apellidos']),
         ]);
     }
 
@@ -64,9 +68,32 @@ class OcupacionController extends Controller
             $this->assertSinActivaSolapada($data['id_unidad']);
         }
 
+        $crearUsuario = $request->boolean('crear_usuario');
+        $usuarioData = $crearUsuario ? $request->validate([
+            'usuario_email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            'usuario_password' => ['required', Password::min(8)],
+        ]) : null;
+
+        if ($crearUsuario && User::where('id_persona', $data['id_persona'])->exists()) {
+            throw ValidationException::withMessages(['usuario_email' => 'Este inquilino ya tiene una cuenta de acceso al portal.']);
+        }
+
         OcupacionUnidad::create($data);
 
-        return back()->with('success', 'Ocupación creada correctamente');
+        if ($usuarioData) {
+            $persona = Persona::find($data['id_persona']);
+            $usuario = User::create([
+                'name' => trim($persona->nombres.' '.$persona->apellidos),
+                'email' => $usuarioData['usuario_email'],
+                'password' => $usuarioData['usuario_password'],
+                'id_persona' => $data['id_persona'],
+            ]);
+            $usuario->assignRole('Inquilino');
+        }
+
+        return back()->with('success', $crearUsuario
+            ? 'Ocupación creada y acceso al portal habilitado correctamente'
+            : 'Ocupación creada correctamente');
     }
 
     public function update(Request $request, OcupacionUnidad $ocupacion): RedirectResponse

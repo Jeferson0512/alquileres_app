@@ -5,6 +5,7 @@ import { useState } from 'react';
 const emptyForm = {
     id_unidad: '', id_persona: '', fecha_inicio: '', fecha_fin: '',
     monto_alquiler: 0, garantia: 0, estado: 'ACTIVO', observacion: '',
+    crear_usuario: false, usuario_email: '', usuario_password: '',
 };
 
 export default function Index({ ocupaciones, unidades, inquilinos }) {
@@ -13,6 +14,9 @@ export default function Index({ ocupaciones, unidades, inquilinos }) {
     const { data, setData, post, patch, processing, errors, reset } = useForm(emptyForm);
 
     const puede = (p) => auth.permissions.includes(p);
+
+    const personaSeleccionada = inquilinos.find((p) => String(p.id_persona) === String(data.id_persona));
+    const personaYaTieneUsuario = personaSeleccionada?.user_exists ?? false;
 
     const startEdit = (o) => {
         setEditing(o.id_ocupacion);
@@ -94,6 +98,40 @@ export default function Index({ ocupaciones, unidades, inquilinos }) {
                         </select>
                         {errors.id_unidad && data.estado === 'ACTIVO' && <p className="mt-1 text-xs text-danger">{errors.id_unidad}</p>}
                     </div>
+                    {editing === 'new' && data.id_persona && (
+                        <div className="col-span-2 rounded-lg border border-primary-light bg-primary-light/30 p-3 sm:col-span-4">
+                            {personaYaTieneUsuario ? (
+                                <p className="text-xs text-gray-600">Este inquilino ya tiene una cuenta de acceso al portal.</p>
+                            ) : (
+                                <>
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                        <input
+                                            type="checkbox"
+                                            checked={data.crear_usuario}
+                                            onChange={(e) => setData('crear_usuario', e.target.checked)}
+                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        />
+                                        Crear también su acceso al portal
+                                    </label>
+                                    {data.crear_usuario && (
+                                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500">Email de acceso *</label>
+                                                <input type="email" value={data.usuario_email} onChange={(e) => setData('usuario_email', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                                                {errors.usuario_email && <p className="mt-1 text-xs text-danger">{errors.usuario_email}</p>}
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500">Contraseña inicial *</label>
+                                                <input type="password" value={data.usuario_password} onChange={(e) => setData('usuario_password', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                                                {errors.usuario_password && <p className="mt-1 text-xs text-danger">{errors.usuario_password}</p>}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
+
                     <div className="col-span-2 flex gap-2 sm:col-span-4">
                         <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
                         <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
