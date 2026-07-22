@@ -5,8 +5,9 @@ Este paquete ejecuta pruebas E2E sobre el sistema y entrega reporte HTML.
 ## Que incluye
 
 1. Suite de flujo real para Cobros y Avisos (incluye pago y anulación).
-2. Reporte automatico de ejecucion en `playwright-report`.
-3. Seed + cleanup de datos de prueba para no dejar basura en BD.
+2. Reparto de medidor compartido (`medidor-compartido.spec.js`): ejercita `buildCobrosProgramados()` (la misma función que usa `cobros/generate.php` en producción) contra una unidad titular y una dependiente sembradas ad-hoc, sin tocar los cobros reales del periodo activo.
+3. Reporte automatico de ejecucion en `playwright-report`.
+4. Seed + cleanup de datos de prueba para no dejar basura en BD.
 
 ## Comandos
 

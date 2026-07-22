@@ -42,8 +42,25 @@ async function cleanupSeedData(seed) {
   });
 }
 
+async function createSeedMedidorCompartido(marker) {
+  const seed = await apiRequest("testing/e2e-seed-medidor", {
+    method: "POST",
+    body: JSON.stringify({ marker }),
+  });
+  return seed.data;
+}
+
+async function cleanupSeedMedidorCompartido(seed) {
+  await apiRequest("testing/e2e-cleanup-medidor", {
+    method: "POST",
+    body: JSON.stringify(seed),
+  });
+}
+
 module.exports = {
   apiRequest,
   createSeedData,
   cleanupSeedData,
+  createSeedMedidorCompartido,
+  cleanupSeedMedidorCompartido,
 };

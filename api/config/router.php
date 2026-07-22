@@ -33,6 +33,8 @@ $routes = [
     'config-cobranza/upload-qr' => $modulesBase . '/config-cobranza/upload-qr.php',
     'testing/e2e-seed' => $modulesBase . '/testing/e2e-seed.php',
     'testing/e2e-cleanup' => $modulesBase . '/testing/e2e-cleanup.php',
+    'testing/e2e-seed-medidor' => $modulesBase . '/testing/e2e-seed-medidor.php',
+    'testing/e2e-cleanup-medidor' => $modulesBase . '/testing/e2e-cleanup-medidor.php',
 ];
 
 if (!isset($routes[$path])) {

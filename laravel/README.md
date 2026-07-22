@@ -22,6 +22,25 @@ npm run dev                      # Vite en paralelo, para hot-reload de React
 
 Usuario admin ya sembrado (`php artisan db:seed`): `jefersonbujaico@gmail.com` / `CambiarEstaClave123!` — **cambiar esta contraseña** en cuanto se use por primera vez.
 
+## Tests (Pest)
+
+Los tests de `LiquidacionService`, `CobroService` y `PagoService` corren contra una base de datos MySQL **dedicada** (`alquileres_db_test`), no contra sqlite — el esquema heredado usa triggers, un stored procedure (`sp_recalcular_estado_cobro`) y una columna generada (`ocupacion_unidad.activa_flag`) que sqlite no puede replicar.
+
+Setup (una sola vez):
+
+```bash
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS alquileres_db_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysqldump -u root --no-data --routines --triggers --events alquileres_db > ../database/schema_dump_test.sql
+mysql -u root alquileres_db_test < ../database/schema_dump_test.sql
+mysql -u root alquileres_db_test < ../database/conceptos_cobro_seed.sql   # tabla de referencia conceptos_cobro
+```
+
+Cada test corre envuelto en una transacción (`DatabaseTransactions`, ver `tests/Pest.php`) que se revierte al final — nunca se usa `RefreshDatabase`, porque `migrate:fresh` borraría las 18 tablas de negocio heredadas (no gestionadas por migraciones Laravel). Los fixtures mínimos (inmueble, unidad, persona, periodo, recibo, lectura...) están en `tests/Support/AlquileresFixtures.php`.
+
+```bash
+php artisan test
+```
+
 ## Nota sobre instalación en esta carpeta (Windows)
 
 Si en algún momento hay que reinstalar dependencias (`composer install`, `npm install`) y aparecen errores de "Permission denied" o "could not delete" durante la extracción de paquetes con muchos archivos chicos (Carbon, Faker, etc.), es un bloqueo transitorio de algún proceso de Windows (indexador o similar) escaneando archivos nuevos en tiempo real — no es un problema del proyecto. Si persiste tras 2-3 reintentos, instalar en `C:\Temp` y mover la carpeta resultante suele evitarlo.
