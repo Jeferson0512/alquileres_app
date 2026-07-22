@@ -2,9 +2,20 @@ import Dropdown from '@/Components/Dropdown';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
+// Excepciones donde el "code" del módulo (usado también para nombrar permisos,
+// ej. config_cobranza.ver) no coincide literalmente con el segmento de la URL.
+const CODE_TO_PATH = {
+    config_cobranza: 'config-cobranza',
+};
+
+function moduleToPath(code) {
+    const segment = code.replace('.', '/');
+    return CODE_TO_PATH[segment] ?? segment;
+}
+
 function isModuleActive(currentPath, code) {
     // "cobros" activa /cobros y /cobros/pagos; "cobros.pagos" solo /cobros/pagos.
-    const segment = code.replace('.', '/');
+    const segment = moduleToPath(code);
     return currentPath === `/${segment}` || currentPath.startsWith(`/${segment}/`);
 }
 
@@ -17,7 +28,7 @@ function NavItem({ item, currentPath }) {
         return (
             <li>
                 <Link
-                    href={`/${item.code}`}
+                    href={`/${moduleToPath(item.code)}`}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                         active
                             ? 'bg-primary-light text-primary-dark'
@@ -56,7 +67,7 @@ function NavItem({ item, currentPath }) {
                         return (
                             <li key={child.code}>
                                 <Link
-                                    href={`/${child.code.replace('.', '/')}`}
+                                    href={`/${moduleToPath(child.code)}`}
                                     className={`block rounded-lg px-3 py-1.5 text-sm font-medium ${
                                         childActive
                                             ? 'bg-primary-light text-primary-dark'
