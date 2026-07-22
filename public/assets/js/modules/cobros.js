@@ -699,7 +699,18 @@ function bindResumenModalActions(idCobro) {
       const idCobroBtn = Number(btn.dataset.cobro || idCobro);
       if (!idPago || !idCobroBtn) return;
       await reversePagoFlow(idPago, idCobroBtn);
-      await openResumenPagado((_state?.cobros || []).find((x) => Number(x.id_cobro) === idCobroBtn) || { id_cobro: idCobroBtn, codigo_unidad: "" });
+
+      const updatedRow = (_state?.cobros || []).find((x) => Number(x.id_cobro) === idCobroBtn);
+      const estado = String(updatedRow?.estado_pago || "").toUpperCase();
+
+      if (updatedRow && (estado === "PAGADO" || estado === "PARCIAL")) {
+        // Sigue habiendo pagos activos sobre este cobro: se refresca el mismo resumen.
+        await openResumenPagado(updatedRow);
+      } else {
+        // Sin pagos activos (quedó PENDIENTE): no hay "resumen de pago" que mostrar, se cierra.
+        closeModal();
+        renderCobros(_view, _state);
+      }
     });
   });
 
