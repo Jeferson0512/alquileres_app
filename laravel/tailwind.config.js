@@ -30,6 +30,21 @@ export default {
                 warning: '#D97706',
                 danger: '#DC2626',
             },
+            keyframes: {
+                blob: {
+                    '0%, 100%': { transform: 'translate(0px, 0px) scale(1)' },
+                    '33%': { transform: 'translate(30px, -60px) scale(1.15)' },
+                    '66%': { transform: 'translate(-25px, 25px) scale(0.9)' },
+                },
+                'fade-in-up': {
+                    '0%': { opacity: '0', transform: 'translateY(24px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                },
+            },
+            animation: {
+                blob: 'blob 8s infinite',
+                'fade-in-up': 'fade-in-up 0.7s ease-out forwards',
+            },
         },
     },
 
