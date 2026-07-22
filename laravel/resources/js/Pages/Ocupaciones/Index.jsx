@@ -5,7 +5,7 @@ import { useState } from 'react';
 const emptyForm = {
     id_unidad: '', id_persona: '', fecha_inicio: '', fecha_fin: '',
     monto_alquiler: 0, garantia: 0, estado: 'ACTIVO', observacion: '',
-    crear_usuario: false, usuario_email: '', usuario_password: '',
+    crear_usuario: false, usuario_password: '',
 };
 
 export default function Index({ ocupaciones, unidades, inquilinos }) {
@@ -116,13 +116,16 @@ export default function Index({ ocupaciones, unidades, inquilinos }) {
                                     {data.crear_usuario && (
                                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                                             <div>
-                                                <label className="block text-xs font-medium text-gray-500">Email de acceso *</label>
-                                                <input type="email" value={data.usuario_email} onChange={(e) => setData('usuario_email', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                                                {errors.usuario_email && <p className="mt-1 text-xs text-danger">{errors.usuario_email}</p>}
+                                                <label className="block text-xs font-medium text-gray-500">Email de acceso (de su ficha)</label>
+                                                {personaSeleccionada?.email ? (
+                                                    <p className="mt-1 rounded-md bg-white px-3 py-1.5 text-sm text-gray-700">{personaSeleccionada.email}</p>
+                                                ) : (
+                                                    <p className="mt-1 text-xs text-danger">Sin email registrado — agrégaselo primero en Inquilinos.</p>
+                                                )}
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-medium text-gray-500">Contraseña inicial *</label>
-                                                <input type="password" value={data.usuario_password} onChange={(e) => setData('usuario_password', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                                                <input type="password" value={data.usuario_password} onChange={(e) => setData('usuario_password', e.target.value)} disabled={!personaSeleccionada?.email} className="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-100" />
                                                 {errors.usuario_password && <p className="mt-1 text-xs text-danger">{errors.usuario_password}</p>}
                                             </div>
                                         </div>
@@ -133,7 +136,13 @@ export default function Index({ ocupaciones, unidades, inquilinos }) {
                     )}
 
                     <div className="col-span-2 flex gap-2 sm:col-span-4">
-                        <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
+                        <button
+                            type="submit"
+                            disabled={processing || (data.crear_usuario && !personaSeleccionada?.email)}
+                            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
+                        >
+                            Guardar
+                        </button>
                         <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
                     </div>
                 </form>

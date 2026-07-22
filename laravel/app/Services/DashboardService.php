@@ -47,4 +47,24 @@ class DashboardService
             ];
         })->all();
     }
+
+    /**
+     * Consumo (kWh) por unidad del periodo inmediatamente anterior --
+     * para comparar "subió o bajó" contra el periodo actual en el
+     * Dashboard. Devuelve [id_unidad => consumo_kwh].
+     */
+    public function consumoPorUnidadPeriodoAnterior(Periodo $periodo): array
+    {
+        $anterior = $periodo->anterior();
+        if (!$anterior) {
+            return [];
+        }
+
+        return DB::table('liquidacion_luz_detalle')
+            ->where('id_periodo', $anterior->id_periodo)
+            ->where('estado', '!=', 'ANULADO')
+            ->pluck('consumo_kwh', 'id_unidad')
+            ->map(fn ($v) => (float) $v)
+            ->all();
+    }
 }

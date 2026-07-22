@@ -10,6 +10,8 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
     });
 
     const puede = (p) => auth.permissions.includes(p);
+    const esInquilino = data.rol === 'Inquilino';
+    const personaSeleccionada = personasDisponibles.find((p) => String(p.id_persona) === String(data.id_persona));
 
     const submit = (e) => {
         e.preventDefault();
@@ -50,32 +52,18 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
             {creating && (
                 <form onSubmit={submit} className="mb-6 grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-4">
                     <div>
-                        <label className="block text-xs font-medium text-gray-500">Nombre *</label>
-                        <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                        {errors.name && <p className="mt-1 text-xs text-danger">{errors.name}</p>}
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500">Email *</label>
-                        <input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                        {errors.email && <p className="mt-1 text-xs text-danger">{errors.email}</p>}
-                    </div>
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500">Contraseña *</label>
-                        <input type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                        {errors.password && <p className="mt-1 text-xs text-danger">{errors.password}</p>}
-                    </div>
-                    <div>
                         <label className="block text-xs font-medium text-gray-500">Rol *</label>
                         <select value={data.rol} onChange={(e) => setData('rol', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm">
                             {roles.map((r) => <option key={r} value={r}>{r}</option>)}
                         </select>
                         {errors.rol && <p className="mt-1 text-xs text-danger">{errors.rol}</p>}
-                        {data.rol !== 'Inquilino' && (
+                        {!esInquilino && (
                             <p className="mt-1 text-xs text-gray-400">Elige "Inquilino" para vincular esta cuenta a un inquilino ya registrado.</p>
                         )}
                     </div>
-                    {data.rol === 'Inquilino' && (
-                        <div>
+
+                    {esInquilino ? (
+                        <div className="col-span-2 sm:col-span-3">
                             <label className="block text-xs font-medium text-gray-500">Inquilino (persona) *</label>
                             <select value={data.id_persona} onChange={(e) => setData('id_persona', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm">
                                 <option value="">-- elegir --</option>
@@ -87,10 +75,53 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
                             {personasDisponibles.length === 0 && (
                                 <p className="mt-1 text-xs text-warning">No hay inquilinos sin cuenta todavía — todos ya tienen acceso o falta crear su ocupación.</p>
                             )}
+
+                            {personaSeleccionada && (
+                                <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg bg-surface p-3">
+                                    <div>
+                                        <p className="text-xs text-gray-400">Nombre (de su ficha)</p>
+                                        <p className="text-sm font-medium text-gray-800">{personaSeleccionada.nombres} {personaSeleccionada.apellidos}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-400">Email (de su ficha)</p>
+                                        {personaSeleccionada.email ? (
+                                            <p className="text-sm font-medium text-gray-800">{personaSeleccionada.email}</p>
+                                        ) : (
+                                            <p className="text-xs text-danger">Sin email — agrégalo primero en Inquilinos.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500">Nombre *</label>
+                                <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                                {errors.name && <p className="mt-1 text-xs text-danger">{errors.name}</p>}
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-500">Email *</label>
+                                <input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                                {errors.email && <p className="mt-1 text-xs text-danger">{errors.email}</p>}
+                            </div>
+                        </>
                     )}
+
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500">Contraseña *</label>
+                        <input type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                        {errors.password && <p className="mt-1 text-xs text-danger">{errors.password}</p>}
+                    </div>
+
                     <div className="col-span-2 flex gap-2 sm:col-span-4">
-                        <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
+                        <button
+                            type="submit"
+                            disabled={processing || (esInquilino && personaSeleccionada && !personaSeleccionada.email)}
+                            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
+                        >
+                            Guardar
+                        </button>
                         <button type="button" onClick={() => { setCreating(false); reset(); }} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
                     </div>
                 </form>

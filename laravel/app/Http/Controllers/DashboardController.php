@@ -46,6 +46,7 @@ class DashboardController extends Controller
             ],
             'morosidadTotal' => round(collect($cobros)->sum('deuda_anterior'), 2),
             'vencimientosContrato' => $avisoService->vencimientosContrato(),
+            'consumoAnterior' => $dashboardService->consumoPorUnidadPeriodoAnterior($periodo),
         ]);
     }
 }

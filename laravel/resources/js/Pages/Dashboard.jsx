@@ -1,5 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
+import { AlertTriangle, CalendarClock, Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import Chart from 'react-apexcharts';
 
 function money(value) {
@@ -11,7 +12,7 @@ function number(value, decimals = 2) {
 
 const CHART_COLORS = ['#2563EB', '#16A34A', '#D97706', '#DC2626'];
 
-export default function Dashboard({ periodo, periodos, recibo, preview, stats, tendencia, estadoCobros, morosidadTotal, vencimientosContrato }) {
+export default function Dashboard({ periodo, periodos, recibo, preview, stats, tendencia, estadoCobros, morosidadTotal, vencimientosContrato, consumoAnterior }) {
     const filas = (preview?.data || []).filter((r) => r.participa_liquidacion);
     const totalConsumo = filas.reduce((acc, r) => acc + Number(r.consumo_kwh || 0), 0);
 
@@ -43,14 +44,27 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats, t
 
     const consumoOptions = {
         chart: { toolbar: { show: false }, fontFamily: 'inherit' },
-        colors: [CHART_COLORS[2]],
-        plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+        colors: ['#cbd5e1', CHART_COLORS[2]],
+        plotOptions: { bar: { borderRadius: 4, columnWidth: '65%' } },
         dataLabels: { enabled: false },
+        legend: { position: 'top', horizontalAlign: 'right', fontSize: '12px' },
         xaxis: { categories: filas.map((f) => f.codigo_unidad), labels: { style: { colors: '#94a3b8' } } },
         yaxis: { labels: { formatter: (v) => `${Number(v).toFixed(0)} kWh` } },
         grid: { borderColor: '#f1f5f9' },
     };
-    const consumoSeries = [{ name: 'Consumo', data: filas.map((f) => Number(f.consumo_kwh || 0)) }];
+    const consumoSeries = [
+        { name: 'Mes anterior', data: filas.map((f) => Number(consumoAnterior[f.id_unidad] ?? 0)) },
+        { name: 'Este mes', data: filas.map((f) => Number(f.consumo_kwh || 0)) },
+    ];
+
+    function tendenciaConsumo(row) {
+        const anterior = Number(consumoAnterior[row.id_unidad] ?? 0);
+        const actual = Number(row.consumo_kwh || 0);
+        const diff = actual - anterior;
+        if (anterior === 0 || Math.abs(diff) < 0.05) return { Icon: Minus, color: 'text-gray-400', text: 'Igual que el mes anterior' };
+        if (diff > 0) return { Icon: TrendingUp, color: 'text-danger', text: `+${number(diff, 1)} kWh vs. mes anterior` };
+        return { Icon: TrendingDown, color: 'text-success', text: `${number(diff, 1)} kWh vs. mes anterior` };
+    }
 
     return (
         <AdminLayout title="Dashboard">
@@ -108,13 +122,14 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats, t
                     ) : (
                         <>
                             <div className="mb-4">
-                                <h4 className="mb-2 text-xs font-semibold uppercase text-gray-500">Consumo por unidad</h4>
+                                <h4 className="mb-2 text-xs font-semibold uppercase text-gray-500">Consumo por unidad — este mes vs. mes anterior</h4>
                                 <Chart options={consumoOptions} series={consumoSeries} type="bar" height={220} />
                             </div>
 
                             <div className="space-y-3">
                                 {filas.map((row) => {
                                     const pct = (Number(row.porcentaje_participacion || 0) * 100).toFixed(1);
+                                    const { Icon, color, text } = tendenciaConsumo(row);
                                     return (
                                         <div key={row.id_unidad} className="rounded-lg border border-gray-100 p-3">
                                             <div className="mb-2 flex items-center gap-2">
@@ -134,6 +149,9 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats, t
                                                     <div className="h-1.5 rounded-full bg-primary" style={{ width: `${pct}%` }} />
                                                 </div>
                                                 <span>{pct}%</span>
+                                            </div>
+                                            <div className={`mt-1.5 flex items-center gap-1.5 text-xs ${color}`}>
+                                                <Icon className="h-3.5 w-3.5" /> {text}
                                             </div>
                                         </div>
                                     );
@@ -163,11 +181,23 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats, t
                         <section className="rounded-lg border border-gray-200 bg-white p-4">
                             <h3 className="mb-3 text-sm font-semibold text-gray-800">Contratos por vencer</h3>
                             <div className="space-y-2">
-                                {vencimientosContrato.map((aviso) => (
-                                    <div key={aviso.id_referencia} className={`rounded-lg px-3 py-2 text-xs ${aviso.nivel === 'URGENTE' ? 'bg-red-50 text-danger' : 'bg-amber-50 text-warning'}`}>
-                                        <strong>{aviso.nivel === 'URGENTE' ? 'Urgente' : 'Próximo'}:</strong> {aviso.mensaje}
-                                    </div>
-                                ))}
+                                {vencimientosContrato.map((aviso) => {
+                                    const urgente = aviso.nivel === 'URGENTE';
+                                    return (
+                                        <div key={aviso.id_referencia} className={`flex items-center gap-3 rounded-lg border-l-4 bg-surface p-3 ${urgente ? 'border-danger' : 'border-warning'}`}>
+                                            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${urgente ? 'bg-red-100 text-danger' : 'bg-amber-100 text-warning'}`}>
+                                                {urgente ? <AlertTriangle className="h-4 w-4" /> : <CalendarClock className="h-4 w-4" />}
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-medium text-gray-800">{aviso.inquilino}</p>
+                                                <p className="text-xs text-gray-400">Unidad {aviso.codigo_unidad}</p>
+                                            </div>
+                                            <div className={`shrink-0 rounded-full px-2.5 py-1 text-center text-xs font-bold text-white ${urgente ? 'bg-danger' : 'bg-warning'}`}>
+                                                {aviso.dias_restantes}d
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </section>
                     )}

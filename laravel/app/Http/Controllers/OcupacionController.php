@@ -28,7 +28,7 @@ class OcupacionController extends Controller
             'unidades' => Unidad::where('estado', 'ACTIVO')->orderBy('codigo_unidad')->get(['id_unidad', 'codigo_unidad', 'nombre_unidad']),
             'inquilinos' => Persona::inquilinos()->where('estado', 'ACTIVO')->orderBy('apellidos')
                 ->withExists('user')
-                ->get(['id_persona', 'nombres', 'apellidos']),
+                ->get(['id_persona', 'nombres', 'apellidos', 'email']),
         ]);
     }
 
@@ -62,7 +62,9 @@ class OcupacionController extends Controller
      * Valida los campos de alta de cuenta (si vinieron) ANTES de tocar la
      * base de datos -- se llama antes de abrir la transaccion para que un
      * error de validacion nunca deje una ocupacion creada/editada a medias
-     * sin su usuario.
+     * sin su usuario. El email del login SIEMPRE se deriva de la Persona
+     * (nunca se confia en lo que mande el cliente) -- lo unico que el
+     * Admin realmente elige aqui es la contraseña inicial.
      */
     private function validarDatosUsuarioPortal(Request $request, int $idPersona): ?array
     {
@@ -71,13 +73,22 @@ class OcupacionController extends Controller
         }
 
         if (User::where('id_persona', $idPersona)->exists()) {
-            throw ValidationException::withMessages(['usuario_email' => 'Este inquilino ya tiene una cuenta de acceso al portal.']);
+            throw ValidationException::withMessages(['crear_usuario' => 'Este inquilino ya tiene una cuenta de acceso al portal.']);
         }
 
-        return $request->validate([
-            'usuario_email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+        $persona = Persona::findOrFail($idPersona);
+        if (empty($persona->email)) {
+            throw ValidationException::withMessages(['crear_usuario' => 'Este inquilino no tiene email registrado. Agrégaselo primero desde Inquilinos.']);
+        }
+        if (User::where('email', $persona->email)->exists()) {
+            throw ValidationException::withMessages(['crear_usuario' => 'Ya existe una cuenta con ese email.']);
+        }
+
+        $validated = $request->validate([
             'usuario_password' => ['required', Password::min(8)],
         ]);
+
+        return ['email' => $persona->email, 'password' => $validated['usuario_password']];
     }
 
     private function crearUsuarioPortal(int $idPersona, array $usuarioData): void
@@ -85,8 +96,8 @@ class OcupacionController extends Controller
         $persona = Persona::find($idPersona);
         $usuario = User::create([
             'name' => trim($persona->nombres.' '.$persona->apellidos),
-            'email' => $usuarioData['usuario_email'],
-            'password' => $usuarioData['usuario_password'],
+            'email' => $usuarioData['email'],
+            'password' => $usuarioData['password'],
             'id_persona' => $idPersona,
         ]);
         $usuario->assignRole('Inquilino');

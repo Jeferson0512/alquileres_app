@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Spatie\Permission\Models\Role;
@@ -22,25 +23,55 @@ class UsuarioController extends Controller
             'personasDisponibles' => Persona::inquilinos()
                 ->whereDoesntHave('user')
                 ->orderBy('nombres')
-                ->get(['id_persona', 'nombres', 'apellidos']),
+                ->get(['id_persona', 'nombres', 'apellidos', 'email']),
         ]);
     }
 
+    /**
+     * Para el rol Inquilino, nombre y email del login SIEMPRE se derivan
+     * de la Persona ya registrada -- nunca se confia en lo que mande el
+     * cliente para esos dos campos, así no hay forma de que el login
+     * quede con un nombre/email distinto al de su ficha real.
+     */
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', Password::min(8)],
             'rol' => ['required', 'string', 'exists:roles,name'],
-            'id_persona' => ['required_if:rol,Inquilino', 'nullable', 'integer', 'exists:personas,id_persona', 'unique:users,id_persona'],
         ]);
 
+        if ($data['rol'] === 'Inquilino') {
+            $request->validate([
+                'id_persona' => ['required', 'integer', 'exists:personas,id_persona', 'unique:users,id_persona'],
+            ]);
+
+            $persona = Persona::findOrFail($request->integer('id_persona'));
+
+            if (empty($persona->email)) {
+                throw ValidationException::withMessages(['id_persona' => 'Este inquilino no tiene email registrado. Agrégaselo primero desde Inquilinos.']);
+            }
+            if (User::where('email', $persona->email)->exists()) {
+                throw ValidationException::withMessages(['id_persona' => 'Ya existe una cuenta con ese email.']);
+            }
+
+            $name = trim($persona->nombres.' '.$persona->apellidos);
+            $email = $persona->email;
+            $idPersona = $persona->id_persona;
+        } else {
+            $extra = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            ]);
+            $name = $extra['name'];
+            $email = $extra['email'];
+            $idPersona = null;
+        }
+
         $usuario = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
+            'name' => $name,
+            'email' => $email,
             'password' => $data['password'],
-            'id_persona' => $data['id_persona'] ?? null,
+            'id_persona' => $idPersona,
         ]);
         $usuario->assignRole($data['rol']);
 
