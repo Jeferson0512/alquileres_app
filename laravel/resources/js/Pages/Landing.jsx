@@ -58,6 +58,11 @@ export default function Landing({ unidadesDisponibles }) {
         post(route('landing.contacto'), { onSuccess: () => reset() });
     };
 
+    const consultarUnidad = (idUnidad) => {
+        setData('unit_id', String(idUnidad));
+        document.getElementById('contacto')?.scrollIntoView({ behavior: 'smooth' });
+    };
+
     return (
         <div className="min-h-screen overflow-x-hidden bg-surface">
             <Head title="Alquileres App — Habitaciones y departamentos" />
@@ -161,7 +166,9 @@ export default function Landing({ unidadesDisponibles }) {
                                             <p className="text-2xl font-extrabold text-primary">{money(u.tarifa_alquiler_base)}</p>
                                             <p className="text-xs text-gray-400">por mes</p>
                                         </div>
-                                        <a href="#contacto" className="text-sm font-semibold text-primary hover:text-primary-dark">Consultar →</a>
+                                        <button type="button" onClick={() => consultarUnidad(u.id_unidad)} className="text-sm font-semibold text-primary hover:text-primary-dark">
+                                            Consultar →
+                                        </button>
                                     </div>
                                 </Reveal>
                             );
