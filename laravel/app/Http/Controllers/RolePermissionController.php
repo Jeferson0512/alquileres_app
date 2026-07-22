@@ -82,4 +82,20 @@ class RolePermissionController extends Controller
 
         return back()->with('success', 'Permiso actualizado correctamente');
     }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
+            'permisos' => ['array'],
+            'permisos.*' => ['string', 'exists:permissions,name'],
+        ]);
+
+        $role = Role::create(['name' => $data['name'], 'guard_name' => 'web']);
+        if (!empty($data['permisos'])) {
+            $role->syncPermissions($data['permisos']);
+        }
+
+        return back()->with('success', "Rol \"{$role->name}\" creado correctamente");
+    }
 }

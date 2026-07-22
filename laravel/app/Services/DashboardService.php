@@ -22,4 +22,29 @@ class DashboardService
                 ->sum('total_cobrar'),
         ];
     }
+
+    /**
+     * Total cobrado (no anulado) de los ultimos $meses periodos, del mas
+     * antiguo al mas reciente -- para el grafico de tendencia del Dashboard.
+     */
+    public function tendenciaMensual(int $meses = 6): array
+    {
+        $periodos = DB::table('periodos')
+            ->orderByDesc('anio')->orderByDesc('mes')
+            ->limit($meses)
+            ->get(['id_periodo', 'anio', 'mes']);
+
+        return $periodos->reverse()->values()->map(function ($periodo) {
+            $total = (float) DB::table('cobros_mensuales')
+                ->where('id_periodo', $periodo->id_periodo)
+                ->where('estado_pago', '!=', 'ANULADO')
+                ->sum('total_cobrar');
+
+            return [
+                'periodo_id' => $periodo->id_periodo,
+                'label' => sprintf('%02d/%d', $periodo->mes, $periodo->anio),
+                'total' => round($total, 2),
+            ];
+        })->all();
+    }
 }

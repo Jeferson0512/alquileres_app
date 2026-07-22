@@ -1,11 +1,33 @@
 import Dropdown from '@/Components/Dropdown';
 import { Link, usePage } from '@inertiajs/react';
+import {
+    Bell, Building2, Calculator, Calendar, ChevronDown, Gauge, KeyRound,
+    LayoutDashboard, Menu, Receipt, Settings, Tag, UserCog, Users, Wallet, Zap,
+} from 'lucide-react';
 import { useState } from 'react';
 
 // Excepciones donde el "code" del módulo (usado también para nombrar permisos,
 // ej. config_cobranza.ver) no coincide literalmente con el segmento de la URL.
 const CODE_TO_PATH = {
     config_cobranza: 'config-cobranza',
+};
+
+// Un ícono Lucide por módulo/submódulo (mismos "code" de la tabla `modules`).
+const MODULE_ICONS = {
+    dashboard: LayoutDashboard,
+    periodos: Calendar,
+    inquilinos: Users,
+    unidades: Building2,
+    ocupaciones: KeyRound,
+    recibo: Zap,
+    lecturas: Gauge,
+    liquidacion: Calculator,
+    cobros: Wallet,
+    'cobros.pagos': Receipt,
+    avisos: Bell,
+    tarifas: Tag,
+    config_cobranza: Settings,
+    usuarios: UserCog,
 };
 
 function moduleToPath(code) {
@@ -17,6 +39,11 @@ function isModuleActive(currentPath, code) {
     // "cobros" activa /cobros y /cobros/pagos; "cobros.pagos" solo /cobros/pagos.
     const segment = moduleToPath(code);
     return currentPath === `/${segment}` || currentPath.startsWith(`/${segment}/`);
+}
+
+function ModuleIcon({ code, className }) {
+    const Icon = MODULE_ICONS[code];
+    return Icon ? <Icon className={className} strokeWidth={2} /> : null;
 }
 
 function NavItem({ item, currentPath }) {
@@ -35,6 +62,7 @@ function NavItem({ item, currentPath }) {
                             : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                 >
+                    <ModuleIcon code={item.code} className="h-4 w-4 shrink-0" />
                     {item.name}
                 </Link>
             </li>
@@ -50,15 +78,11 @@ function NavItem({ item, currentPath }) {
                     active ? 'bg-primary-light text-primary-dark' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
             >
-                <span>{item.name}</span>
-                <svg
-                    className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <span className="flex items-center gap-3">
+                    <ModuleIcon code={item.code} className="h-4 w-4 shrink-0" />
+                    {item.name}
+                </span>
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
             {open && (
                 <ul className="ml-3 mt-1 space-y-1 border-l border-gray-200 pl-3">
@@ -68,12 +92,13 @@ function NavItem({ item, currentPath }) {
                             <li key={child.code}>
                                 <Link
                                     href={`/${moduleToPath(child.code)}`}
-                                    className={`block rounded-lg px-3 py-1.5 text-sm font-medium ${
+                                    className={`flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium ${
                                         childActive
                                             ? 'bg-primary-light text-primary-dark'
                                             : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
                                     }`}
                                 >
+                                    <ModuleIcon code={child.code} className="h-4 w-4 shrink-0" />
                                     {child.name}
                                 </Link>
                             </li>
@@ -131,9 +156,7 @@ export default function AdminLayout({ title, children }) {
                             className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
                             onClick={() => setMobileOpen((v) => !v)}
                         >
-                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
+                            <Menu className="h-6 w-6" />
                         </button>
                         {title && <h1 className="text-base font-semibold text-gray-800">{title}</h1>}
                     </div>

@@ -1,5 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
+import Chart from 'react-apexcharts';
 
 function money(value) {
     return `S/ ${Number(value ?? 0).toFixed(2)}`;
@@ -8,11 +9,48 @@ function number(value, decimals = 2) {
     return Number(value ?? 0).toFixed(decimals);
 }
 
-export default function Dashboard({ periodo, periodos, recibo, preview, stats }) {
+const CHART_COLORS = ['#2563EB', '#16A34A', '#D97706', '#DC2626'];
+
+export default function Dashboard({ periodo, periodos, recibo, preview, stats, tendencia, estadoCobros, morosidadTotal, vencimientosContrato }) {
     const filas = (preview?.data || []).filter((r) => r.participa_liquidacion);
     const totalConsumo = filas.reduce((acc, r) => acc + Number(r.consumo_kwh || 0), 0);
 
     const cambiarPeriodo = (id) => router.get(route('dashboard'), { periodo_id: id }, { preserveState: true });
+
+    const tendenciaOptions = {
+        chart: { toolbar: { show: false }, fontFamily: 'inherit' },
+        colors: [CHART_COLORS[0]],
+        stroke: { curve: 'smooth', width: 3 },
+        fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.05 } },
+        dataLabels: { enabled: false },
+        xaxis: { categories: tendencia.map((t) => t.label), labels: { style: { colors: '#94a3b8' } } },
+        yaxis: { labels: { formatter: (v) => `S/ ${Number(v).toFixed(0)}` } },
+        grid: { borderColor: '#f1f5f9' },
+        tooltip: { y: { formatter: (v) => money(v) } },
+    };
+    const tendenciaSeries = [{ name: 'Total cobrado', data: tendencia.map((t) => t.total) }];
+
+    const estadoLabels = ['Pendiente', 'Parcial', 'Pagado'];
+    const estadoData = [estadoCobros.PENDIENTE, estadoCobros.PARCIAL, estadoCobros.PAGADO];
+    const estadoOptions = {
+        chart: { fontFamily: 'inherit' },
+        labels: estadoLabels,
+        colors: [CHART_COLORS[2], CHART_COLORS[0], CHART_COLORS[1]],
+        legend: { position: 'bottom' },
+        dataLabels: { enabled: true, formatter: (v) => `${v.toFixed(0)}%` },
+        plotOptions: { pie: { donut: { labels: { show: true, total: { show: true, label: 'Cobros' } } } } },
+    };
+
+    const consumoOptions = {
+        chart: { toolbar: { show: false }, fontFamily: 'inherit' },
+        colors: [CHART_COLORS[2]],
+        plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+        dataLabels: { enabled: false },
+        xaxis: { categories: filas.map((f) => f.codigo_unidad), labels: { style: { colors: '#94a3b8' } } },
+        yaxis: { labels: { formatter: (v) => `${Number(v).toFixed(0)} kWh` } },
+        grid: { borderColor: '#f1f5f9' },
+    };
+    const consumoSeries = [{ name: 'Consumo', data: filas.map((f) => Number(f.consumo_kwh || 0)) }];
 
     return (
         <AdminLayout title="Dashboard">
@@ -24,11 +62,31 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats })
                 </select>
             </div>
 
-            <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <KpiCard title="Total alquiler mensual" value={money(stats.total_alquiler)} desc={`Suma de las ${stats.total_ocupados} unidades ocupadas`} color="bg-success/10 text-success" />
                 <KpiCard title="Luz distribuida" value={money(stats.total_luz)} desc="Resultado de la liquidación del recibo" color="bg-primary-light text-primary" />
                 <KpiCard title="Consumo liquidado" value={`${number(totalConsumo)} kWh`} desc="Suma de consumos de unidades ocupadas" color="bg-amber-50 text-warning" />
                 <KpiCard title="Cobro teórico del mes" value={money(stats.total_cobrar)} desc="Alquiler + agua fija + luz" color="bg-purple-50 text-purple-600" />
+                <KpiCard title="Morosidad total" value={money(morosidadTotal)} desc="Deuda anterior acumulada" color="bg-red-50 text-danger" />
+            </div>
+
+            <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
+                <section className="rounded-lg border border-gray-200 bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-800">Tendencia de cobros (últimos {tendencia.length} periodos)</h3>
+                    {tendencia.length > 0 ? (
+                        <Chart options={tendenciaOptions} series={tendenciaSeries} type="area" height={260} />
+                    ) : (
+                        <p className="py-8 text-center text-sm text-gray-400">Sin periodos suficientes todavía.</p>
+                    )}
+                </section>
+                <section className="rounded-lg border border-gray-200 bg-white p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-800">Estado de cobros del periodo</h3>
+                    {estadoData.some((v) => v > 0) ? (
+                        <Chart options={estadoOptions} series={estadoData} type="donut" height={260} />
+                    ) : (
+                        <p className="py-8 text-center text-sm text-gray-400">Sin cobros generados para este periodo.</p>
+                    )}
+                </section>
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
@@ -48,33 +106,40 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats })
                     {filas.length === 0 ? (
                         <p className="py-4 text-sm text-gray-400">Sin datos. Genera la liquidación primero.</p>
                     ) : (
-                        <div className="space-y-3">
-                            {filas.map((row) => {
-                                const pct = (Number(row.porcentaje_participacion || 0) * 100).toFixed(1);
-                                return (
-                                    <div key={row.id_unidad} className="rounded-lg border border-gray-100 p-3">
-                                        <div className="mb-2 flex items-center gap-2">
-                                            <span className="text-sm font-semibold text-gray-800">Unidad {row.codigo_unidad}</span>
-                                            <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs text-primary-dark">{row.inquilino?.split(' ')[0] ?? '—'}</span>
-                                            <span className="ml-auto text-xs text-gray-400">{row.nombre_unidad}</span>
-                                        </div>
-                                        <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                                            <div><p className="text-gray-400">Consumo</p><p className="font-medium text-gray-700">{number(row.consumo_kwh)} kWh</p></div>
-                                            <div><p className="text-gray-400">Luz</p><p className="font-medium text-gray-700">{money(row.total_pagar_luz)}</p></div>
-                                            <div><p className="text-gray-400">Alquiler</p><p className="font-medium text-gray-700">{money(row.monto_alquiler)}</p></div>
-                                            <div><p className="text-gray-400">Total</p><p className="font-semibold text-gray-900">{money(row.total_cobrar)}</p></div>
-                                        </div>
-                                        <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
-                                            <span>Participación</span>
-                                            <div className="h-1.5 flex-1 rounded-full bg-gray-100">
-                                                <div className="h-1.5 rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                        <>
+                            <div className="mb-4">
+                                <h4 className="mb-2 text-xs font-semibold uppercase text-gray-500">Consumo por unidad</h4>
+                                <Chart options={consumoOptions} series={consumoSeries} type="bar" height={220} />
+                            </div>
+
+                            <div className="space-y-3">
+                                {filas.map((row) => {
+                                    const pct = (Number(row.porcentaje_participacion || 0) * 100).toFixed(1);
+                                    return (
+                                        <div key={row.id_unidad} className="rounded-lg border border-gray-100 p-3">
+                                            <div className="mb-2 flex items-center gap-2">
+                                                <span className="text-sm font-semibold text-gray-800">Unidad {row.codigo_unidad}</span>
+                                                <span className="rounded-full bg-primary-light px-2 py-0.5 text-xs text-primary-dark">{row.inquilino?.split(' ')[0] ?? '—'}</span>
+                                                <span className="ml-auto text-xs text-gray-400">{row.nombre_unidad}</span>
                                             </div>
-                                            <span>{pct}%</span>
+                                            <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                                                <div><p className="text-gray-400">Consumo</p><p className="font-medium text-gray-700">{number(row.consumo_kwh)} kWh</p></div>
+                                                <div><p className="text-gray-400">Luz</p><p className="font-medium text-gray-700">{money(row.total_pagar_luz)}</p></div>
+                                                <div><p className="text-gray-400">Alquiler</p><p className="font-medium text-gray-700">{money(row.monto_alquiler)}</p></div>
+                                                <div><p className="text-gray-400">Total</p><p className="font-semibold text-gray-900">{money(row.total_cobrar)}</p></div>
+                                            </div>
+                                            <div className="mt-2 flex items-center gap-2 text-xs text-gray-400">
+                                                <span>Participación</span>
+                                                <div className="h-1.5 flex-1 rounded-full bg-gray-100">
+                                                    <div className="h-1.5 rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                                                </div>
+                                                <span>{pct}%</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                    );
+                                })}
+                            </div>
+                        </>
                     )}
                 </section>
 
@@ -93,6 +158,19 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats })
                             </div>
                         </div>
                     </section>
+
+                    {vencimientosContrato.length > 0 && (
+                        <section className="rounded-lg border border-gray-200 bg-white p-4">
+                            <h3 className="mb-3 text-sm font-semibold text-gray-800">Contratos por vencer</h3>
+                            <div className="space-y-2">
+                                {vencimientosContrato.map((aviso) => (
+                                    <div key={aviso.id_referencia} className={`rounded-lg px-3 py-2 text-xs ${aviso.nivel === 'URGENTE' ? 'bg-red-50 text-danger' : 'bg-amber-50 text-warning'}`}>
+                                        <strong>{aviso.nivel === 'URGENTE' ? 'Urgente' : 'Próximo'}:</strong> {aviso.mensaje}
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
 
                     <section className="rounded-lg border border-gray-200 bg-white p-4">
                         <h3 className="mb-3 text-sm font-semibold text-gray-800">Regla de cálculo</h3>

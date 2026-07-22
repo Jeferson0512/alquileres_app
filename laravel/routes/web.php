@@ -111,6 +111,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/usuarios', [UsuarioController::class, 'store'])->middleware('permission:usuarios.crear')->name('usuarios.store');
     Route::patch('/usuarios/{usuario}/rol', [UsuarioController::class, 'asignarRol'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.asignar-rol');
     Route::get('/usuarios/roles', [RolePermissionController::class, 'index'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles');
+    Route::post('/usuarios/roles', [RolePermissionController::class, 'store'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.store');
     Route::patch('/usuarios/roles/toggle', [RolePermissionController::class, 'toggle'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.toggle');
 });
 
