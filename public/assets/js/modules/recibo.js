@@ -179,7 +179,6 @@ export function renderRecibo(view, state, onSave, canEdit = true, onCopyPrev = n
   if (canEdit) {
     document.getElementById("btnSaveRecibo")?.addEventListener("click", () => {
       onSave({
-        id_inmueble: 1,
         numero_suministro: document.getElementById("rr_numero_suministro")?.value?.trim() || null,
         fecha_emision: document.getElementById("rr_fecha_emision")?.value || null,
         fecha_vencimiento: document.getElementById("rr_fecha_vencimiento")?.value || null,

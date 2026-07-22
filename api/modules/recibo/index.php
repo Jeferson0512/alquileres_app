@@ -39,6 +39,18 @@ function bodyText(array $body, string $key): ?string
     return $value === '' ? null : $value;
 }
 
+function currentInmuebleId(PDO $pdo): int
+{
+    $stmt = $pdo->query("SELECT id_inmueble FROM inmuebles WHERE estado = 'ACTIVO' ORDER BY id_inmueble LIMIT 1");
+    $row = $stmt->fetch();
+
+    if (!$row) {
+        throw new RuntimeException('No hay ningun inmueble activo registrado');
+    }
+
+    return (int) $row['id_inmueble'];
+}
+
 try {
     $pdo = Database::getConnection();
     $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -70,7 +82,7 @@ try {
 
             $recibo = [
                 'id_recibo_luz' => null,
-                'id_inmueble' => 1,
+                'id_inmueble' => currentInmuebleId($pdo),
                 'id_periodo' => $periodoId,
                 'numero_recibo' => autoNumeroRecibo($pdo, $periodoId),
                 'numero_suministro' => null,
@@ -114,7 +126,7 @@ try {
     $consumoGeneral = max($lecturaActual - $lecturaAnterior, 0);
 
     $payload = [
-        'id_inmueble' => (int) ($body['id_inmueble'] ?? 1),
+        'id_inmueble' => currentInmuebleId($pdo),
         'id_periodo' => $periodoId,
         'numero_recibo' => autoNumeroRecibo($pdo, $periodoId),
         'numero_suministro' => bodyText($body, 'numero_suministro'),
