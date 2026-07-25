@@ -13,7 +13,12 @@ class ContactInquiry extends Model
 {
     protected $table = 'contact_inquiries';
 
-    protected $fillable = ['name', 'email', 'phone', 'message', 'unit_id', 'status'];
+    protected $fillable = ['name', 'email', 'phone', 'message', 'unit_id', 'status', 'leido_en'];
+
+    protected function casts(): array
+    {
+        return ['leido_en' => 'datetime'];
+    }
 
     public function unidad(): BelongsTo
     {

@@ -1,17 +1,15 @@
+import Badge from '@/Components/Badge';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, usePage } from '@inertiajs/react';
 
+const ESTADO_VARIANTS = { NUEVO: 'info', CONTACTADO: 'success', DESCARTADO: 'gray' };
+
 function EstadoBadge({ estado }) {
-    const styles = {
-        NUEVO: 'bg-blue-50 text-primary',
-        CONTACTADO: 'bg-green-50 text-success',
-        DESCARTADO: 'bg-gray-100 text-gray-500',
-    };
-    return <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${styles[estado] ?? ''}`}>{estado}</span>;
+    return <Badge variant={ESTADO_VARIANTS[estado] ?? 'gray'}>{estado}</Badge>;
 }
 
 export default function Index({ consultas }) {
-    const { flash, auth } = usePage().props;
+    const { auth } = usePage().props;
     const puedeGestionar = auth.permissions.includes('consultas.gestionar');
 
     const cambiarEstado = (consulta, status) => {
@@ -21,8 +19,6 @@ export default function Index({ consultas }) {
     return (
         <AdminLayout title="Consultas">
             <Head title="Consultas" />
-
-            {flash?.success && <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>}
 
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
