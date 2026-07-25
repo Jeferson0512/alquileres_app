@@ -3,6 +3,7 @@
 use App\Http\Controllers\AvisoController;
 use App\Http\Controllers\CobroController;
 use App\Http\Controllers\CobroOverrideController;
+use App\Http\Controllers\ComprobantePagoController;
 use App\Http\Controllers\ConfigCobranzaController;
 use App\Http\Controllers\ContactInquiryController;
 use App\Http\Controllers\DashboardController;
@@ -10,10 +11,12 @@ use App\Http\Controllers\LandingController;
 use App\Http\Controllers\InquilinoController;
 use App\Http\Controllers\LecturaController;
 use App\Http\Controllers\LiquidacionController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\OcupacionController;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\PerfilCampoController;
 use App\Http\Controllers\PeriodoController;
+use App\Http\Controllers\PortalComprobanteController;
 use App\Http\Controllers\PortalController;
 use App\Http\Controllers\PortalPerfilController;
 use App\Http\Controllers\RolePermissionController;
@@ -27,7 +30,10 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', [LandingController::class, 'index'])->name('landing');
-Route::post('/contacto', [LandingController::class, 'store'])->name('landing.contacto');
+// throttle:6,1 -- mismo limite que ya usa el resto de la app (routes/auth.php)
+// para acciones publicas/sensibles; sin esto un bot podia inundar la tabla
+// de consultas y el correo del admin sin ningun limite.
+Route::post('/contacto', [LandingController::class, 'store'])->middleware('throttle:6,1')->name('landing.contacto');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'permission:dashboard.ver'])
@@ -49,7 +55,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/inquilinos', [InquilinoController::class, 'index'])->middleware('permission:inquilinos.ver')->name('inquilinos.index');
     Route::post('/inquilinos', [InquilinoController::class, 'store'])->middleware('permission:inquilinos.crear')->name('inquilinos.store');
     Route::patch('/inquilinos/{inquilino}', [InquilinoController::class, 'update'])->middleware('permission:inquilinos.editar')->name('inquilinos.update');
-    Route::delete('/inquilinos/{inquilino}', [InquilinoController::class, 'destroy'])->middleware('permission:inquilinos.eliminar')->name('inquilinos.destroy');
+    Route::patch('/inquilinos/{inquilino}/estado', [InquilinoController::class, 'toggleEstado'])->middleware('permission:inquilinos.eliminar')->name('inquilinos.estado');
 
     // Tarifas
     Route::get('/tarifas', [TarifaController::class, 'index'])->middleware('permission:tarifas.ver')->name('tarifas.index');
@@ -64,7 +70,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/unidades', [UnidadController::class, 'index'])->middleware('permission:unidades.ver')->name('unidades.index');
     Route::post('/unidades', [UnidadController::class, 'store'])->middleware('permission:unidades.crear')->name('unidades.store');
     Route::patch('/unidades/{unidad}', [UnidadController::class, 'update'])->middleware('permission:unidades.editar')->name('unidades.update');
-    Route::delete('/unidades/{unidad}', [UnidadController::class, 'destroy'])->middleware('permission:unidades.editar')->name('unidades.destroy');
+    Route::patch('/unidades/{unidad}/estado', [UnidadController::class, 'toggleEstado'])->middleware('permission:unidades.editar')->name('unidades.estado');
     Route::post('/unidades/medidor-compartido', [UnidadMedidorCompartidoController::class, 'store'])->middleware('permission:unidades.editar')->name('unidades.medidor.store');
     Route::delete('/unidades/medidor-compartido/{medidorCompartido}', [UnidadMedidorCompartidoController::class, 'destroy'])->middleware('permission:unidades.editar')->name('unidades.medidor.destroy');
 
@@ -83,6 +89,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/ocupaciones', [OcupacionController::class, 'store'])->middleware('permission:ocupaciones.crear')->name('ocupaciones.store');
     Route::patch('/ocupaciones/{ocupacion}', [OcupacionController::class, 'update'])->middleware('permission:ocupaciones.crear')->name('ocupaciones.update');
     Route::delete('/ocupaciones/{ocupacion}', [OcupacionController::class, 'destroy'])->middleware('permission:ocupaciones.finalizar')->name('ocupaciones.destroy');
+    Route::patch('/ocupaciones/{ocupacion}/anular', [OcupacionController::class, 'anular'])->middleware('permission:ocupaciones.finalizar')->name('ocupaciones.anular');
+
+    // Notificaciones (historial de renovaciones pendientes/resueltas) -- disponible
+    // para cualquier usuario autenticado, no solo quien puede finalizar ocupaciones.
+    Route::get('/notificaciones', [NotificacionController::class, 'index'])->name('notificaciones.index');
+    Route::patch('/notificaciones/marcar-leidas', [NotificacionController::class, 'marcarLeidas'])->name('notificaciones.marcar-leidas');
 
     // Liquidación
     Route::get('/liquidacion', [LiquidacionController::class, 'index'])->middleware('permission:liquidacion.ver')->name('liquidacion.index');
@@ -90,6 +102,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Cobros
     Route::get('/cobros', [CobroController::class, 'index'])->middleware('permission:cobros.ver')->name('cobros.index');
+    Route::get('/cobros/pagos', [CobroController::class, 'index'])->middleware('permission:cobros.pagos.ver')->name('cobros.pagos.index');
     Route::get('/cobros/detalle', [CobroController::class, 'detail'])->middleware('permission:cobros.ver')->name('cobros.detalle');
     Route::post('/cobros/generar', [CobroController::class, 'generar'])->middleware('permission:cobros.generar')->name('cobros.generar');
     Route::post('/cobros/forzar-actualizacion', [CobroController::class, 'forceRefresh'])->middleware('permission:cobros.forzar_actualizacion')->name('cobros.forzar');
@@ -101,34 +114,53 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/pagos/{pago}/reversa', [PagoController::class, 'reversa'])->middleware('permission:cobros.pagos.anular')->name('pagos.reversa');
     Route::get('/pagos/{pago}/auditoria', [PagoController::class, 'auditoria'])->middleware('permission:cobros.ver')->name('pagos.auditoria');
 
+    // Comprobantes de pago (subidos por inquilinos desde el portal, revisados aquí)
+    Route::get('/cobros/comprobantes', [ComprobantePagoController::class, 'index'])->middleware('permission:cobros.comprobantes.ver')->name('comprobantes.index');
+    Route::patch('/cobros/comprobantes/{comprobante}/aprobar', [ComprobantePagoController::class, 'aprobar'])->middleware('permission:cobros.comprobantes.revisar')->name('comprobantes.aprobar');
+    Route::patch('/cobros/comprobantes/{comprobante}/rechazar', [ComprobantePagoController::class, 'rechazar'])->middleware('permission:cobros.comprobantes.revisar')->name('comprobantes.rechazar');
+    // Sin middleware de permiso especifico: la autorizacion (staff con
+    // cobros.comprobantes.ver O el inquilino dueño) se resuelve dentro del
+    // controller, igual que el resto del portal -- ver imagen().
+    Route::get('/cobros/comprobantes/{comprobante}/imagen', [ComprobantePagoController::class, 'imagen'])->name('comprobantes.imagen');
+
     // Avisos
     Route::get('/avisos', [AvisoController::class, 'index'])->middleware('permission:avisos.ver')->name('avisos.index');
 
     // Usuarios
     Route::get('/usuarios', [UsuarioController::class, 'index'])->middleware('permission:usuarios.ver')->name('usuarios.index');
     Route::post('/usuarios', [UsuarioController::class, 'store'])->middleware('permission:usuarios.crear')->name('usuarios.store');
+    Route::patch('/usuarios/{usuario}', [UsuarioController::class, 'update'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.update');
     Route::patch('/usuarios/{usuario}/rol', [UsuarioController::class, 'asignarRol'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.asignar-rol');
-    Route::get('/usuarios/roles', [RolePermissionController::class, 'index'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles');
-    Route::post('/usuarios/roles', [RolePermissionController::class, 'store'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.store');
-    Route::patch('/usuarios/roles/toggle', [RolePermissionController::class, 'toggle'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.toggle');
-    Route::get('/usuarios/perfil-campos', [PerfilCampoController::class, 'index'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.perfil-campos');
-    Route::patch('/usuarios/perfil-campos/{campo}', [PerfilCampoController::class, 'update'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.perfil-campos.update');
+    Route::patch('/usuarios/{usuario}/estado', [UsuarioController::class, 'toggleEstado'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.estado');
+    Route::patch('/usuarios/{usuario}/password', [UsuarioController::class, 'resetPassword'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.password');
+    // Roles y permisos, y Campos del perfil viven en rutas propias (no bajo
+    // /usuarios/*) porque son submodulos independientes de Configuracion, no
+    // paginas hijas de Usuarios -- si comparten prefijo el sidebar los marca
+    // ambos como activos a la vez.
+    Route::get('/roles-permisos', [RolePermissionController::class, 'index'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles');
+    Route::post('/roles-permisos', [RolePermissionController::class, 'store'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.store');
+    Route::patch('/roles-permisos/toggle', [RolePermissionController::class, 'toggle'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.roles.toggle');
+    Route::get('/perfil-campos', [PerfilCampoController::class, 'index'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.perfil-campos');
+    Route::patch('/perfil-campos/{campo}', [PerfilCampoController::class, 'update'])->middleware('permission:usuarios.asignar_rol')->name('usuarios.perfil-campos.update');
 
     // Consultas (del landing page publico)
     Route::get('/consultas', [ContactInquiryController::class, 'index'])->middleware('permission:consultas.ver')->name('consultas.index');
     Route::patch('/consultas/{consulta}', [ContactInquiryController::class, 'update'])->middleware('permission:consultas.gestionar')->name('consultas.update');
 });
 
-// Portal de Inquilinos (solo lectura) -- fuera del panel admin, sin el
-// catalogo de permisos {modulo}.{accion}, gateado solo por rol. La
-// ocupacion.activa corre primero: si el contrato ya finalizo, ni siquiera
-// llega a completar-perfil, se le cierra la sesion directamente.
+// Portal de Inquilinos -- fuera del panel admin, sin el catalogo de permisos
+// {modulo}.{accion}, gateado solo por rol. Es de solo lectura salvo por la
+// unica escritura permitida (subir un comprobante de pago), que siempre
+// resuelve la propiedad desde el id_persona autenticado, nunca de la
+// request. La ocupacion.activa corre primero: si el contrato ya finalizo,
+// ni siquiera llega a completar-perfil, se le cierra la sesion directamente.
 Route::middleware(['auth', 'role:Inquilino', 'ocupacion.activa'])->prefix('portal')->name('portal.')->group(function () {
     Route::get('/completar-perfil', [PortalPerfilController::class, 'edit'])->name('perfil.completar');
     Route::patch('/completar-perfil', [PortalPerfilController::class, 'update'])->name('perfil.actualizar');
 
     Route::middleware('perfil.completo')->group(function () {
         Route::get('/', [PortalController::class, 'index'])->name('index');
+        Route::post('/comprobantes', [PortalComprobanteController::class, 'store'])->name('comprobantes.store');
     });
 });
 

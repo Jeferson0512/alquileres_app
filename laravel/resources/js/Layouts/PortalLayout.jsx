@@ -1,4 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
+import { UserCog } from 'lucide-react';
 
 /**
  * Layout minimalista para el portal del Inquilino -- sin el sidebar de
@@ -14,6 +15,12 @@ export default function PortalLayout({ title, children }) {
                 <span className="text-lg font-semibold text-primary">Alquileres App</span>
                 <div className="flex items-center gap-3">
                     <span className="hidden text-sm text-gray-500 sm:inline">{auth.user?.name}</span>
+                    <Link
+                        href={route('portal.perfil.completar')}
+                        className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                    >
+                        <UserCog className="h-4 w-4" /> <span className="hidden sm:inline">Mi perfil</span>
+                    </Link>
                     <Link
                         href={route('logout')} method="post" as="button"
                         className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"

@@ -1,8 +1,8 @@
 import Dropdown from '@/Components/Dropdown';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
-    Bell, Building2, Calculator, Calendar, ChevronDown, Gauge, KeyRound,
-    LayoutDashboard, Menu, MessageSquare, Receipt, Settings, Tag, UserCog, Users, Wallet, Zap,
+    Banknote, Bell, Building2, Calculator, Calendar, ChevronDown, CircleCheck, CircleX, Gauge, IdCard, KeyRound,
+    LayoutDashboard, Menu, MessageSquare, Receipt, ReceiptText, RefreshCcw, Settings, ShieldCheck, Tag, UserCog, Users, Wallet, Zap,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -10,6 +10,8 @@ import { useState } from 'react';
 // ej. config_cobranza.ver) no coincide literalmente con el segmento de la URL.
 const CODE_TO_PATH = {
     config_cobranza: 'config-cobranza',
+    'usuarios/roles': 'roles-permisos',
+    'usuarios/perfil_campos': 'perfil-campos',
 };
 
 // Un ícono Lucide por módulo/submódulo (mismos "code" de la tabla `modules`).
@@ -24,10 +26,14 @@ const MODULE_ICONS = {
     liquidacion: Calculator,
     cobros: Wallet,
     'cobros.pagos': Receipt,
+    'cobros.comprobantes': ReceiptText,
     avisos: Bell,
+    configuracion: Settings,
     tarifas: Tag,
-    config_cobranza: Settings,
+    config_cobranza: Banknote,
     usuarios: UserCog,
+    'usuarios.roles': ShieldCheck,
+    'usuarios.perfil_campos': IdCard,
     consultas: MessageSquare,
 };
 
@@ -42,6 +48,14 @@ function isModuleActive(currentPath, code) {
     return currentPath === `/${segment}` || currentPath.startsWith(`/${segment}/`);
 }
 
+// Padres "virtuales" como Configuración no tienen ruta propia (nadie visita
+// /configuracion) -- su unica pista de que siguen activos es que la URL
+// actual coincida con alguno de sus hijos reales.
+function isParentActive(currentPath, item) {
+    if (isModuleActive(currentPath, item.code)) return true;
+    return (item.children ?? []).some((child) => isModuleActive(currentPath, child.code));
+}
+
 function ModuleIcon({ code, className }) {
     const Icon = MODULE_ICONS[code];
     return Icon ? <Icon className={className} strokeWidth={2} /> : null;
@@ -49,7 +63,7 @@ function ModuleIcon({ code, className }) {
 
 function NavItem({ item, currentPath }) {
     const hasChildren = item.children && item.children.length > 0;
-    const active = isModuleActive(currentPath, item.code);
+    const active = hasChildren ? isParentActive(currentPath, item) : isModuleActive(currentPath, item.code);
     const [open, setOpen] = useState(active);
 
     if (!hasChildren) {
@@ -111,6 +125,91 @@ function NavItem({ item, currentPath }) {
     );
 }
 
+const NOTIFICACION_ICONOS = {
+    RENOVACION: { Icon: RefreshCcw, bg: 'bg-amber-100', text: 'text-warning' },
+    COMPROBANTE_PENDIENTE: { Icon: ReceiptText, bg: 'bg-amber-100', text: 'text-warning' },
+    COMPROBANTE_APROBADO: { Icon: CircleCheck, bg: 'bg-green-100', text: 'text-success' },
+    COMPROBANTE_RECHAZADO: { Icon: CircleX, bg: 'bg-red-100', text: 'text-danger' },
+    CONSULTA_NUEVO: { Icon: MessageSquare, bg: 'bg-amber-100', text: 'text-warning' },
+    CONSULTA_CONTACTADO: { Icon: MessageSquare, bg: 'bg-green-100', text: 'text-success' },
+    CONSULTA_DESCARTADO: { Icon: MessageSquare, bg: 'bg-gray-100', text: 'text-gray-400' },
+};
+
+function iconoDe(item) {
+    const clave = item.tipo === 'RENOVACION' ? item.tipo : `${item.tipo}_${item.subestado}`;
+    return NOTIFICACION_ICONOS[clave] ?? NOTIFICACION_ICONOS.RENOVACION;
+}
+
+function NotificacionesBell() {
+    const { notificaciones } = usePage().props;
+    const items = notificaciones ?? [];
+    const noLeidas = items.filter((n) => !n.leido).length;
+
+    const marcarLeidas = (e) => {
+        e.preventDefault();
+        router.patch(route('notificaciones.marcar-leidas'), {}, { preserveScroll: true, preserveState: true });
+    };
+
+    return (
+        <Dropdown>
+            <Dropdown.Trigger>
+                <button
+                    type="button"
+                    className="relative flex items-center gap-2 rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+                    title="Notificaciones"
+                >
+                    <Bell className="h-5 w-5" />
+                    {noLeidas > 0 && (
+                        <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white">
+                            {noLeidas}
+                        </span>
+                    )}
+                </button>
+            </Dropdown.Trigger>
+            <Dropdown.Content align="right" width="80" contentClasses="bg-white">
+                <div className="flex items-center justify-between border-b border-gray-100 px-3 py-2.5">
+                    <p className="text-sm font-semibold text-gray-800">Notificaciones</p>
+                    {noLeidas > 0 && (
+                        <button type="button" onClick={marcarLeidas} className="text-xs font-medium text-primary hover:text-primary-dark">
+                            Marcar leídas
+                        </button>
+                    )}
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                    {items.length === 0 ? (
+                        <p className="px-3 py-6 text-center text-sm text-gray-400">Sin notificaciones por ahora.</p>
+                    ) : (
+                        items.map((n) => {
+                            const { Icon, bg, text } = iconoDe(n);
+                            return (
+                                <Link
+                                    key={n.id}
+                                    href={n.url}
+                                    className={`flex items-start gap-2.5 border-b border-gray-50 px-3 py-2.5 text-left hover:bg-gray-50 ${!n.leido ? 'bg-amber-50/60' : ''}`}
+                                >
+                                    <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${bg} ${text}`}>
+                                        <Icon className="h-4 w-4" />
+                                    </span>
+                                    <span className="min-w-0 flex-1">
+                                        <span className="flex items-center gap-1.5 text-sm font-medium text-gray-800">
+                                            <span className="truncate">{n.titulo}</span>
+                                            {!n.leido && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
+                                        </span>
+                                        <span className="mt-0.5 block text-xs text-gray-500">{n.detalle}</span>
+                                    </span>
+                                </Link>
+                            );
+                        })
+                    )}
+                </div>
+                <Link href={route('notificaciones.index')} className="block border-t border-gray-100 px-3 py-2.5 text-center text-xs font-medium text-primary hover:text-primary-dark">
+                    Ver todas las notificaciones →
+                </Link>
+            </Dropdown.Content>
+        </Dropdown>
+    );
+}
+
 export default function AdminLayout({ title, children }) {
     const { auth, navigation, url } = usePage().props;
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
@@ -162,6 +261,8 @@ export default function AdminLayout({ title, children }) {
                         {title && <h1 className="text-base font-semibold text-gray-800">{title}</h1>}
                     </div>
 
+                    <div className="flex items-center gap-2">
+                    <NotificacionesBell />
                     <Dropdown>
                         <Dropdown.Trigger>
                             <button
@@ -180,11 +281,13 @@ export default function AdminLayout({ title, children }) {
                         </Dropdown.Trigger>
                         <Dropdown.Content>
                             <Dropdown.Link href={route('profile.edit')}>Perfil</Dropdown.Link>
+                            <Dropdown.Link href={route('notificaciones.index')}>Notificaciones</Dropdown.Link>
                             <Dropdown.Link href={route('logout')} method="post" as="button">
                                 Cerrar sesión
                             </Dropdown.Link>
                         </Dropdown.Content>
                     </Dropdown>
+                    </div>
                 </header>
 
                 <main className="p-4 sm:p-6">{children}</main>
