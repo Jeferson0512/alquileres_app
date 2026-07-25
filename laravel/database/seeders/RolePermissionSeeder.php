@@ -30,27 +30,45 @@ class RolePermissionSeeder extends Seeder
         'liquidacion.ver', 'liquidacion.generar', 'liquidacion.recalcular',
 
         'cobros.ver', 'cobros.generar', 'cobros.forzar_actualizacion',
-        'cobros.pagos.registrar', 'cobros.pagos.reversar', 'cobros.pagos.anular',
+        'cobros.pagos.ver', 'cobros.pagos.registrar', 'cobros.pagos.reversar', 'cobros.pagos.anular',
+        'cobros.comprobantes.ver', 'cobros.comprobantes.revisar',
 
         'avisos.ver', 'avisos.enviar',
+
+        'configuracion.ver',
 
         'tarifas.ver', 'tarifas.editar',
 
         'config_cobranza.ver', 'config_cobranza.editar',
 
         'usuarios.ver', 'usuarios.crear', 'usuarios.asignar_rol',
+        'usuarios.roles.ver', 'usuarios.perfil_campos.ver',
 
         'consultas.ver', 'consultas.gestionar',
     ];
 
     /**
-     * Permisos del rol Supervisor: todos los .ver, mas lecturas y registrar pagos.
-     * Explicitamente SIN tarifas/config_cobranza/usuarios ni cobros.pagos.anular.
+     * Permisos del rol Supervisor: todos los .ver, mas lecturas y registrar
+     * pagos. Ojo: Supervisor SI ve tarifas/config_cobranza/usuarios (los
+     * ".ver" son de solo lectura), pero NO puede editarlos ni asignar
+     * roles -- por eso "Roles y permisos" y "Campos del perfil" quedan
+     * excluidos del sidebar (su unica razon de ser es mutar algo que
+     * Supervisor no tiene permiso de tocar).
      */
     private const SUPERVISOR_EXTRA = [
         'lecturas.registrar',
         'lecturas.sincronizar',
         'cobros.pagos.registrar',
+        'cobros.comprobantes.revisar',
+    ];
+
+    /**
+     * ".ver" que igual se excluyen del auto-otorgado a Supervisor -- ver
+     * docstring de SUPERVISOR_EXTRA.
+     */
+    private const SUPERVISOR_VER_EXCLUIDOS = [
+        'usuarios.roles.ver',
+        'usuarios.perfil_campos.ver',
     ];
 
     public function run(): void
@@ -64,7 +82,7 @@ class RolePermissionSeeder extends Seeder
 
         $verPermissions = array_values(array_filter(
             self::PERMISSIONS,
-            fn (string $permission) => str_ends_with($permission, '.ver')
+            fn (string $permission) => str_ends_with($permission, '.ver') && !in_array($permission, self::SUPERVISOR_VER_EXCLUIDOS, true)
         ));
 
         $supervisor = Role::firstOrCreate(['name' => 'Supervisor', 'guard_name' => 'web']);

@@ -1,9 +1,7 @@
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 
 export default function PerfilCampos({ campos }) {
-    const { flash } = usePage().props;
-
     const toggle = (campo) => {
         router.patch(route('usuarios.perfil-campos.update', campo.id), { required: !campo.required }, { preserveScroll: true });
     };
@@ -11,12 +9,6 @@ export default function PerfilCampos({ campos }) {
     return (
         <AdminLayout title="Campos del perfil de inquilino">
             <Head title="Campos del perfil" />
-
-            <div className="mb-4">
-                <Link href={route('usuarios.index')} className="text-sm font-medium text-primary hover:text-primary-dark">← Volver a Usuarios</Link>
-            </div>
-
-            {flash?.success && <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>}
 
             <div className="mb-4 rounded-lg bg-primary-light px-4 py-3 text-sm text-primary-dark">
                 Estos son los datos que un inquilino debe completar antes de poder usar su portal. Marca cuáles son obligatorios — los que no marques quedan como opcionales.

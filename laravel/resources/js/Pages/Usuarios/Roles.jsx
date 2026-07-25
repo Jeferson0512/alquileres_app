@@ -1,5 +1,5 @@
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { Fragment, useState } from 'react';
 
 const ACCION_LABELS = {
@@ -15,7 +15,7 @@ function accionLabel(accion) {
 }
 
 export default function Roles({ grupos, roles, rolePermissions }) {
-    const { flash } = usePage().props;
+    const { errors: pageErrors } = usePage().props;
     const [creating, setCreating] = useState(false);
     const { data, setData, post, processing, errors, reset } = useForm({ name: '', permisos: [] });
 
@@ -43,8 +43,7 @@ export default function Roles({ grupos, roles, rolePermissions }) {
         <AdminLayout title="Roles y permisos">
             <Head title="Roles y permisos" />
 
-            <div className="mb-4 flex items-center justify-between">
-                <Link href={route('usuarios.index')} className="text-sm font-medium text-primary hover:text-primary-dark">← Volver a Usuarios</Link>
+            <div className="mb-4 flex items-center justify-end">
                 {!creating && (
                     <button onClick={() => setCreating(true)} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark">
                         Crear rol
@@ -52,8 +51,7 @@ export default function Roles({ grupos, roles, rolePermissions }) {
                 )}
             </div>
 
-            {flash?.success && <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>}
-            {flash?.errors?.role && <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-danger">{flash.errors.role}</div>}
+            {pageErrors?.role && <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-danger">{pageErrors.role}</div>}
 
             {creating && (
                 <form onSubmit={crearRol} className="mb-4 rounded-lg border border-gray-200 bg-white p-4">
