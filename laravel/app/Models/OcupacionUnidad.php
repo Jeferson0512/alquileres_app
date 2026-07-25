@@ -15,6 +15,7 @@ class OcupacionUnidad extends Model
     protected $fillable = [
         'id_unidad', 'id_persona', 'fecha_inicio', 'fecha_fin',
         'monto_alquiler', 'garantia', 'estado', 'observacion',
+        'motivo_fin', 'motivo_fin_detalle', 'renovada_de_id',
     ];
 
     public function unidad(): BelongsTo
@@ -25,6 +26,15 @@ class OcupacionUnidad extends Model
     public function persona(): BelongsTo
     {
         return $this->belongsTo(Persona::class, 'id_persona', 'id_persona');
+    }
+
+    /**
+     * Si esta ocupacion nacio de renovar un contrato anterior (ver
+     * OcupacionController::destroy), apunta a esa fila previa.
+     */
+    public function renovadaDe(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'renovada_de_id', 'id_ocupacion');
     }
 
     /**

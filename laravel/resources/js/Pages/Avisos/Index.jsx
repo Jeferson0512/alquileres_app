@@ -1,4 +1,5 @@
 import AdminLayout from '@/Layouts/AdminLayout';
+import formatDate from '@/lib/date';
 import { Head, Link, router } from '@inertiajs/react';
 import { useMemo, useRef, useState } from 'react';
 
@@ -396,7 +397,7 @@ export default function Index({ periodo, periodos, cobros, config, vencimientosC
             `Pendiente del periodo: ${money(isPaid ? 0 : saldoPeriodo)}`,
             deuda > 0 ? `Deuda anterior: ${money(deuda)}` : null,
             `${isPaid ? 'Pagado total' : (hasDeuda ? 'Pendiente total' : 'Pendiente del mes')}: ${money(isPaid ? Math.max(pagado, Number(row.total_cobrar || 0)) : (hasDeuda ? saldoTotal : saldoPeriodo))}`,
-            row.fecha_vencimiento ? `Vence: ${row.fecha_vencimiento}` : null,
+            row.fecha_vencimiento ? `Vence: ${formatDate(row.fecha_vencimiento)}` : null,
             !isPaid && config?.yape_numero ? `Yape: ${config.yape_numero} (${config.yape_titular || ''})` : null,
             !isPaid && config?.banco_nombre ? `Transferencia: ${config.banco_nombre} / ${config.banco_cuenta || config.banco_cci || ''}` : null,
         ].filter(Boolean).join('\n');
@@ -506,7 +507,7 @@ export default function Index({ periodo, periodos, cobros, config, vencimientosC
                                             <span className="text-xs text-gray-500">{formatTenantDisplayName(row)}</span>
                                         </div>
                                         <div className="text-right">
-                                            <small className="block text-xs text-gray-400">{row.fecha_vencimiento ?? 'Sin vencimiento'}</small>
+                                            <small className="block text-xs text-gray-400">{row.fecha_vencimiento ? formatDate(row.fecha_vencimiento) : 'Sin vencimiento'}</small>
                                             <strong className="text-primary">{money(saldoTotalPendiente(row))}</strong>
                                         </div>
                                     </button>
