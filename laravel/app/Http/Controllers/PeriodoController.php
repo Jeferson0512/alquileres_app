@@ -27,14 +27,19 @@ class PeriodoController extends Controller
         return back()->with('success', 'Periodo creado correctamente');
     }
 
+    /**
+     * Solo fecha_fin y observacion son editables -- año/mes/fecha_inicio
+     * identifican el periodo y el cierre del anterior ya se hace solo al
+     * crear uno nuevo (ver PeriodoService::crear), asi que no hay boton de
+     * "cerrar" manual aqui.
+     */
     public function update(Request $request, Periodo $periodo): RedirectResponse
     {
-        $data = $request->only(['observacion', 'estado', 'fecha_inicio', 'fecha_fin']);
+        $data = $request->validate([
+            'fecha_fin' => ['nullable', 'date', 'after_or_equal:'.$periodo->fecha_inicio->toDateString()],
+            'observacion' => ['nullable', 'string', 'max:255'],
+        ]);
         $data = array_filter($data, fn ($v) => $v !== null);
-
-        if (isset($data['estado']) && !in_array($data['estado'], ['ABIERTO', 'CERRADO', 'ANULADO'], true)) {
-            unset($data['estado']);
-        }
 
         if (empty($data)) {
             return back()->withErrors(['general' => 'No se recibieron campos para actualizar']);

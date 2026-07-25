@@ -30,7 +30,11 @@ class PeriodoService
         $fechaInicio = $datos['fecha_inicio'] ?? sprintf('%04d-%02d-01', $anio, $mes);
         $fechaInicio = Carbon::parse($fechaInicio)->toDateString();
 
-        $fechaFin = $datos['fecha_fin'] ?? Carbon::parse($fechaInicio)->endOfMonth()->toDateString();
+        // Convención del negocio: el ciclo dura un mes exacto desde fecha_inicio,
+        // cerrando el día anterior al mismo día del mes siguiente (ej. 15 a 14),
+        // no el fin de mes calendario -- así evitamos que quede mal calculado
+        // si el admin no especifica fecha_fin explícitamente.
+        $fechaFin = $datos['fecha_fin'] ?? Carbon::parse($fechaInicio)->addMonthNoOverflow()->subDay()->toDateString();
         $fechaFin = Carbon::parse($fechaFin)->toDateString();
 
         if ($fechaInicio > $fechaFin) {

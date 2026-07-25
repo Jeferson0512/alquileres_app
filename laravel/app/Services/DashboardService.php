@@ -24,8 +24,9 @@ class DashboardService
     }
 
     /**
-     * Total cobrado (no anulado) de los ultimos $meses periodos, del mas
-     * antiguo al mas reciente -- para el grafico de tendencia del Dashboard.
+     * Facturado vs. realmente cobrado (no anulado) de los ultimos $meses
+     * periodos, del mas antiguo al mas reciente -- para el grafico de
+     * tendencia del Dashboard.
      */
     public function tendenciaMensual(int $meses = 6): array
     {
@@ -35,15 +36,24 @@ class DashboardService
             ->get(['id_periodo', 'anio', 'mes']);
 
         return $periodos->reverse()->values()->map(function ($periodo) {
-            $total = (float) DB::table('cobros_mensuales')
+            $facturado = (float) DB::table('cobros_mensuales')
                 ->where('id_periodo', $periodo->id_periodo)
                 ->where('estado_pago', '!=', 'ANULADO')
                 ->sum('total_cobrar');
 
+            $cobrado = (float) DB::table('pagos as pg')
+                ->join('cobros_mensuales as c', 'c.id_cobro', '=', 'pg.id_cobro')
+                ->where('c.id_periodo', $periodo->id_periodo)
+                ->where('c.estado_pago', '!=', 'ANULADO')
+                ->where('pg.estado', 'REGISTRADO')
+                ->sum('pg.monto_pagado');
+
             return [
                 'periodo_id' => $periodo->id_periodo,
                 'label' => sprintf('%02d/%d', $periodo->mes, $periodo->anio),
-                'total' => round($total, 2),
+                'facturado' => round($facturado, 2),
+                'cobrado' => round($cobrado, 2),
+                'pendiente' => round(max($facturado - $cobrado, 0), 2),
             ];
         })->all();
     }

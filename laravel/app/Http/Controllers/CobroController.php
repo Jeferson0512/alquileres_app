@@ -22,6 +22,8 @@ class CobroController extends Controller
             'periodo' => $periodo,
             'periodos' => Periodo::orderByDesc('anio')->orderByDesc('mes')->get(['id_periodo', 'anio', 'mes', 'estado']),
             'cobros' => $service->listarParaPeriodo($periodo),
+            // Independiente del periodo_id seleccionado arriba -- ver carteraVencida().
+            'carteraVencida' => $service->carteraVencida(),
         ]);
     }
 

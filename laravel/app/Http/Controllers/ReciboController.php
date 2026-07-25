@@ -27,7 +27,7 @@ class ReciboController extends Controller
                 'id_inmueble' => Inmueble::activoActual()->id_inmueble,
                 'id_periodo' => $periodo->id_periodo,
                 'numero_recibo' => $this->autoNumeroRecibo($periodo),
-                'numero_suministro' => null,
+                'numero_suministro' => $reciboPrev?->numero_suministro,
                 'fecha_emision' => null,
                 'fecha_vencimiento' => null,
                 'lectura_anterior_general' => $reciboPrev?->lectura_actual_general ?? 0,

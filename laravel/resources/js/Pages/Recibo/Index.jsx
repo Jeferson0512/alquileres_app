@@ -3,7 +3,7 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect } from 'react';
 
 export default function Index({ periodo, periodos, recibo, tieneAnterior }) {
-    const { flash, errors, auth } = usePage().props;
+    const { errors, auth } = usePage().props;
     const puede = auth.permissions.includes('recibo.editar');
     const editable = periodo.estado === 'ABIERTO' && puede;
 
@@ -76,9 +76,6 @@ export default function Index({ periodo, periodos, recibo, tieneAnterior }) {
         <AdminLayout title="Recibo de luz">
             <Head title="Recibo de luz" />
 
-            {flash?.success && (
-                <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>
-            )}
             {errors?.general && (
                 <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-danger">{errors.general}</div>
             )}

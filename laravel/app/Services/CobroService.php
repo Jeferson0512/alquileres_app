@@ -236,6 +236,46 @@ class CobroService
     }
 
     /**
+     * Cartera vencida: cobros con saldo de PERIODOS ANTERIORES al periodo
+     * actualmente ABIERTO -- a proposito independiente del periodo que el
+     * admin tenga seleccionado en el filtro de la pantalla de Cobros, para
+     * que esta lista no "desaparezca" solo porque cambio de mes a revisar.
+     */
+    public function carteraVencida(): array
+    {
+        $abierto = Periodo::where('estado', 'ABIERTO')->orderByDesc('anio')->orderByDesc('mes')->first()
+            ?? Periodo::orderByDesc('anio')->orderByDesc('mes')->firstOrFail();
+
+        $rows = DB::table('cobros_mensuales as c')
+            ->join('periodos as per', 'per.id_periodo', '=', 'c.id_periodo')
+            ->join('unidades as u', 'u.id_unidad', '=', 'c.id_unidad')
+            ->join('personas as p', 'p.id_persona', '=', 'c.id_persona')
+            ->where('per.fecha_fin', '<', $abierto->fecha_inicio)
+            ->whereIn('c.estado_pago', ['PENDIENTE', 'PARCIAL'])
+            ->orderBy('per.anio')->orderBy('per.mes')->orderBy('u.codigo_unidad')
+            ->get([
+                'c.id_cobro', 'c.id_persona', 'c.id_unidad', 'u.codigo_unidad',
+                'per.anio', 'per.mes',
+                DB::raw("CONCAT(p.nombres, ' ', p.apellidos) as inquilino"),
+                'c.total_cobrar', 'c.fecha_vencimiento', 'c.estado_pago',
+            ]);
+
+        return $rows->map(function ($row) {
+            $pagadoTotal = (float) Pago::where('id_cobro', $row->id_cobro)->where('estado', 'REGISTRADO')->sum('monto_pagado');
+            $saldoPendiente = max((float) $row->total_cobrar - $pagadoTotal, 0);
+
+            return array_merge((array) $row, [
+                'periodo_label' => sprintf('%02d/%d', $row->mes, $row->anio),
+                'pagado_total' => round($pagadoTotal, 2),
+                'saldo_pendiente' => round($saldoPendiente, 2),
+            ]);
+        })
+            ->filter(fn ($row) => $row['saldo_pendiente'] > 0.009)
+            ->values()
+            ->all();
+    }
+
+    /**
      * Filas para la pantalla de Cobros: pagado/saldo/deuda anterior calculados.
      */
     public function listarParaPeriodo(Periodo $periodo): array

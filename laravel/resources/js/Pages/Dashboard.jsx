@@ -1,6 +1,8 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
-import { AlertTriangle, CalendarClock, Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import {
+    AlertTriangle, Calculator, CalendarClock, Gauge, Info, Minus, TrendingDown, TrendingUp, Wallet, Zap,
+} from 'lucide-react';
 import Chart from 'react-apexcharts';
 
 function money(value) {
@@ -20,16 +22,21 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats, t
 
     const tendenciaOptions = {
         chart: { toolbar: { show: false }, fontFamily: 'inherit' },
-        colors: [CHART_COLORS[0]],
+        colors: [CHART_COLORS[0], CHART_COLORS[1], CHART_COLORS[2]],
         stroke: { curve: 'smooth', width: 3 },
-        fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.05 } },
+        fill: { type: 'gradient', gradient: { opacityFrom: 0.3, opacityTo: 0.05 } },
         dataLabels: { enabled: false },
+        legend: { position: 'top', horizontalAlign: 'right', fontSize: '12px' },
         xaxis: { categories: tendencia.map((t) => t.label), labels: { style: { colors: '#94a3b8' } } },
         yaxis: { labels: { formatter: (v) => `S/ ${Number(v).toFixed(0)}` } },
         grid: { borderColor: '#f1f5f9' },
         tooltip: { y: { formatter: (v) => money(v) } },
     };
-    const tendenciaSeries = [{ name: 'Total cobrado', data: tendencia.map((t) => t.total) }];
+    const tendenciaSeries = [
+        { name: 'Facturado', data: tendencia.map((t) => t.facturado) },
+        { name: 'Cobrado', data: tendencia.map((t) => t.cobrado) },
+        { name: 'Pendiente', data: tendencia.map((t) => t.pendiente) },
+    ];
 
     const estadoLabels = ['Pendiente', 'Parcial', 'Pagado'];
     const estadoData = [estadoCobros.PENDIENTE, estadoCobros.PARCIAL, estadoCobros.PAGADO];
@@ -77,11 +84,11 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats, t
             </div>
 
             <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <KpiCard title="Total alquiler mensual" value={money(stats.total_alquiler)} desc={`Suma de las ${stats.total_ocupados} unidades ocupadas`} color="bg-success/10 text-success" />
-                <KpiCard title="Luz distribuida" value={money(stats.total_luz)} desc="Resultado de la liquidación del recibo" color="bg-primary-light text-primary" />
-                <KpiCard title="Consumo liquidado" value={`${number(totalConsumo)} kWh`} desc="Suma de consumos de unidades ocupadas" color="bg-amber-50 text-warning" />
-                <KpiCard title="Cobro teórico del mes" value={money(stats.total_cobrar)} desc="Alquiler + agua fija + luz" color="bg-purple-50 text-purple-600" />
-                <KpiCard title="Morosidad total" value={money(morosidadTotal)} desc="Deuda anterior acumulada" color="bg-red-50 text-danger" />
+                <KpiCard title="Total alquiler mensual" value={money(stats.total_alquiler)} desc={`Suma de las ${stats.total_ocupados} unidades ocupadas`} icon={Wallet} iconColor="text-success" />
+                <KpiCard title="Luz distribuida" value={money(stats.total_luz)} desc="Resultado de la liquidación del recibo" icon={Zap} iconColor="text-primary" />
+                <KpiCard title="Consumo liquidado" value={`${number(totalConsumo)} kWh`} desc="Suma de consumos de unidades ocupadas" icon={Gauge} iconColor="text-warning" />
+                <KpiCard title="Cobro teórico del mes" value={money(stats.total_cobrar)} desc="Alquiler + agua fija + luz" icon={Calculator} iconColor="text-purple-600" />
+                <KpiCard title="Morosidad total" value={money(morosidadTotal)} desc="Deuda anterior acumulada" icon={AlertTriangle} iconColor="text-danger" />
             </div>
 
             <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
@@ -216,12 +223,22 @@ export default function Dashboard({ periodo, periodos, recibo, preview, stats, t
     );
 }
 
-function KpiCard({ title, value, desc, color }) {
+function KpiCard({ title, value, desc, icon: Icon, iconColor }) {
     return (
         <article className="rounded-lg border border-gray-200 bg-white p-4">
-            <p className="text-xs font-medium text-gray-500">{title}</p>
-            <p className="mt-1 text-xl font-bold text-gray-900">{value}</p>
-            <p className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs ${color}`}>{desc}</p>
+            <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
+                <span>{title}</span>
+                <span className="group relative inline-flex">
+                    <Info tabIndex={0} className="h-3.5 w-3.5 cursor-help text-gray-300 outline-none hover:text-gray-400 focus:text-gray-400" />
+                    <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 w-44 -translate-x-1/2 rounded-md bg-gray-800 px-2 py-1.5 text-center text-[11px] font-normal normal-case leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                        {desc}
+                    </span>
+                </span>
+            </div>
+            <div className="mt-1 flex items-center gap-2">
+                {Icon && <Icon className={`h-5 w-5 shrink-0 ${iconColor ?? 'text-gray-400'}`} />}
+                <p className="text-xl font-bold text-gray-900">{value}</p>
+            </div>
         </article>
     );
 }

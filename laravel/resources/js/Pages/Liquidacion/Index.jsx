@@ -3,7 +3,7 @@ import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function Index({ periodo, periodos, meta, data }) {
-    const { flash, errors, auth } = usePage().props;
+    const { errors, auth } = usePage().props;
     const puedeGenerar = auth.permissions.includes('liquidacion.generar');
     const [ajustes, setAjustes] = useState(() => Object.fromEntries((data || []).map((r) => [r.id_unidad, r.ajuste])));
 
@@ -18,7 +18,6 @@ export default function Index({ periodo, periodos, meta, data }) {
         <AdminLayout title="Liquidación de luz">
             <Head title="Liquidación" />
 
-            {flash?.success && <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>}
             {errors?.general && <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-danger">{errors.general}</div>}
 
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
