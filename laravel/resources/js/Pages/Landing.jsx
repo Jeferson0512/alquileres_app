@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import {
     ArrowRight, Building2, CheckCircle2, Clock, Home as HomeIcon,
     MapPin, MessageCircle, Send, ShieldCheck, Sparkles,
@@ -48,7 +48,6 @@ function Reveal({ as: Tag = 'div', className = '', delay = 0, children }) {
 }
 
 export default function Landing({ unidadesDisponibles }) {
-    const { flash } = usePage().props;
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '', email: '', phone: '', message: '', unit_id: '',
     });
@@ -198,9 +197,6 @@ export default function Landing({ unidadesDisponibles }) {
                     </Reveal>
 
                     <Reveal delay={150}>
-                        {flash?.success && (
-                            <div className="mb-4 rounded-xl border border-success/30 bg-success/10 px-4 py-3 text-sm text-white">{flash.success}</div>
-                        )}
                         <form onSubmit={submit} className="grid grid-cols-1 gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg sm:grid-cols-2 sm:p-8">
                             <div>
                                 <label className="block text-xs font-medium text-white/60">Nombre *</label>

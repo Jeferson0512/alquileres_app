@@ -1,19 +1,17 @@
+import Badge from '@/Components/Badge';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
+const AUDITORIA_VARIANTS = { OK: 'info', REVISAR: 'warning', SIN_HISTORICO: 'gray' };
+const AUDITORIA_LABELS = { OK: 'OK', REVISAR: 'Revisar', SIN_HISTORICO: 'Sin histórico' };
+
 function AuditoriaBadge({ estado }) {
-    const styles = {
-        OK: 'bg-primary-light text-primary-dark',
-        REVISAR: 'bg-amber-50 text-warning',
-        SIN_HISTORICO: 'bg-gray-100 text-gray-500',
-    };
-    const labels = { OK: 'OK', REVISAR: 'Revisar', SIN_HISTORICO: 'Sin histórico' };
-    return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[estado]}`}>{labels[estado]}</span>;
+    return <Badge variant={AUDITORIA_VARIANTS[estado] ?? 'gray'}>{AUDITORIA_LABELS[estado] ?? estado}</Badge>;
 }
 
 export default function Index({ periodo, periodos, lecturas }) {
-    const { flash, errors, auth } = usePage().props;
+    const { errors, auth } = usePage().props;
     const [valores, setValores] = useState(() => Object.fromEntries(lecturas.map((l) => [l.id_lectura, l.lectura_actual])));
     const [saving, setSaving] = useState(false);
 
@@ -41,9 +39,6 @@ export default function Index({ periodo, periodos, lecturas }) {
         <AdminLayout title="Lecturas">
             <Head title="Lecturas" />
 
-            {flash?.success && (
-                <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>
-            )}
             {errors?.general && (
                 <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-danger">{errors.general}</div>
             )}

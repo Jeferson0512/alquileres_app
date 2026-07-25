@@ -1,10 +1,19 @@
 import '../css/app.css';
 
-import { createInertiaApp } from '@inertiajs/react';
+import toast from '@/lib/toast';
+import { createInertiaApp, router } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot } from 'react-dom/client';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
+router.on('success', (event) => {
+    const flash = event.detail.page.props.flash ?? {};
+    toast.success(flash.success);
+    toast.error(flash.error);
+    toast.warning(flash.warning);
+    toast.info(flash.info);
+});
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,

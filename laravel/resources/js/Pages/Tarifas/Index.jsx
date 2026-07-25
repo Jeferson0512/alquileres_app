@@ -3,7 +3,7 @@ import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function Index({ tarifas }) {
-    const { flash, auth } = usePage().props;
+    const { auth } = usePage().props;
     const [editing, setEditing] = useState(null);
     const { data, setData, patch, processing, errors } = useForm({ descripcion: '', monto: 0, activo: true });
 
@@ -22,10 +22,6 @@ export default function Index({ tarifas }) {
     return (
         <AdminLayout title="Tarifas">
             <Head title="Tarifas" />
-
-            {flash?.success && (
-                <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>
-            )}
 
             <p className="mb-4 text-sm text-gray-500">Montos de agua, gas, mantenimiento y demás servicios por unidad. Cada cambio queda auditado.</p>
 
