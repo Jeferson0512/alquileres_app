@@ -11,11 +11,15 @@ use Inertia\Response;
 
 class UnidadController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $estado = $request->query('estado', 'ACTIVO');
+
         return Inertia::render('Unidades/Index', [
-            'unidades' => Unidad::orderBy('piso')->orderBy('codigo_unidad')->get(),
+            'unidades' => Unidad::when($estado !== 'TODOS', fn ($query) => $query->where('estado', $estado))
+                ->orderBy('piso')->orderBy('codigo_unidad')->paginate(20)->withQueryString(),
             'tipos' => Unidad::TIPOS,
+            'estadoFiltro' => $estado,
         ]);
     }
 
@@ -61,10 +65,11 @@ class UnidadController extends Controller
         return back()->with('success', 'Unidad actualizada correctamente');
     }
 
-    public function destroy(Unidad $unidad): RedirectResponse
+    public function toggleEstado(Unidad $unidad): RedirectResponse
     {
-        $unidad->update(['estado' => 'INACTIVO']);
+        $nuevoEstado = $unidad->estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+        $unidad->update(['estado' => $nuevoEstado]);
 
-        return back()->with('success', 'Unidad desactivada correctamente');
+        return back()->with('success', $nuevoEstado === 'INACTIVO' ? 'Unidad dada de baja correctamente' : 'Unidad reactivada correctamente');
     }
 }

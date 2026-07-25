@@ -1,10 +1,82 @@
+import IconButton from '@/Components/IconButton';
+import StatusBadge from '@/Components/StatusBadge';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import confirmDialog from '@/lib/confirm';
+import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { KeyRound, Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useState } from 'react';
 
+function EditarModal({ usuario, onClose }) {
+    const { data, setData, patch, processing, errors } = useForm({ name: usuario.name, email: usuario.email });
+
+    const submit = (e) => {
+        e.preventDefault();
+        patch(route('usuarios.update', usuario.id), { onSuccess: onClose });
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl">
+                <h3 className="mb-4 text-base font-semibold text-gray-800">Editar usuario</h3>
+                <form onSubmit={submit} className="space-y-3">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500">Nombre *</label>
+                        <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                        {errors.name && <p className="mt-1 text-xs text-danger">{errors.name}</p>}
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500">Email *</label>
+                        <input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                        {errors.email && <p className="mt-1 text-xs text-danger">{errors.email}</p>}
+                    </div>
+                    {errors.general && <p className="text-xs text-danger">{errors.general}</p>}
+                    <div className="flex gap-2 pt-2">
+                        <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
+                        <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+function PasswordModal({ usuario, onClose }) {
+    const { data, setData, patch, processing, errors, reset } = useForm({ password: '', password_confirmation: '' });
+
+    const submit = (e) => {
+        e.preventDefault();
+        patch(route('usuarios.password', usuario.id), { onSuccess: onClose, onError: () => setData('password', '') });
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl">
+                <h3 className="mb-1 text-base font-semibold text-gray-800">Cambiar contraseña</h3>
+                <p className="mb-4 text-sm text-gray-500">{usuario.name}</p>
+                <p className="mb-4 rounded-lg bg-primary-light px-3 py-2 text-xs text-primary-dark">
+                    Esto reemplaza la contraseña sin pedir la actual — úsalo cuando el usuario la olvidó y no puede entrar él mismo a cambiarla.
+                </p>
+                <form onSubmit={submit} className="space-y-3">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-500">Contraseña nueva *</label>
+                        <input type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                        {errors.password && <p className="mt-1 text-xs text-danger">{errors.password}</p>}
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                        <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
+                        <button type="button" onClick={() => { reset(); onClose(); }} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 export default function Index({ usuarios, roles, personasDisponibles }) {
-    const { flash, auth } = usePage().props;
+    const { auth } = usePage().props;
     const [creating, setCreating] = useState(false);
+    const [editando, setEditando] = useState(null);
+    const [cambiandoPassword, setCambiandoPassword] = useState(null);
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '', email: '', password: '', rol: roles[roles.length - 1] ?? '', id_persona: '',
     });
@@ -25,23 +97,22 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
         router.patch(route('usuarios.asignar-rol', usuario.id), { rol });
     };
 
+    const toggleEstado = async (usuario) => {
+        const activando = usuario.estado !== 'ACTIVO';
+        const ok = await confirmDialog({
+            title: activando ? '¿Reactivar usuario?' : '¿Dar de baja?',
+            text: usuario.name,
+            confirmText: activando ? 'Reactivar' : 'Dar de baja',
+            danger: !activando,
+        });
+        if (ok) router.patch(route('usuarios.estado', usuario.id));
+    };
+
     return (
         <AdminLayout title="Usuarios">
             <Head title="Usuarios" />
 
-            {flash?.success && <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>}
-
-            <div className="mb-4 flex items-center justify-between">
-                {puede('usuarios.asignar_rol') && (
-                    <div className="flex gap-4">
-                        <Link href={route('usuarios.roles')} className="text-sm font-medium text-primary hover:text-primary-dark">
-                            Roles y permisos →
-                        </Link>
-                        <Link href={route('usuarios.perfil-campos')} className="text-sm font-medium text-primary hover:text-primary-dark">
-                            Campos del perfil →
-                        </Link>
-                    </div>
-                )}
+            <div className="mb-4 flex items-center justify-end">
                 {puede('usuarios.crear') && !creating && (
                     <button onClick={() => setCreating(true)} className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark">
                         Nuevo usuario
@@ -134,6 +205,8 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
                             <th className="px-4 py-2 text-left font-medium text-gray-500">Nombre</th>
                             <th className="px-4 py-2 text-left font-medium text-gray-500">Email</th>
                             <th className="px-4 py-2 text-left font-medium text-gray-500">Rol</th>
+                            <th className="px-4 py-2 text-left font-medium text-gray-500">Estado</th>
+                            <th className="px-4 py-2 text-right font-medium text-gray-500">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -155,11 +228,35 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
                                         <span className="rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-medium text-primary-dark">{u.rol ?? 'Sin rol'}</span>
                                     )}
                                 </td>
+                                <td className="px-4 py-2">
+                                    <StatusBadge estado={u.estado} />
+                                </td>
+                                <td className="px-4 py-2 text-right">
+                                    <div className="flex items-center justify-end gap-1">
+                                        {puede('usuarios.asignar_rol') && u.id_persona === null && (
+                                            <IconButton icon={Pencil} label="Editar nombre/email" onClick={() => setEditando(u)} />
+                                        )}
+                                        {puede('usuarios.asignar_rol') && (
+                                            <IconButton icon={KeyRound} label="Cambiar contraseña" onClick={() => setCambiandoPassword(u)} />
+                                        )}
+                                        {puede('usuarios.asignar_rol') && u.id !== auth.user.id && (
+                                            <IconButton
+                                                icon={u.estado === 'ACTIVO' ? ToggleRight : ToggleLeft}
+                                                label={u.estado === 'ACTIVO' ? 'Dar de baja' : 'Reactivar'}
+                                                variant={u.estado === 'ACTIVO' ? 'success' : 'default'}
+                                                onClick={() => toggleEstado(u)}
+                                            />
+                                        )}
+                                    </div>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
+
+            {editando && <EditarModal usuario={editando} onClose={() => setEditando(null)} />}
+            {cambiandoPassword && <PasswordModal usuario={cambiandoPassword} onClose={() => setCambiandoPassword(null)} />}
         </AdminLayout>
     );
 }

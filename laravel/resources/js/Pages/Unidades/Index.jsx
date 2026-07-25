@@ -1,18 +1,38 @@
+import IconButton from '@/Components/IconButton';
+import Pagination from '@/Components/Pagination';
+import StatusBadge from '@/Components/StatusBadge';
+import StatusTabs from '@/Components/StatusTabs';
 import AdminLayout from '@/Layouts/AdminLayout';
+import confirmDialog from '@/lib/confirm';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useState } from 'react';
+
+const ESTADO_TABS = [
+    { value: 'ACTIVO', label: 'Activas' },
+    { value: 'INACTIVO', label: 'De baja' },
+    { value: 'TODOS', label: 'Todas' },
+];
 
 const emptyForm = {
     id_inmueble: 1, codigo_unidad: '', nombre_unidad: '', piso: 1, tipo_unidad: 'CUARTO',
     tiene_medidor: 'SI', medidor_codigo: '', tarifa_alquiler_base: 0, observacion: '', estado: 'ACTIVO',
 };
 
-export default function Index({ unidades, tipos }) {
-    const { flash, auth } = usePage().props;
+export default function Index({ unidades, tipos, estadoFiltro }) {
+    const { auth } = usePage().props;
     const [editing, setEditing] = useState(null);
     const { data, setData, post, patch, processing, errors, reset } = useForm(emptyForm);
 
     const puede = (permiso) => auth.permissions.includes(permiso);
+
+    const cambiarEstado = (estado) => {
+        router.get(route('unidades.index'), { estado }, { preserveState: true, replace: true });
+    };
+
+    const cambiarPagina = (page) => {
+        router.get(route('unidades.index'), { estado: estadoFiltro, page }, { preserveState: true, preserveScroll: true });
+    };
 
     const startEdit = (u) => {
         setEditing(u.id_unidad);
@@ -33,21 +53,23 @@ export default function Index({ unidades, tipos }) {
         }
     };
 
-    const desactivar = (u) => {
-        if (confirm(`¿Desactivar la unidad ${u.codigo_unidad}?`)) {
-            router.delete(route('unidades.destroy', u.id_unidad));
-        }
+    const toggleEstado = async (u) => {
+        const activando = u.estado !== 'ACTIVO';
+        const ok = await confirmDialog({
+            title: activando ? '¿Reactivar unidad?' : '¿Dar de baja?',
+            text: `Unidad ${u.codigo_unidad}`,
+            confirmText: activando ? 'Reactivar' : 'Dar de baja',
+            danger: !activando,
+        });
+        if (ok) router.patch(route('unidades.estado', u.id_unidad));
     };
 
     return (
         <AdminLayout title="Unidades">
             <Head title="Unidades" />
 
-            {flash?.success && (
-                <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>
-            )}
-
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <StatusTabs value={estadoFiltro} options={ESTADO_TABS} onChange={cambiarEstado} />
                 {puede('unidades.crear') && (
                     <button type="button" onClick={startNew} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark">
                         Nueva unidad
@@ -96,7 +118,7 @@ export default function Index({ unidades, tipos }) {
                         <label className="block text-xs font-medium text-gray-500">Estado</label>
                         <select value={data.estado} onChange={(e) => setData('estado', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm">
                             <option value="ACTIVO">Activo</option>
-                            <option value="INACTIVO">Inactivo</option>
+                            <option value="INACTIVO">De baja</option>
                         </select>
                     </div>
                     <div className="col-span-2 flex gap-2 sm:col-span-4">
@@ -124,7 +146,7 @@ export default function Index({ unidades, tipos }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {unidades.map((u) => (
+                        {unidades.data.map((u) => (
                             <tr key={u.id_unidad}>
                                 <td className="px-4 py-2 font-medium text-gray-800">{u.codigo_unidad}</td>
                                 <td className="px-4 py-2 text-gray-500">{u.nombre_unidad}</td>
@@ -132,22 +154,28 @@ export default function Index({ unidades, tipos }) {
                                 <td className="px-4 py-2 text-gray-500">{u.tipo_unidad}</td>
                                 <td className="px-4 py-2 text-right text-gray-500">S/ {Number(u.tarifa_alquiler_base).toFixed(2)}</td>
                                 <td className="px-4 py-2">
-                                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${u.estado === 'ACTIVO' ? 'bg-primary-light text-primary-dark' : 'bg-gray-100 text-gray-600'}`}>
-                                        {u.estado}
-                                    </span>
+                                    <StatusBadge estado={u.estado} />
                                 </td>
                                 <td className="px-4 py-2 text-right">
-                                    {puede('unidades.editar') && (
-                                        <button onClick={() => startEdit(u)} className="mr-3 text-sm font-medium text-primary hover:text-primary-dark">Editar</button>
-                                    )}
-                                    {puede('unidades.editar') && u.estado === 'ACTIVO' && (
-                                        <button onClick={() => desactivar(u)} className="text-sm font-medium text-danger hover:opacity-75">Desactivar</button>
-                                    )}
+                                    <div className="flex items-center justify-end gap-1">
+                                        {puede('unidades.editar') && (
+                                            <IconButton icon={Pencil} label="Editar" variant="primary" onClick={() => startEdit(u)} />
+                                        )}
+                                        {puede('unidades.editar') && (
+                                            <IconButton
+                                                icon={u.estado === 'ACTIVO' ? ToggleRight : ToggleLeft}
+                                                label={u.estado === 'ACTIVO' ? 'Dar de baja' : 'Reactivar'}
+                                                variant={u.estado === 'ACTIVO' ? 'success' : 'default'}
+                                                onClick={() => toggleEstado(u)}
+                                            />
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+                <Pagination meta={unidades} onPageChange={cambiarPagina} />
             </div>
         </AdminLayout>
     );

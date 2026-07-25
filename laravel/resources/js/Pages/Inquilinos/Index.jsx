@@ -1,14 +1,28 @@
+import IconButton from '@/Components/IconButton';
+import Pagination from '@/Components/Pagination';
+import StatusBadge from '@/Components/StatusBadge';
+import StatusTabs from '@/Components/StatusTabs';
 import AdminLayout from '@/Layouts/AdminLayout';
+import confirmDialog from '@/lib/confirm';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { Pencil, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useState } from 'react';
 
+const ESTADO_TABS = [
+    { value: 'ACTIVO', label: 'Activos' },
+    { value: 'INACTIVO', label: 'De baja' },
+    { value: 'TODOS', label: 'Todos' },
+];
+
+const TIPOS_DOCUMENTO = ['DNI', 'CE', 'PASAPORTE', 'RUC'];
+
 const emptyForm = {
-    nombres: '', apellidos: '', tipo_documento: '', numero_documento: '',
+    nombres: '', apellidos: '', tipo_documento: 'DNI', numero_documento: '',
     celular: '', email: '', direccion: '', observacion: '', estado: 'ACTIVO',
 };
 
-export default function Index({ inquilinos, filtro }) {
-    const { flash, auth } = usePage().props;
+export default function Index({ inquilinos, filtro, estadoFiltro }) {
+    const { auth } = usePage().props;
     const [q, setQ] = useState(filtro ?? '');
     const [editing, setEditing] = useState(null); // null | 'new' | id_persona
 
@@ -18,7 +32,15 @@ export default function Index({ inquilinos, filtro }) {
 
     const buscar = (value) => {
         setQ(value);
-        router.get(route('inquilinos.index'), { q: value }, { preserveState: true, replace: true });
+        router.get(route('inquilinos.index'), { q: value, estado: estadoFiltro }, { preserveState: true, replace: true });
+    };
+
+    const cambiarEstado = (estado) => {
+        router.get(route('inquilinos.index'), { q, estado }, { preserveState: true, replace: true });
+    };
+
+    const cambiarPagina = (page) => {
+        router.get(route('inquilinos.index'), { q, estado: estadoFiltro, page }, { preserveState: true, preserveScroll: true });
     };
 
     const startEdit = (inquilino) => {
@@ -40,28 +62,32 @@ export default function Index({ inquilinos, filtro }) {
         }
     };
 
-    const desactivar = (inquilino) => {
-        if (confirm(`¿Desactivar a ${inquilino.nombres} ${inquilino.apellidos}?`)) {
-            router.delete(route('inquilinos.destroy', inquilino.id_persona));
-        }
+    const toggleEstado = async (inquilino) => {
+        const activando = inquilino.estado !== 'ACTIVO';
+        const ok = await confirmDialog({
+            title: activando ? '¿Reactivar inquilino?' : '¿Dar de baja?',
+            text: `${inquilino.nombres} ${inquilino.apellidos}`,
+            confirmText: activando ? 'Reactivar' : 'Dar de baja',
+            danger: !activando,
+        });
+        if (ok) router.patch(route('inquilinos.estado', inquilino.id_persona));
     };
 
     return (
         <AdminLayout title="Inquilinos">
             <Head title="Inquilinos" />
 
-            {flash?.success && (
-                <div className="mb-4 rounded-lg bg-green-50 px-4 py-3 text-sm text-success">{flash.success}</div>
-            )}
-
-            <div className="mb-4 flex items-center justify-between gap-4">
-                <input
-                    type="search"
-                    placeholder="Buscar por nombre, apellido o documento..."
-                    value={q}
-                    onChange={(e) => buscar(e.target.value)}
-                    className="w-72 rounded-lg border-gray-300 text-sm"
-                />
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                    <StatusTabs value={estadoFiltro} options={ESTADO_TABS} onChange={cambiarEstado} />
+                    <input
+                        type="search"
+                        placeholder="Buscar por nombre, apellido o documento..."
+                        value={q}
+                        onChange={(e) => buscar(e.target.value)}
+                        className="w-72 rounded-lg border-gray-300 text-sm"
+                    />
+                </div>
                 {puede('inquilinos.crear') && (
                     <button type="button" onClick={startNew} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark">
                         Nuevo inquilino
@@ -82,18 +108,22 @@ export default function Index({ inquilinos, filtro }) {
                         {errors.apellidos && <p className="mt-1 text-xs text-danger">{errors.apellidos}</p>}
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-500">Documento</label>
+                        <label className="block text-xs font-medium text-gray-500">Documento *</label>
                         <div className="mt-1 flex gap-2">
-                            <input placeholder="Tipo" value={data.tipo_documento ?? ''} onChange={(e) => setData('tipo_documento', e.target.value)} className="w-1/3 rounded-md border-gray-300 text-sm" />
+                            <select value={data.tipo_documento} onChange={(e) => setData('tipo_documento', e.target.value)} className="w-1/3 rounded-md border-gray-300 text-sm">
+                                {TIPOS_DOCUMENTO.map((t) => <option key={t} value={t}>{t}</option>)}
+                            </select>
                             <input placeholder="Número" value={data.numero_documento ?? ''} onChange={(e) => setData('numero_documento', e.target.value)} className="w-2/3 rounded-md border-gray-300 text-sm" />
                         </div>
+                        {errors.tipo_documento && <p className="mt-1 text-xs text-danger">{errors.tipo_documento}</p>}
+                        {errors.numero_documento && <p className="mt-1 text-xs text-danger">{errors.numero_documento}</p>}
                     </div>
                     <div>
                         <label className="block text-xs font-medium text-gray-500">Celular</label>
                         <input value={data.celular ?? ''} onChange={(e) => setData('celular', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-500">Email</label>
+                        <label className="block text-xs font-medium text-gray-500">Email *</label>
                         <input type="email" value={data.email ?? ''} onChange={(e) => setData('email', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
                         {errors.email && <p className="mt-1 text-xs text-danger">{errors.email}</p>}
                     </div>
@@ -101,7 +131,7 @@ export default function Index({ inquilinos, filtro }) {
                         <label className="block text-xs font-medium text-gray-500">Estado</label>
                         <select value={data.estado} onChange={(e) => setData('estado', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm">
                             <option value="ACTIVO">Activo</option>
-                            <option value="INACTIVO">Inactivo</option>
+                            <option value="INACTIVO">De baja</option>
                         </select>
                     </div>
                     <div className="col-span-2 sm:col-span-3">
@@ -131,28 +161,34 @@ export default function Index({ inquilinos, filtro }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {inquilinos.map((i) => (
+                        {inquilinos.data.map((i) => (
                             <tr key={i.id_persona}>
                                 <td className="px-4 py-2 font-medium text-gray-800">{i.nombres} {i.apellidos}</td>
                                 <td className="px-4 py-2 text-gray-500">{i.tipo_documento} {i.numero_documento}</td>
                                 <td className="px-4 py-2 text-gray-500">{i.celular ?? '-'}</td>
                                 <td className="px-4 py-2">
-                                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${i.estado === 'ACTIVO' ? 'bg-primary-light text-primary-dark' : 'bg-gray-100 text-gray-600'}`}>
-                                        {i.estado}
-                                    </span>
+                                    <StatusBadge estado={i.estado} />
                                 </td>
                                 <td className="px-4 py-2 text-right">
-                                    {puede('inquilinos.editar') && (
-                                        <button onClick={() => startEdit(i)} className="mr-3 text-sm font-medium text-primary hover:text-primary-dark">Editar</button>
-                                    )}
-                                    {puede('inquilinos.eliminar') && i.estado === 'ACTIVO' && (
-                                        <button onClick={() => desactivar(i)} className="text-sm font-medium text-danger hover:opacity-75">Desactivar</button>
-                                    )}
+                                    <div className="flex items-center justify-end gap-1">
+                                        {puede('inquilinos.editar') && (
+                                            <IconButton icon={Pencil} label="Editar" variant="primary" onClick={() => startEdit(i)} />
+                                        )}
+                                        {puede('inquilinos.eliminar') && (
+                                            <IconButton
+                                                icon={i.estado === 'ACTIVO' ? ToggleRight : ToggleLeft}
+                                                label={i.estado === 'ACTIVO' ? 'Dar de baja' : 'Reactivar'}
+                                                variant={i.estado === 'ACTIVO' ? 'success' : 'default'}
+                                                onClick={() => toggleEstado(i)}
+                                            />
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+                <Pagination meta={inquilinos} onPageChange={cambiarPagina} />
             </div>
         </AdminLayout>
     );

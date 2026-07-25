@@ -50,6 +50,15 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (Auth::user()->estado === 'INACTIVO') {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Tu cuenta ha sido desactivada. Contacta al administrador si crees que esto es un error.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 
