@@ -66,7 +66,10 @@ class ConfigCobranzaController extends Controller
             'qr' => ['required', 'file', 'mimes:png,jpg,jpeg,webp', 'max:5120'],
         ]);
 
+        $idInmueble = Inmueble::activoActual()->id_inmueble;
         $path = $request->file('qr')->store('qr', 'public');
+
+        ConfigCobranza::updateOrCreate(['id_inmueble' => $idInmueble], ['yape_qr' => $path]);
 
         return back()->with('success', 'QR subido correctamente')->with('qr_path', Storage::url($path));
     }

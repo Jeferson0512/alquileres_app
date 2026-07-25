@@ -13,10 +13,15 @@ class PortalPerfilController extends Controller
     public function edit(Request $request): Response
     {
         $persona = $request->user()->persona;
+        $campos = ProfileField::orderBy('id')->get(['code', 'label', 'required']);
+
+        $incompleto = $campos->where('required', true)
+            ->contains(fn (ProfileField $campo) => empty($persona->{$campo->code}));
 
         return Inertia::render('Portal/CompletarPerfil', [
             'persona' => $persona->only(['celular', 'email', 'direccion']),
-            'campos' => ProfileField::orderBy('id')->get(['code', 'label', 'required']),
+            'campos' => $campos,
+            'incompleto' => $incompleto,
         ]);
     }
 
@@ -33,6 +38,6 @@ class PortalPerfilController extends Controller
 
         $persona->update($data);
 
-        return redirect()->route('portal.index');
+        return redirect()->route('portal.index')->with('success', 'Tus datos se actualizaron correctamente');
     }
 }

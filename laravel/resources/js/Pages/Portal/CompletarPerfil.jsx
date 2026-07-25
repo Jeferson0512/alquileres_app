@@ -1,9 +1,9 @@
 import PortalLayout from '@/Layouts/PortalLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 
 const TYPES = { celular: 'tel', email: 'email', direccion: 'text' };
 
-export default function CompletarPerfil({ persona, campos }) {
+export default function CompletarPerfil({ persona, campos, incompleto }) {
     const { data, setData, patch, processing, errors } = useForm({
         celular: persona.celular ?? '',
         email: persona.email ?? '',
@@ -16,12 +16,21 @@ export default function CompletarPerfil({ persona, campos }) {
     };
 
     return (
-        <PortalLayout title="Completa tu perfil">
-            <Head title="Completar perfil" />
+        <PortalLayout title={incompleto ? 'Completa tu perfil' : 'Mi perfil'}>
+            <Head title="Mi perfil" />
 
-            <div className="mb-4 rounded-lg bg-primary-light px-4 py-3 text-sm text-primary-dark">
-                Antes de continuar, necesitamos que completes estos datos. Los marcados con * son obligatorios.
-            </div>
+            {incompleto ? (
+                <div className="mb-4 rounded-lg bg-primary-light px-4 py-3 text-sm text-primary-dark">
+                    Antes de continuar, necesitamos que completes estos datos. Los marcados con * son obligatorios.
+                </div>
+            ) : (
+                <div className="mb-4 flex items-center justify-between">
+                    <p className="text-sm text-gray-500">Actualiza tus datos de contacto cuando lo necesites.</p>
+                    <Link href={route('portal.index')} className="text-sm font-medium text-primary hover:text-primary-dark">
+                        Volver
+                    </Link>
+                </div>
+            )}
 
             <form onSubmit={submit} className="space-y-4 rounded-lg border border-gray-200 bg-white p-4">
                 {campos.map((campo) => (
@@ -40,7 +49,7 @@ export default function CompletarPerfil({ persona, campos }) {
                 ))}
 
                 <button type="submit" disabled={processing} className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">
-                    Guardar y continuar
+                    {incompleto ? 'Guardar y continuar' : 'Guardar cambios'}
                 </button>
             </form>
         </PortalLayout>
