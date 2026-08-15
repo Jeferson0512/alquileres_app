@@ -2,3 +2,6 @@ node_modules/
 playwright-report/
 test-results/
 tests/e2e/.e2e-seed.json
+
+# Logs de error de mysqldump (vacios / ruido local)
+database/*_err.log
