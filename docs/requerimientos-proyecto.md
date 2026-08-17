@@ -4,7 +4,7 @@
 
 ## 1. Estado actual
 
-**Stack:** PHP plano sin framework (~5.000 líneas en `api/modules/*`) + JavaScript vanilla sin build (~5.000 líneas en `public/assets/js/`) sobre MySQL/MariaDB, corriendo en XAMPP.
+**Stack:** PHP plano sin framework (~5.000 líneas en `api/modules/*`) + JavaScript vanilla sin build (~5.000 líneas en `public/assets/js/`) sobre MySQL/MariaDB, corriendo en Laragon.
 
 **13 módulos existentes:**
 

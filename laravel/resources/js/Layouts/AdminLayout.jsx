@@ -220,16 +220,16 @@ export default function AdminLayout({ title, children }) {
         <div className="min-h-screen bg-surface">
             {/* Sidebar */}
             <aside
-                className={`fixed inset-y-0 left-0 z-40 w-64 transform border-r border-gray-200 bg-white transition-transform lg:translate-x-0 ${
+                className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col transform border-r border-gray-200 bg-white transition-transform lg:translate-x-0 ${
                     mobileOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
-                <div className="flex h-16 items-center border-b border-gray-200 px-5">
+                <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-5">
                     <Link href="/dashboard" className="text-lg font-semibold text-primary">
                         Alquileres App
                     </Link>
                 </div>
-                <nav className="flex flex-col gap-1 overflow-y-auto p-3">
+                <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3">
                     <ul className="space-y-1">
                         {navigation.map((item) => (
                             <NavItem key={item.code} item={item} currentPath={currentPath} />
