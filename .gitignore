@@ -5,3 +5,8 @@ tests/e2e/.e2e-seed.json
 
 # Logs de error de mysqldump (vacios / ruido local)
 database/*_err.log
+
+# Backups automaticos (contienen datos reales de inquilinos/pagos, nunca al repo publico)
+# El script y su README SI se versionan -- solo se ignoran los .sql/.log que genera.
+database/backups/*.sql
+database/backups/*.log

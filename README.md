@@ -49,13 +49,13 @@ alquileres-app/
 | **Avisos** | Vista para compartir el resumen de cobro (PNG/texto) por Yape/transferencia, e incluye alertas de vencimiento de contrato. |
 | **Tarifas** | Montos de agua/gas/mantenimiento/precio kWh por inmueble, con auditoría de cambios. |
 
-## Cómo correrlo en local (XAMPP)
+## Cómo correrlo en local (Laragon)
 
-1. Cloná el repo dentro de `htdocs` (ej. `C:\xampp\htdocs\proyectos\alquileres-app`).
-2. Levantá Apache y MySQL desde el panel de XAMPP.
-3. Creá la base de datos `alquileres_db` e importá uno de los dumps de `database/` (el backup más reciente) usando phpMyAdmin o `mysql` por línea de comandos.
+1. Cloná el repo dentro de `www` (ej. `C:\laragon\www\alquileres_app`).
+2. Levantá Apache y MySQL desde Laragon (arrancan solos al abrir Laragon; Laragon crea el vhost `alquileres_app.test` automáticamente por el nombre de la carpeta).
+3. Creá la base de datos `alquileres_db` e importá `database/seed/fresh_local_dump_fixed.sql` (el dump de referencia más completo) usando phpMyAdmin o `mysql` por línea de comandos.
 4. Revisá las credenciales en `api/config/config.php` (por defecto `root` sin password, host `127.0.0.1:3306`).
-5. Abrí `http://localhost/proyectos/alquileres-app/public/` en el navegador.
+5. Abrí `http://alquileres_app.test/public/` en el navegador.
 
 ## Tests end-to-end
 
@@ -79,7 +79,3 @@ Complemento con instalación y tour visual de las 12 bases de datos/BaaS mencion
 ## Migración a Laravel + React + TailAdmin (en curso)
 
 Documento de requerimientos (usuarios/roles, casos de uso, catálogo de permisos, sistema de diseño) que guía la migración: [`docs/requerimientos-proyecto.md`](docs/requerimientos-proyecto.md). El plan de migración por fases vive en `C:\Users\Jeferson\.claude\plans\streamed-inventing-kay.md`.
-
-## Pendiente de limpieza
-
-Hay algunos archivos sueltos en la raíz que parecen scripts de un solo uso y están pendientes de archivar o eliminar: `insertar_enero.php`, `resumen_enero.php`, `prueba.html`, `PLANTILLA_HISTORICO.tsv`, `PLANTILLA_HISTORICO_ENERO_FEBRERO.txt`.

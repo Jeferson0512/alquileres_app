@@ -30,9 +30,9 @@ Setup (una sola vez):
 
 ```bash
 mysql -u root -e "CREATE DATABASE IF NOT EXISTS alquileres_db_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-mysqldump -u root --no-data --routines --triggers --events alquileres_db > ../database/schema_dump_test.sql
-mysql -u root alquileres_db_test < ../database/schema_dump_test.sql
-mysql -u root alquileres_db_test < ../database/conceptos_cobro_seed.sql   # tabla de referencia conceptos_cobro
+mysqldump -u root --no-data --routines --triggers --events alquileres_db > ../database/seed/schema_dump_test.sql
+mysql -u root alquileres_db_test < ../database/seed/schema_dump_test.sql
+mysql -u root alquileres_db_test < ../database/seed/conceptos_cobro_seed.sql   # tabla de referencia conceptos_cobro
 ```
 
 Cada test corre envuelto en una transacción (`DatabaseTransactions`, ver `tests/Pest.php`) que se revierte al final — nunca se usa `RefreshDatabase`, porque `migrate:fresh` borraría las 18 tablas de negocio heredadas (no gestionadas por migraciones Laravel). Los fixtures mínimos (inmueble, unidad, persona, periodo, recibo, lectura...) están en `tests/Support/AlquileresFixtures.php`.

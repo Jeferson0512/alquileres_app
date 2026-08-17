@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
  * Fixtures minimas para probar los Services contra el esquema real de
  * negocio (18 tablas heredadas de la app legacy, con sus FKs/triggers/
  * columna generada intactos) en la base de datos dedicada
- * alquileres_db_test -- ver phpunit.xml y database/schema_dump_test.sql.
+ * alquileres_db_test -- ver phpunit.xml y database/seed/schema_dump_test.sql.
  * Cada test corre dentro de una transaccion (DatabaseTransactions) que se
  * revierte al final, asi que estos inserts nunca dejan residuos.
  */

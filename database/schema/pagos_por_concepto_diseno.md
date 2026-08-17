@@ -301,10 +301,10 @@ Recomendacion operativa final:
 
 ### Paso 1. Desplegar estructura
 
-1. ejecutar [database/pagos_por_concepto_schema.sql](database/pagos_por_concepto_schema.sql);
-2. ejecutar [database/pagos_por_concepto_migracion.sql](database/pagos_por_concepto_migracion.sql);
-3. ejecutar [database/pagos_por_concepto_guardrails.sql](database/pagos_por_concepto_guardrails.sql);
-4. correr validaciones de [database/pagos_por_concepto_consultas.sql](database/pagos_por_concepto_consultas.sql).
+1. ejecutar [pagos_por_concepto_schema.sql](pagos_por_concepto_schema.sql);
+2. ejecutar [pagos_por_concepto_migracion.sql](pagos_por_concepto_migracion.sql);
+3. ejecutar [pagos_por_concepto_guardrails.sql](pagos_por_concepto_guardrails.sql);
+4. correr validaciones de [pagos_por_concepto_consultas.sql](pagos_por_concepto_consultas.sql).
 
 ### Paso 2. Adaptar backend sin romper compatibilidad
 
