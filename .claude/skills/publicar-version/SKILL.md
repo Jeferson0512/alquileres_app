@@ -124,7 +124,11 @@ Laravel — eso rompe la convención del proyecto para tablas grupo 1.
 **Ya hay servidor de producción real, desplegado el 2026-07-25**:
 
 - Oracle Cloud Free Tier, instancia Ampere A1 (Frankfurt), Ubuntu 24.04, IP `130.61.110.40`.
-- Acceso: `ssh -i "/c/Users/Jeferson/Downloads/Oracle/ssh-key-2026-07-25.key" ubuntu@130.61.110.40`
+- Acceso: `ssh -i "$env:USERPROFILE\Downloads\Oracle\ssh-key-2026-07-25.key" ubuntu@130.61.110.40`
+  (en Git Bash: `ssh -i "$HOME/Downloads/Oracle/ssh-key-2026-07-25.key" ubuntu@130.61.110.40`)
+  Misma llave privada en cualquier máquina desde donde se despliegue — vive en
+  `Downloads/Oracle/` dentro del perfil de cada usuario, ruta portátil entre
+  computadoras distintas siempre que se mantenga esa subcarpeta.
 - Proyecto en `/var/www/alquileres-prod` (repo clonado completo; la app Laravel vive en `/var/www/alquileres-prod/laravel`).
 - Stack: Nginx + PHP 8.4-FPM + MySQL 8.0 (base `alquileres_prod`, usuario `alquileres_user`).
 - Dominio: `https://alquileres.jeffray.site`, proxied por Cloudflare (certificado Origin CA instalado en `/etc/nginx/ssl/`, vhost en `/etc/nginx/sites-available/alquileres-prod.conf`).
