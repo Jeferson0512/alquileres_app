@@ -91,7 +91,7 @@ body {
     margin: -6px 0 12px;
 }
 
-/* ── INFO GRID (BD / XAMPP) ─────────────────────────── */
+/* ── INFO GRID (BD / Laragon) ─────────────────────────── */
 .info-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -189,6 +189,25 @@ ul.simple-list li {
 
 .badge.innovador {
     background: #7c3aed;
+}
+
+.badge.done-badge {
+    background: var(--success);
+}
+
+.risk-item.resolved {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    opacity: .8;
+}
+
+.risk-item.resolved strong {
+    text-decoration: line-through;
+}
+
+.risk-item.partial {
+    background: #fefce8;
+    border-color: #fde68a;
 }
 
 /* ── FAQ COLAPSABLE (ideas innovadoras) ─────────────── */

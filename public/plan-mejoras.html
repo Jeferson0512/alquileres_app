@@ -19,9 +19,23 @@
       <a class="back-link" href="./index.html">← Volver al sistema</a>
     </header>
 
-    <!-- Base de datos / XAMPP -->
+    <!-- Aviso de migracion -->
     <section class="card">
-      <h2>🗄️ Base de datos y XAMPP</h2>
+      <div class="note">
+        ℹ️ <strong>Actualizado 2026-08-16:</strong> el proyecto migró a <strong>Laravel 13 + React
+        (Inertia)</strong> en <code>laravel/</code>. Login, roles (Spatie), pagos por concepto,
+        dashboard con gráficos y portal de inquilino, entre otros ítems de este roadmap, ya están
+        implementados ahí (marcados <span class="badge done-badge">✅ Resuelto</span> abajo). El PHP
+        plano de <code>api/</code> y <code>public/</code> sigue activo en paralelo mientras dura la
+        migración (patrón <em>strangler fig</em>). La fuente de verdad actual del alcance del
+        proyecto es <code>docs/requerimientos-proyecto.md</code>; esta página queda como
+        diagnóstico histórico y seguimiento de los pendientes que no dependían de esa migración.
+      </div>
+    </section>
+
+    <!-- Base de datos / Laragon -->
+    <section class="card">
+      <h2>🗄️ Base de datos y Laragon</h2>
       <div class="info-grid">
         <div class="info-item">
           <div class="label">Base de datos</div>
@@ -41,12 +55,13 @@
         </div>
       </div>
       <div class="note">
-        ✅ Apache y MySQL están activos en XAMPP.
+        ✅ Apache y MySQL están activos en Laragon.
       </div>
-      <div class="note warn">
-        ⚠️ En la carpeta de datos de MySQL existen otras 3 bases que no usa esta app:
-        <strong>alquileres_db_test_20260323</strong>, <strong>admin_alquileres</strong> y
-        <strong>alquileres_saas</strong>. Conviene revisar si todavía se necesitan.
+      <div class="note">
+        ✅ Verificado 2026-08-16: las 3 bases sueltas que mencionaba esta nota
+        (<strong>alquileres_db_test_20260323</strong>, <strong>admin_alquileres</strong>,
+        <strong>alquileres_saas</strong>) ya no existen en el MySQL de Laragon
+        (puerto 3306, donde vive <code>alquileres_db</code>). No hay nada que limpiar.
       </div>
     </section>
 
@@ -83,60 +98,60 @@
     <section class="card">
       <h2>⚠️ Qué falta / riesgos detectados</h2>
       <div class="risk-grid">
-        <div class="risk-item">
-          <span class="badge critico">Crítico</span>
+        <div class="risk-item resolved">
+          <span class="badge done-badge">✅ Resuelto</span>
           <div class="risk-text">
             <strong>Sin autenticación ni roles</strong>
-            <span>Toda la API está abierta: no hay login, sesiones ni usuarios.</span>
+            <span>Resuelto en Laravel: login con sesión, roles y permisos por módulo/submódulo vía Spatie (Admin/Supervisor).</span>
           </div>
         </div>
-        <div class="risk-item">
-          <span class="badge alto">Alto</span>
+        <div class="risk-item resolved">
+          <span class="badge done-badge">✅ Resuelto</span>
           <div class="risk-text">
             <strong>"Pagos por concepto" diseñado pero no confirmado en producción</strong>
-            <span>El esquema avanzado ya está escrito en <code>database/pagos_por_concepto_*.sql</code> pero falta desplegarlo.</span>
+            <span>Ya desplegado: <code>ConceptoCobro</code> y <code>PagoDetalle</code> existen como modelos Laravel sobre las tablas creadas con <code>database/schema/pagos_por_concepto_*.sql</code>.</span>
           </div>
         </div>
         <div class="risk-item">
           <span class="badge alto">Alto</span>
           <div class="risk-text">
             <strong>Mora no automática</strong>
-            <span>El campo <code>mora</code> existe pero se llena manualmente, sin cálculo por días de atraso.</span>
+            <span>Sigue pendiente en Laravel: el campo <code>mora</code> existe en <code>CobroMensual</code> pero se llena manualmente, sin cálculo por días de atraso.</span>
           </div>
         </div>
-        <div class="risk-item">
-          <span class="badge medio">Medio</span>
+        <div class="risk-item partial">
+          <span class="badge medio">Parcial</span>
           <div class="risk-text">
             <strong>Sin notificaciones automáticas</strong>
-            <span>Los avisos se generan, pero el envío es 100% manual (copiar y compartir).</span>
+            <span>En Laravel ya hay un feed de notificaciones en la app (renovaciones pendientes, comprobantes subidos, consultas del landing), pero el aviso de vencimiento al inquilino sigue siendo manual (copiar y compartir), no hay envío push/email/WhatsApp.</span>
           </div>
         </div>
         <div class="risk-item">
           <span class="badge medio">Medio</span>
           <div class="risk-text">
             <strong>Sin recibos PDF</strong>
-            <span>Solo se genera PNG vía canvas; no hay comprobantes imprimibles/oficiales.</span>
+            <span>Sigue pendiente. Solo se genera PNG vía canvas; no hay comprobantes imprimibles/oficiales.</span>
           </div>
         </div>
-        <div class="risk-item">
-          <span class="badge medio">Medio</span>
+        <div class="risk-item resolved">
+          <span class="badge done-badge">✅ Resuelto</span>
           <div class="risk-text">
             <strong>Dashboard muy básico</strong>
-            <span>Solo 4 KPIs; no hay morosos, históricos ni gráficos de consumo.</span>
+            <span>Resuelto en Laravel: gráficos con ApexCharts y comparativa mensual, más allá de los 4 KPIs originales.</span>
           </div>
         </div>
-        <div class="risk-item">
-          <span class="badge bajo">Bajo</span>
+        <div class="risk-item resolved">
+          <span class="badge done-badge">✅ Resuelto</span>
           <div class="risk-text">
             <strong>Archivos sueltos en la raíz del proyecto</strong>
-            <span><code>insertar_enero.php</code>, <code>resumen_enero.php</code>, plantillas TSV/TXT y <code>prueba.html</code> parecen scripts de un solo uso.</span>
+            <span>Eliminados: <code>insertar_enero.php</code>, <code>resumen_enero.php</code>, <code>prueba.html</code> y las plantillas <code>PLANTILLA_HISTORICO*</code>.</span>
           </div>
         </div>
-        <div class="risk-item">
-          <span class="badge bajo">Bajo</span>
+        <div class="risk-item resolved">
+          <span class="badge done-badge">✅ Resuelto</span>
           <div class="risk-text">
             <strong>Sin backups automáticos</strong>
-            <span>Solo existe un dump manual de marzo de <code>alquileres_db</code>.</span>
+            <span>Tarea programada de Windows diaria (3:00 AM) con <code>database/backups/backup-db.ps1</code>, rotación de 30 días. Ver <code>database/backups/backup-db.README.md</code>.</span>
           </div>
         </div>
       </div>
@@ -158,10 +173,10 @@
         <h3>Corto plazo</h3>
 
         <label class="task-item">
-          <input type="checkbox" data-id="corto-1" />
+          <input type="checkbox" data-id="corto-1" checked />
           <div class="task-text">
             <strong>Desplegar "pagos por concepto"</strong>
-            <span>Ejecutar el schema, la migración y los guardrails ya escritos en <code>database/</code>, y adaptar <code>generate.php</code> / <code>pagos/index.php</code> para guardar el detalle por concepto.</span>
+            <span>✅ Hecho en la migración a Laravel: <code>ConceptoCobro</code> y <code>PagoDetalle</code> ya operan sobre el schema de <code>database/schema/pagos_por_concepto_*.sql</code>.</span>
           </div>
         </label>
 
@@ -174,18 +189,18 @@
         </label>
 
         <label class="task-item">
-          <input type="checkbox" data-id="corto-3" />
+          <input type="checkbox" data-id="corto-3" checked />
           <div class="task-text">
             <strong>Estado de cuenta por inquilino</strong>
-            <span>Vista con la deuda acumulada de todos los periodos abiertos, desglosada por concepto (alquiler, luz, agua, gas...).</span>
+            <span>✅ Hecho: cubierto por el Portal de Inquilinos en Laravel (deuda, historial de cobros/saldo y avisos de su propio contrato).</span>
           </div>
         </label>
 
         <label class="task-item">
-          <input type="checkbox" data-id="corto-4" />
+          <input type="checkbox" data-id="corto-4" checked />
           <div class="task-text">
             <strong>Login básico</strong>
-            <span>Usuario admin con sesión PHP y contraseña hasheada (bcrypt), para cerrar la API abierta.</span>
+            <span>✅ Superado: Laravel implementó login con sesión más roles/permisos granulares (Spatie), no solo un usuario admin.</span>
           </div>
         </label>
       </div>
@@ -197,15 +212,15 @@
           <input type="checkbox" data-id="medio-1" />
           <div class="task-text">
             <strong>Recordatorios automáticos</strong>
-            <span>Tarea programada de Windows que, días antes del vencimiento, genere y envíe los avisos (email con PHPMailer o WhatsApp API).</span>
+            <span>Tarea programada de Windows que, días antes del vencimiento, genere y envíe los avisos (email con PHPMailer o WhatsApp API). ⚠️ Parcial: Laravel ya tiene un feed de notificaciones en la app (renovaciones, comprobantes, consultas), pero el envío al inquilino sigue siendo manual.</span>
           </div>
         </label>
 
         <label class="task-item">
-          <input type="checkbox" data-id="medio-2" />
+          <input type="checkbox" data-id="medio-2" checked />
           <div class="task-text">
             <strong>Dashboard ampliado</strong>
-            <span>Lista de unidades morosas, recaudado vs proyectado del periodo, e histórico de consumo eléctrico (Chart.js).</span>
+            <span>✅ Hecho en Laravel: gráficos con ApexCharts y comparativa mensual, más allá de los 4 KPIs originales.</span>
           </div>
         </label>
 
@@ -213,7 +228,7 @@
           <input type="checkbox" data-id="medio-3" />
           <div class="task-text">
             <strong>Recibos en PDF</strong>
-            <span>Integrar dompdf para generar comprobantes descargables/imprimibles, además del PNG actual.</span>
+            <span>2026-08-16: diseño aprobado (sección 3 del artifact "Mi Alquiler") — documento formal con folio (<code>numero_comprobante</code>), tabla de conceptos, deuda anterior separada, sello de estado no editable. Falta implementar: descarga self-service desde el portal (hoy solo existe como generador admin en Avisos/Index.jsx, PNG vía canvas) + agregar exportación a PDF con dompdf (ya en el plan original) o vía canvas→PDF en el cliente.</span>
           </div>
         </label>
 
@@ -224,40 +239,48 @@
             <span>Internet, cable, estacionamiento, limpieza, etc. reutilizando <code>tarifas_servicios</code> / <code>conceptos_cobro</code> — sin cambios de esquema.</span>
           </div>
         </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="medio-5" checked />
+          <div class="task-text">
+            <strong>Rediseño del portal de inquilino (móvil + web)</strong>
+            <span>2026-08-17: implementado completo en <code>Portal/Index.jsx</code> — Hero con el monto total a pagar y desglose de deuda anterior primero, orden accionable-antes-que-contexto, gráfico de consumo eléctrico con <code>ApexCharts</code> y datos reales de <code>lecturas_unidad</code>, botón flotante de WhatsApp, campanita de notificaciones, cambio de contraseña, <strong>recibo descargable en PDF real</strong> (dompdf, con folio del correlativo de pago cuando existe, deuda anterior, y respeta la regla del <code>minimo_kwh_aviso</code> — probado con un cobro pendiente y uno pagado), <strong>tema claro/oscuro funcional</strong> (toggle con persistencia en <code>localStorage</code>, escoteado solo al portal via <code>darkMode:'class'</code> — el panel admin no tiene ninguna clase <code>dark:</code>, así que no le afecta en nada), y <strong>layout responsive de 2 columnas</strong> en pantallas anchas (CSS grid, mismo orden de secciones que en móvil). Probado end-to-end con datos reales de dos inquilinos de prueba, incluida la verificación de que un inquilino no puede descargar el recibo de otro (403 confirmado).</span>
+          </div>
+        </label>
       </div>
 
       <div class="plan-section">
         <h3>Largo plazo</h3>
 
         <label class="task-item">
-          <input type="checkbox" data-id="largo-1" />
+          <input type="checkbox" data-id="largo-1" checked />
           <div class="task-text">
             <strong>Backups automáticos</strong>
-            <span>Programar <code>mysqldump</code> periódico de <code>alquileres_db</code>.</span>
+            <span>✅ Hecho: tarea programada de Windows diaria vía <code>database/backups/backup-db.ps1</code>, con rotación de 30 días.</span>
           </div>
         </label>
 
         <label class="task-item">
-          <input type="checkbox" data-id="largo-2" />
+          <input type="checkbox" data-id="largo-2" checked />
           <div class="task-text">
             <strong>Limpieza de archivos y bases sueltas</strong>
-            <span>Revisar/archivar <code>insertar_enero.php</code>, <code>resumen_enero.php</code>, plantillas TSV/TXT, <code>prueba.html</code> y las bases extra de XAMPP.</span>
+            <span>✅ Hecho: se eliminaron <code>insertar_enero.php</code>, <code>resumen_enero.php</code>, <code>prueba.html</code> y las plantillas TSV/TXT. Las bases sueltas (<code>alquileres_db_test_20260323</code>, <code>admin_alquileres</code>, <code>alquileres_saas</code>) ya no existen — verificado, no había nada que limpiar.</span>
           </div>
         </label>
 
         <label class="task-item">
-          <input type="checkbox" data-id="largo-3" />
+          <input type="checkbox" data-id="largo-3" checked />
           <div class="task-text">
             <strong>Roles (admin / cobrador)</strong>
-            <span>Una vez exista login, reutilizando los campos <code>registrado_por</code> / <code>reversado_por</code> ya previstos en la auditoría.</span>
+            <span>✅ Hecho en Laravel: roles Admin/Supervisor vía Spatie, con matriz de permisos por módulo/submódulo.</span>
           </div>
         </label>
 
         <label class="task-item">
-          <input type="checkbox" data-id="largo-4" />
+          <input type="checkbox" data-id="largo-4" checked />
           <div class="task-text">
             <strong>Comprobantes con numeración correlativa</strong>
-            <span>Si se requiere formalidad fiscal (boletas/facturas SUNAT) más allá del <code>numero_recibo</code> actual de luz.</span>
+            <span>✅ Hecho (nivel interno, no SUNAT): cada pago nuevo recibe un correlativo atómico tipo <code>B001-00000123</code> vía <code>comprobante_correlativos</code> + <code>PagoService</code>, sin huecos ni duplicados aunque fallen transacciones concurrentes. La integración fiscal real con SUNAT sigue fuera de alcance (ver <code>docs/requerimientos-proyecto.md</code>, punto 8).</span>
           </div>
         </label>
       </div>
@@ -346,10 +369,10 @@
         </label>
 
         <label class="task-item">
-          <input type="checkbox" data-id="innovador-5" />
+          <input type="checkbox" data-id="innovador-5" checked />
           <div class="task-text">
             <strong>Dashboard con gráficos de consumo e ingresos históricos</strong>
-            <span>Ampliar el dashboard con gráficos de consumo y recaudación vs. proyectado usando Chart.js. Fuente: tendencias de analítica de datos 2026.</span>
+            <span>✅ Hecho en Laravel con ApexCharts (comparativa mensual) en vez de Chart.js — mismo objetivo, distinta librería. Fuente original: tendencias de analítica de datos 2026.</span>
             <details>
               <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
               <p><strong>Beneficios:</strong> ver de un vistazo si el consumo general sube o baja mes a mes; identificar unidades morosas recurrentes; argumento visual para decidir si conviene ajustar tarifas.</p>
