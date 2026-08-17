@@ -286,7 +286,10 @@ function DetalleModal({ cobro, onClose, puedeAnular }) {
                     {detalle && detalle.pagos.length === 0 && <p className="text-sm text-gray-400">Sin pagos registrados.</p>}
                     {detalle && detalle.pagos.map((p) => (
                         <div key={p.id_pago} className="flex items-center justify-between rounded-md border border-gray-100 px-3 py-2 text-sm">
-                            <span>{formatDate(p.fecha_pago)} · S/ {Number(p.monto_pagado).toFixed(2)} · {p.metodo_pago}</span>
+                            <span>
+                                {p.numero_comprobante && <span className="font-mono text-xs text-gray-400">{p.numero_comprobante} · </span>}
+                                {formatDate(p.fecha_pago)} · S/ {Number(p.monto_pagado).toFixed(2)} · {p.metodo_pago}
+                            </span>
                             <span className="flex items-center gap-2">
                                 <span className={`text-xs ${p.estado === 'REGISTRADO' ? 'text-success' : 'text-gray-400'}`}>{p.estado}</span>
                                 {puedeAnular && p.estado === 'REGISTRADO' && (

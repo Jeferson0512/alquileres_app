@@ -1,0 +1,18 @@
+{
+    "name": "Mi Alquiler",
+    "short_name": "Mi Alquiler",
+    "description": "Portal del inquilino de Alquileres App — consulta tus cobros, pagos y comprobantes.",
+    "start_url": "/portal",
+    "scope": "/portal",
+    "id": "/portal",
+    "display": "standalone",
+    "background_color": "#F5F7FC",
+    "theme_color": "#2563EB",
+    "orientation": "portrait-primary",
+    "lang": "es-PE",
+    "icons": [
+        { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ]
+}

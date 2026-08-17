@@ -7,6 +7,7 @@ use App\Services\PagoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -50,6 +51,22 @@ class ComprobantePagoController extends Controller
         $esDueno = $request->user()->id_persona !== null && $request->user()->id_persona === $comprobante->id_persona;
         abort_unless($esStaffAutorizado || $esDueno, 403);
         abort_unless($comprobante->imagen_path, 404);
+
+        // Storage::response() pide metadata (file_size) antes de servir el
+        // archivo -- si el archivo no existe en disco (ej. una DB restaurada
+        // desde un dump que no trae los binarios de storage/), Flysystem
+        // lanza UnableToRetrieveMetadata en vez de un 404 limpio. Se
+        // verifica la existencia antes para devolver un error legible y
+        // dejar registro de qué comprobante quedó con el archivo faltante.
+        if (! Storage::disk('local')->exists($comprobante->imagen_path)) {
+            Log::channel('portal')->warning('Imagen de comprobante no encontrada en disco', [
+                'comprobante_id' => $comprobante->id,
+                'imagen_path' => $comprobante->imagen_path,
+                'user_id' => $request->user()->id,
+            ]);
+
+            abort(404, 'La imagen de este comprobante ya no está disponible.');
+        }
 
         return Storage::disk('local')->response($comprobante->imagen_path);
     }

@@ -349,10 +349,13 @@ class CobroService
         return $rows->map(function ($row) {
             $pagadoTotal = (float) Pago::where('id_cobro', $row->id_cobro)->where('estado', 'REGISTRADO')->sum('monto_pagado');
             $saldoPendiente = max((float) $row->total_cobrar - $pagadoTotal, 0);
+            $fechaUltimoPago = Pago::where('id_cobro', $row->id_cobro)->where('estado', 'REGISTRADO')
+                ->orderByDesc('fecha_pago')->value('fecha_pago');
 
             return array_merge((array) $row, [
                 'pagado_total' => round($pagadoTotal, 2),
                 'saldo_pendiente' => round($saldoPendiente, 2),
+                'fecha_ultimo_pago' => $fechaUltimoPago,
             ]);
         })->all();
     }

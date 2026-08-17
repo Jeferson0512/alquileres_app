@@ -13,13 +13,15 @@ class ComprobantePago extends Model
     protected $fillable = [
         'id_cobro', 'id_persona', 'monto_declarado', 'fecha_pago_declarada',
         'metodo_pago', 'numero_operacion', 'imagen_path', 'estado',
-        'motivo_rechazo', 'revisado_por', 'fecha_revision', 'id_pago', 'leido_en',
+        'motivo_rechazo', 'revisado_por', 'fecha_revision', 'id_pago',
+        'leido_en', 'leido_en_inquilino',
     ];
 
     protected function casts(): array
     {
         return [
             'leido_en' => 'datetime',
+            'leido_en_inquilino' => 'datetime',
             'fecha_revision' => 'datetime',
         ];
     }

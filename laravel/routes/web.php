@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AvisoController;
+use App\Http\Controllers\ClientLogController;
 use App\Http\Controllers\CobroController;
 use App\Http\Controllers\CobroOverrideController;
 use App\Http\Controllers\ComprobantePagoController;
@@ -18,7 +19,9 @@ use App\Http\Controllers\PerfilCampoController;
 use App\Http\Controllers\PeriodoController;
 use App\Http\Controllers\PortalComprobanteController;
 use App\Http\Controllers\PortalController;
+use App\Http\Controllers\PortalNotificacionController;
 use App\Http\Controllers\PortalPerfilController;
+use App\Http\Controllers\PortalReciboController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReciboController;
@@ -34,6 +37,15 @@ Route::get('/', [LandingController::class, 'index'])->name('landing');
 // para acciones publicas/sensibles; sin esto un bot podia inundar la tabla
 // de consultas y el correo del admin sin ningun limite.
 Route::post('/contacto', [LandingController::class, 'store'])->middleware('throttle:6,1')->name('landing.contacto');
+
+// Beacon de diagnostico: errores capturados en el navegador (ver
+// resources/js/lib/logError.js), vía fetch/sendBeacon same-origin -- el
+// middleware CSRF de Laravel 13 (PreventRequestForgery) ya las deja pasar
+// por el header Sec-Fetch-Site sin necesitar token. Solo se limita con
+// throttle para que no se pueda usar como vector de flood al log.
+Route::post('/log-frontend-error', [ClientLogController::class, 'store'])
+    ->middleware('throttle:30,1')
+    ->name('log-frontend-error');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified', 'permission:dashboard.ver'])
@@ -149,18 +161,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Portal de Inquilinos -- fuera del panel admin, sin el catalogo de permisos
-// {modulo}.{accion}, gateado solo por rol. Es de solo lectura salvo por la
-// unica escritura permitida (subir un comprobante de pago), que siempre
-// resuelve la propiedad desde el id_persona autenticado, nunca de la
-// request. La ocupacion.activa corre primero: si el contrato ya finalizo,
-// ni siquiera llega a completar-perfil, se le cierra la sesion directamente.
+// {modulo}.{accion}, gateado solo por rol. De solo lectura salvo por las
+// escrituras explicitamente permitidas (comprobante de pago, datos de
+// contacto propios, password propia), que siempre resuelven la propiedad
+// desde el usuario/id_persona autenticado, nunca de la request. La
+// ocupacion.activa corre primero: si el contrato ya finalizo, ni siquiera
+// llega a completar-perfil, se le cierra la sesion directamente.
 Route::middleware(['auth', 'role:Inquilino', 'ocupacion.activa'])->prefix('portal')->name('portal.')->group(function () {
     Route::get('/completar-perfil', [PortalPerfilController::class, 'edit'])->name('perfil.completar');
     Route::patch('/completar-perfil', [PortalPerfilController::class, 'update'])->name('perfil.actualizar');
+    Route::put('/completar-perfil/password', [PortalPerfilController::class, 'updatePassword'])->name('perfil.password');
 
     Route::middleware('perfil.completo')->group(function () {
         Route::get('/', [PortalController::class, 'index'])->name('index');
         Route::post('/comprobantes', [PortalComprobanteController::class, 'store'])->name('comprobantes.store');
+        Route::get('/notificaciones', [PortalNotificacionController::class, 'index'])->name('notificaciones.index');
+        Route::patch('/notificaciones/marcar-leidas', [PortalNotificacionController::class, 'marcarLeidas'])->name('notificaciones.marcar-leidas');
+        Route::get('/cobros/{cobro}/recibo', [PortalReciboController::class, 'show'])->name('recibo');
+        Route::get('/recibos/descargar', [PortalReciboController::class, 'descargarTodos'])->name('recibos.descargar-todos');
     });
 });
 

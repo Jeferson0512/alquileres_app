@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Module;
 use App\Services\NotificacionFeedService;
+use App\Services\PortalNotificacionService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -60,10 +61,15 @@ class HandleInertiaRequests extends Middleware
                 'info' => fn () => $request->session()->get('info'),
                 'qr_path' => fn () => $request->session()->get('qr_path'),
             ],
-            // Compartido para cualquier usuario autenticado (no solo quien puede
-            // finalizar ocupaciones o revisar comprobantes): la campanita de
-            // notificaciones es un mecanismo general para todo el staff.
-            'notificaciones' => $user ? app(NotificacionFeedService::class)->paraCampana() : [],
+            // `notificaciones` (staff) y `notificacionesPortal` (inquilino) son
+            // feeds distintos que NUNCA se comparten al mismo tiempo -- el de
+            // staff trae nombres/montos/motivos de TODOS los inquilinos, asi que
+            // compartirselo tambien a una sesion de Inquilino filtraria esos
+            // datos en el JSON de cada pagina aunque la UI no lo dibuje.
+            'notificaciones' => $user && !$user->hasRole('Inquilino') ? app(NotificacionFeedService::class)->paraCampana() : [],
+            'notificacionesPortal' => $user && $user->hasRole('Inquilino') && $user->id_persona
+                ? app(PortalNotificacionService::class)->paraCampana($user->id_persona)
+                : [],
         ];
     }
 
