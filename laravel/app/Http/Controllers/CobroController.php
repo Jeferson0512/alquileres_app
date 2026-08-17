@@ -54,7 +54,7 @@ class CobroController extends Controller
         $idCobro = $request->integer('id_cobro');
         $conceptos = $pagoService->conceptosDeCobro($idCobro);
         $pagos = Pago::where('id_cobro', $idCobro)->orderByDesc('fecha_pago')->orderByDesc('id_pago')
-            ->get(['id_pago', 'fecha_pago', 'monto_pagado', 'metodo_pago', 'estado']);
+            ->get(['id_pago', 'numero_comprobante', 'fecha_pago', 'monto_pagado', 'metodo_pago', 'estado']);
 
         return response()->json(['ok' => true, 'data' => ['conceptos' => $conceptos, 'pagos' => $pagos]]);
     }

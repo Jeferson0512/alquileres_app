@@ -117,6 +117,30 @@ class PagoService
         return $result;
     }
 
+    /**
+     * Correlativo atomico ("B001-00000123"). El lockForUpdate() dentro de la
+     * misma transaccion del pago evita huecos y duplicados bajo pagos
+     * concurrentes: si la transaccion revierte, el incremento tambien revierte.
+     */
+    private function siguienteNumeroComprobante(string $serie = 'B001'): string
+    {
+        $row = DB::table('comprobante_correlativos')->where('serie', $serie)->lockForUpdate()->first();
+
+        if (!$row) {
+            DB::table('comprobante_correlativos')->insert([
+                'serie' => $serie, 'ultimo_numero' => 0, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+            $row = DB::table('comprobante_correlativos')->where('serie', $serie)->lockForUpdate()->first();
+        }
+
+        $siguiente = $row->ultimo_numero + 1;
+        DB::table('comprobante_correlativos')->where('serie', $serie)->update([
+            'ultimo_numero' => $siguiente, 'updated_at' => now(),
+        ]);
+
+        return sprintf('%s-%08d', $serie, $siguiente);
+    }
+
     public function sincronizarEstadoCobro(CobroMensual $cobro): void
     {
         if ($cobro->estado_pago === 'ANULADO') {
@@ -162,6 +186,7 @@ class PagoService
         return DB::transaction(function () use ($cobro, $body, $montoPagado, $metodoPago, $aplicaciones, $modo, $registradoPor) {
             $pago = Pago::create([
                 'id_cobro' => $cobro->id_cobro,
+                'numero_comprobante' => $this->siguienteNumeroComprobante(),
                 'fecha_pago' => $body['fecha_pago'],
                 'monto_pagado' => $montoPagado,
                 'metodo_pago' => $metodoPago,
@@ -237,6 +262,9 @@ class PagoService
 
         $nuevo = Pago::create([
             'id_cobro' => $cobro->id_cobro,
+            // Mismo numero que el original reversado: es el mismo pago real
+            // preservado por forceRefresh(), no un comprobante nuevo.
+            'numero_comprobante' => $pagoOriginal->numero_comprobante,
             'fecha_pago' => $pagoOriginal->fecha_pago,
             'monto_pagado' => $montoPagado,
             'metodo_pago' => $pagoOriginal->metodo_pago,

@@ -13,7 +13,7 @@ class Pago extends Model
     public $timestamps = true;
 
     protected $fillable = [
-        'id_cobro', 'fecha_pago', 'monto_pagado', 'metodo_pago', 'numero_operacion',
+        'id_cobro', 'numero_comprobante', 'fecha_pago', 'monto_pagado', 'metodo_pago', 'numero_operacion',
         'observacion', 'estado', 'origen_registro', 'registrado_por',
         'reversado_por', 'fecha_reversa', 'motivo_reversa',
     ];
