@@ -13,6 +13,7 @@ export default function Index({ config }) {
         yape_titular: config.yape_titular ?? '',
         yape_numero: config.yape_numero ?? '',
         yape_qr: config.yape_qr ?? '',
+        whatsapp_contacto: config.whatsapp_contacto ?? '',
         banco_nombre: config.banco_nombre ?? '',
         banco_titular: config.banco_titular ?? '',
         banco_cuenta: config.banco_cuenta ?? '',
@@ -99,6 +100,14 @@ export default function Index({ config }) {
                                 <p className="mt-1 text-xs text-gray-400">PNG, JPG o WEBP, máx. 5 MB. Es el mismo QR que verán todos los inquilinos en su portal.</p>
                             </div>
                         )}
+                    </div>
+
+                    <div className="rounded-lg border border-gray-200 bg-white p-5">
+                        <h3 className="mb-3 text-sm font-semibold text-gray-800">Contacto</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            {field('whatsapp_contacto', 'WhatsApp (con código de país, solo números)', 'tel')}
+                        </div>
+                        <p className="mt-1 text-xs text-gray-400">Ej. 51987654321 — sin espacios ni símbolos. Es el botón de WhatsApp que ve el inquilino en su portal.</p>
                     </div>
 
                     <div className="rounded-lg border border-gray-200 bg-white p-5">
