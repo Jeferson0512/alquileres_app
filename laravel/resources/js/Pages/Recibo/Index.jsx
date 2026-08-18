@@ -1,5 +1,11 @@
+import InputError from '@/Components/InputError';
+import InputLabel from '@/Components/InputLabel';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { ArrowRight, Copy } from 'lucide-react';
 import { useEffect } from 'react';
 
 export default function Index({ periodo, periodos, recibo, tieneAnterior }) {
@@ -27,7 +33,10 @@ export default function Index({ periodo, periodos, recibo, tieneAnterior }) {
         observacion: recibo.observacion ?? '',
     });
 
-    // Replica autoCalcular() de public/assets/js/modules/recibo.js
+    // Replica autoCalcular() de public/assets/js/modules/recibo.js -- misma
+    // formula real, nada nuevo: consumo = lectura actual - anterior; energia
+    // = consumo * precio; subtotal = energia + cargos fijos; IGV = 18% del
+    // subtotal; total = subtotal + IGV + electrificacion + redondeos.
     useEffect(() => {
         const consumoKwh = Math.max(data.lectura_actual_general - data.lectura_anterior_general, 0);
         const consumoEnergia = consumoKwh * data.precio_kwh;
@@ -55,125 +64,128 @@ export default function Index({ periodo, periodos, recibo, tieneAnterior }) {
         post(route('recibo.store') + `?periodo_id=${periodo.id_periodo}`);
     };
 
-    const num = (key, label, step = '0.01') => (
+    const campo = (key, label, step = '0.01') => (
         <div>
-            <label className="block text-xs font-medium text-gray-500">{label}</label>
-            <input
+            <InputLabel htmlFor={key} value={label} />
+            <TextInput
+                id={key}
                 type="number"
                 step={step}
                 value={data[key]}
                 disabled={!editable}
                 onChange={(e) => setData(key, parseFloat(e.target.value) || 0)}
-                className="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-50"
+                className="mt-1 block w-full disabled:bg-gray-50"
             />
-            {errors[key] && <p className="mt-1 text-xs text-danger">{errors[key]}</p>}
+            <InputError className="mt-1" message={errors[key]} />
         </div>
     );
 
     const consumoKwh = Math.max(data.lectura_actual_general - data.lectura_anterior_general, 0);
+    const money = (v) => `S/ ${Number(v).toFixed(2)}`;
 
     return (
-        <AdminLayout title="Recibo de luz">
+        <AdminLayout
+            title="Recibo de luz"
+            description={`${periodo.mes}/${periodo.anio} · suministro ${data.numero_suministro || '—'}`}
+            periodo={periodo}
+            periodos={periodos}
+            onPeriodoChange={cambiarPeriodo}
+            actions={editable && (
+                <div className="flex gap-2">
+                    {tieneAnterior && (
+                        <SecondaryButton type="button" onClick={copiarAnterior}>
+                            <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar desde mes anterior
+                        </SecondaryButton>
+                    )}
+                    <PrimaryButton type="submit" form="recibo-form" disabled={processing}>Guardar recibo del mes</PrimaryButton>
+                </div>
+            )}
+        >
             <Head title="Recibo de luz" />
 
             {errors?.general && (
                 <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-danger">{errors.general}</div>
             )}
 
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <select value={periodo.id_periodo} onChange={(e) => cambiarPeriodo(e.target.value)} className="rounded-lg border-gray-300 text-sm">
-                    {periodos.map((p) => (
-                        <option key={p.id_periodo} value={p.id_periodo}>{p.mes}/{p.anio} ({p.estado})</option>
-                    ))}
-                </select>
-                <p className="text-sm text-gray-500">Nº recibo: <span className="font-medium text-gray-700">{recibo.numero_recibo}</span></p>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary-dark bg-gradient-to-br from-primary-dark to-primary p-5 text-white">
+                <div>
+                    <p className="text-xs uppercase tracking-wide text-white/70">Total del recibo</p>
+                    <p className="mt-1 text-3xl font-bold">{money(data.total_recibo)}</p>
+                </div>
+                <span className="rounded-full bg-white/15 px-3 py-1 font-mono text-xs font-semibold">{recibo.numero_recibo}</span>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-                <form onSubmit={submit} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-white p-5 sm:grid-cols-4">
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500">Nº suministro</label>
-                            <input value={data.numero_suministro} disabled={!editable} onChange={(e) => setData('numero_suministro', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-50" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500">Fecha emisión</label>
-                            <input type="date" value={data.fecha_emision ?? ''} disabled={!editable} onChange={(e) => setData('fecha_emision', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-50" />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500">Fecha vencimiento</label>
-                            <input type="date" value={data.fecha_vencimiento ?? ''} disabled={!editable} onChange={(e) => setData('fecha_vencimiento', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-50" />
-                        </div>
-                        {num('precio_kwh', 'Precio kWh', '0.0001')}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-white p-5 sm:grid-cols-4">
-                        {num('lectura_anterior_general', 'Lectura anterior')}
-                        {num('lectura_actual_general', 'Lectura actual')}
-                        <div>
-                            <label className="block text-xs font-medium text-gray-500">Consumo (kWh)</label>
-                            <input value={consumoKwh.toFixed(2)} readOnly className="mt-1 w-full rounded-md border-gray-200 bg-gray-50 text-sm" />
-                        </div>
-                        {num('consumo_energia', 'Consumo energía (S/)')}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-white p-5 sm:grid-cols-4">
-                        {num('cargo_fijo', 'Cargo fijo')}
-                        {num('mant_reposicion', 'Mant. reposición')}
-                        {num('alumbrado_publico', 'Alumbrado público')}
-                        {num('electrificacion_rural', 'Electrificación rural')}
-                        {num('ajuste_redondeo_anterior', 'Ajuste redondeo anterior')}
-                        {num('ajuste_redondeo_actual', 'Ajuste redondeo actual')}
-                        {num('subtotal', 'Subtotal')}
-                        {num('igv', 'IGV (18%)')}
-                    </div>
-
-                    <div className="rounded-lg border border-gray-200 bg-white p-5">
-                        <label className="block text-xs font-medium text-gray-500">Observación</label>
-                        <input value={data.observacion ?? ''} disabled={!editable} onChange={(e) => setData('observacion', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-50" />
-                    </div>
-
-                    {editable && (
-                        <div className="flex gap-2">
-                            <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">
-                                Guardar recibo del mes
-                            </button>
-                            {tieneAnterior && (
-                                <button type="button" onClick={copiarAnterior} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
-                                    Copiar desde mes anterior
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </form>
-
-                <aside className="space-y-4">
-                    <section className="rounded-lg border border-gray-200 bg-gradient-to-br from-primary-dark to-primary p-5 text-white">
-                        <p className="text-xs uppercase tracking-wide text-white/70">Total del recibo</p>
-                        <p className="mt-1 text-3xl font-bold">S/ {Number(data.total_recibo).toFixed(2)}</p>
-                        <p className="mt-1 text-xs text-white/70">{periodo.mes}/{periodo.anio} · {periodo.estado}</p>
-                    </section>
-
-                    <section className="rounded-lg border border-gray-200 bg-white p-5">
-                        <h3 className="mb-3 text-sm font-semibold text-gray-800">Resumen</h3>
-                        <div className="space-y-2 text-sm">
-                            <div className="flex justify-between"><span className="text-gray-500">Consumo</span><strong className="text-gray-800">{consumoKwh.toFixed(2)} kWh</strong></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Consumo energía</span><strong className="text-gray-800">S/ {Number(data.consumo_energia).toFixed(2)}</strong></div>
-                            <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><strong className="text-gray-800">S/ {Number(data.subtotal).toFixed(2)}</strong></div>
-                            <div className="flex justify-between"><span className="text-gray-500">IGV (18%)</span><strong className="text-gray-800">S/ {Number(data.igv).toFixed(2)}</strong></div>
-                        </div>
-                    </section>
-
-                    <section className="rounded-lg border border-gray-200 bg-white p-5">
-                        <h3 className="mb-2 text-sm font-semibold text-gray-800">¿Cómo funciona?</h3>
-                        <ul className="space-y-2 text-xs text-gray-500">
-                            <li className="flex gap-2"><span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />Registra la lectura general y los cargos fijos del recibo real de la eléctrica.</li>
-                            <li className="flex gap-2"><span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />El consumo y los totales se calculan solos mientras escribes.</li>
-                            <li className="flex gap-2"><span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />Luego, en Liquidación, este total se reparte entre las unidades según su consumo.</li>
-                        </ul>
-                    </section>
-                </aside>
+            <div className="mb-6 flex flex-wrap items-center gap-2 overflow-x-auto rounded-lg border border-gray-200 bg-white p-3 text-xs">
+                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">Lect. anterior {Number(data.lectura_anterior_general).toFixed(1)}</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
+                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">Lect. actual {Number(data.lectura_actual_general).toFixed(1)}</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
+                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">{consumoKwh.toFixed(1)} kWh × S/ {Number(data.precio_kwh).toFixed(4)}</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
+                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">+ cargos fijos</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
+                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">+ IGV 18%</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
+                <span className="shrink-0 rounded-md bg-primary-light px-2.5 py-1.5 font-bold text-primary-dark">{money(data.total_recibo)}</span>
             </div>
+
+            <form id="recibo-form" onSubmit={submit} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div className="rounded-lg border border-gray-200 bg-white p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-gray-800">Datos del recibo</h3>
+                        <span className="text-xs text-gray-400">se recalcula al tipear</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="col-span-2">
+                            <InputLabel htmlFor="numero_suministro" value="Nº suministro" />
+                            <TextInput id="numero_suministro" value={data.numero_suministro} disabled={!editable} onChange={(e) => setData('numero_suministro', e.target.value)} className="mt-1 block w-full disabled:bg-gray-50" />
+                            <InputError className="mt-1" message={errors.numero_suministro} />
+                        </div>
+                        {campo('precio_kwh', 'Precio kWh', '0.0001')}
+                        {campo('lectura_anterior_general', 'Lectura anterior')}
+                        {campo('lectura_actual_general', 'Lectura actual')}
+                        {campo('cargo_fijo', 'Cargo fijo')}
+                        {campo('mant_reposicion', 'Mant. y reposición')}
+                        {campo('alumbrado_publico', 'Alumbrado público')}
+                        {campo('electrificacion_rural', 'Electrificación rural')}
+                        {campo('ajuste_redondeo_anterior', 'Ajuste redondeo anterior')}
+                        {campo('ajuste_redondeo_actual', 'Ajuste redondeo actual')}
+                        <div>
+                            <InputLabel htmlFor="fecha_emision" value="Fecha emisión" />
+                            <TextInput id="fecha_emision" type="date" value={data.fecha_emision ?? ''} disabled={!editable} onChange={(e) => setData('fecha_emision', e.target.value)} className="mt-1 block w-full disabled:bg-gray-50" />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="fecha_vencimiento" value="Fecha vencimiento" />
+                            <TextInput id="fecha_vencimiento" type="date" value={data.fecha_vencimiento ?? ''} disabled={!editable} onChange={(e) => setData('fecha_vencimiento', e.target.value)} className="mt-1 block w-full disabled:bg-gray-50" />
+                        </div>
+                        <div className="col-span-2">
+                            <InputLabel htmlFor="observacion" value="Observación" />
+                            <TextInput id="observacion" value={data.observacion ?? ''} disabled={!editable} onChange={(e) => setData('observacion', e.target.value)} className="mt-1 block w-full disabled:bg-gray-50" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 bg-white p-5">
+                    <h3 className="mb-4 text-sm font-semibold text-gray-800">Desglose calculado</h3>
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between"><span className="text-gray-500">Consumo ({consumoKwh.toFixed(1)} kWh)</span><span className="font-medium text-gray-700">{money(data.consumo_energia)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Cargo fijo</span><span className="font-medium text-gray-700">{money(data.cargo_fijo)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Mant. y reposición</span><span className="font-medium text-gray-700">{money(data.mant_reposicion)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Alumbrado público</span><span className="font-medium text-gray-700">{money(data.alumbrado_publico)}</span></div>
+                        <div className="flex justify-between border-t border-gray-100 pt-2"><span className="text-gray-500">Subtotal</span><span className="font-medium text-gray-700">{money(data.subtotal)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">IGV (18%)</span><span className="font-medium text-gray-700">{money(data.igv)}</span></div>
+                        <div className="flex justify-between"><span className="text-gray-500">Electrificación rural</span><span className="font-medium text-gray-700">{money(data.electrificacion_rural)}</span></div>
+                        {(Number(data.ajuste_redondeo_anterior) !== 0 || Number(data.ajuste_redondeo_actual) !== 0) && (
+                            <div className="flex justify-between"><span className="text-gray-500">Ajustes de redondeo</span><span className="font-medium text-gray-700">{money(Number(data.ajuste_redondeo_anterior) + Number(data.ajuste_redondeo_actual))}</span></div>
+                        )}
+                        <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900"><span>Total del recibo</span><span>{money(data.total_recibo)}</span></div>
+                    </div>
+
+                    <div className="mt-5 rounded-lg bg-surface p-3 text-xs text-gray-500">
+                        Este total se reparte entre las unidades según su consumo en <strong className="text-gray-700">Liquidación</strong> — acá solo se registra el recibo real de la eléctrica.
+                    </div>
+                </div>
+            </form>
         </AdminLayout>
     );
 }
