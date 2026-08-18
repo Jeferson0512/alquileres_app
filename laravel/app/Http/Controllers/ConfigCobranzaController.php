@@ -40,6 +40,14 @@ class ConfigCobranzaController extends Controller
     {
         $idInmueble = Inmueble::activoActual()->id_inmueble;
 
+        // El input de WhatsApp acepta el formato que sea (con +, espacios,
+        // guiones) y aqui se limpia a solo digitos antes de validar -- la
+        // regex estricta rechazaba en silencio cualquier cosa que no fueran
+        // puros numeros, sin mostrar un error lo bastante visible.
+        if ($request->filled('whatsapp_contacto')) {
+            $request->merge(['whatsapp_contacto' => preg_replace('/\D+/', '', $request->input('whatsapp_contacto'))]);
+        }
+
         $data = $request->validate([
             'monto_minimo_luz' => ['nullable', 'numeric', 'min:0'],
             'minimo_kwh_aviso' => ['nullable', 'numeric', 'min:0'],
