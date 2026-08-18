@@ -67,7 +67,9 @@ class InquilinoController extends Controller
                     ->where(fn ($q) => $q->where('tipo_documento', request('tipo_documento')))
                     ->ignore($ignorar?->id_persona, 'id_persona'),
             ],
-            'celular' => ['nullable', 'string', 'max:20'],
+            // Celular peruano: 9 dígitos, siempre empieza con 9 (RENIEC/telcos
+            // ya no usan otro prefijo para líneas móviles).
+            'celular' => ['nullable', 'regex:/^9\d{8}$/'],
             'email' => ['required', 'email', 'max:120'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'observacion' => ['nullable', 'string', 'max:255'],
@@ -75,9 +77,13 @@ class InquilinoController extends Controller
         ];
     }
 
+    private const MENSAJES = [
+        'celular.regex' => 'El celular debe tener 9 dígitos y empezar con 9 (ej. 987654321).',
+    ];
+
     public function store(Request $request): RedirectResponse
     {
-        $data = $request->validate($this->rules());
+        $data = $request->validate($this->rules(), self::MENSAJES);
         $data['tipo_persona'] = 'INQUILINO';
         $data['estado'] = $data['estado'] ?? 'ACTIVO';
 
@@ -88,7 +94,7 @@ class InquilinoController extends Controller
 
     public function update(Request $request, Persona $inquilino): RedirectResponse
     {
-        $data = $request->validate($this->rules($inquilino));
+        $data = $request->validate($this->rules($inquilino), self::MENSAJES);
         $data['estado'] = $data['estado'] ?? 'ACTIVO';
 
         $inquilino->update($data);
@@ -101,6 +107,17 @@ class InquilinoController extends Controller
         $nuevoEstado = $inquilino->estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
         $inquilino->update(['estado' => $nuevoEstado]);
 
-        return back()->with('success', $nuevoEstado === 'INACTIVO' ? 'Inquilino dado de baja correctamente' : 'Inquilino reactivado correctamente');
+        $mensaje = $nuevoEstado === 'INACTIVO' ? 'Inquilino dado de baja correctamente' : 'Inquilino reactivado correctamente';
+
+        // Si tiene cuenta de portal, dar de baja al inquilino corta también su
+        // acceso -- si no, podría seguir usando el portal aunque ya no sea
+        // inquilino activo. Reactivarlo NO restaura el portal automáticamente:
+        // eso es una decisión aparte y deliberada, que se hace desde Usuarios.
+        if ($nuevoEstado === 'INACTIVO' && $inquilino->user) {
+            $inquilino->user->update(['estado' => 'INACTIVO']);
+            $mensaje .= ' — su acceso al portal también fue desactivado.';
+        }
+
+        return back()->with('success', $mensaje);
     }
 }

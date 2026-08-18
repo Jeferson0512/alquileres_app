@@ -24,6 +24,16 @@ const ESTADO_TABS = [
 
 const TIPOS_DOCUMENTO = ['DNI', 'CE', 'PASAPORTE', 'RUC'];
 
+// Espejo de InquilinoController::FORMATOS_DOCUMENTO -- guía al usuario antes
+// de enviar el formulario, pero la validación real (la que manda) sigue
+// siendo la del backend.
+const FORMATOS_DOCUMENTO = {
+    DNI: { maxLength: 8, soloNumeros: true, placeholder: '12345678', ayuda: 'Exactamente 8 dígitos.' },
+    RUC: { maxLength: 11, soloNumeros: true, placeholder: '20123456789', ayuda: 'Exactamente 11 dígitos.' },
+    CE: { maxLength: 12, soloNumeros: false, placeholder: 'AB1234567', ayuda: 'Entre 6 y 12 caracteres alfanuméricos.' },
+    PASAPORTE: { maxLength: 12, soloNumeros: false, placeholder: 'A1234567', ayuda: 'Entre 5 y 12 caracteres alfanuméricos.' },
+};
+
 const emptyForm = {
     nombres: '', apellidos: '', tipo_documento: 'DNI', numero_documento: '',
     celular: '', email: '', direccion: '', observacion: '',
@@ -36,6 +46,21 @@ function InquilinoModal({ show, onClose, inquilino }) {
         ...editando,
         estado: editando?.estado ?? 'ACTIVO',
     });
+
+    const formatoDoc = FORMATOS_DOCUMENTO[data.tipo_documento];
+
+    const cambiarTipoDocumento = (tipo) => {
+        setData((prev) => ({ ...prev, tipo_documento: tipo, numero_documento: '' }));
+    };
+
+    const cambiarNumeroDocumento = (value) => {
+        const limpio = formatoDoc.soloNumeros ? value.replace(/\D/g, '') : value.replace(/[^A-Za-z0-9]/g, '');
+        setData('numero_documento', limpio.slice(0, formatoDoc.maxLength));
+    };
+
+    const cambiarCelular = (value) => {
+        setData('celular', value.replace(/\D/g, '').slice(0, 9));
+    };
 
     const submit = (e) => {
         e.preventDefault();
@@ -74,7 +99,7 @@ function InquilinoModal({ show, onClose, inquilino }) {
                         <select
                             id="tipo_documento"
                             value={data.tipo_documento}
-                            onChange={(e) => setData('tipo_documento', e.target.value)}
+                            onChange={(e) => cambiarTipoDocumento(e.target.value)}
                             className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
                         >
                             {TIPOS_DOCUMENTO.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -83,13 +108,30 @@ function InquilinoModal({ show, onClose, inquilino }) {
                     </div>
                     <div>
                         <InputLabel htmlFor="numero_documento" value="Número de documento *" />
-                        <TextInput id="numero_documento" className="mt-1 block w-full" value={data.numero_documento} onChange={(e) => setData('numero_documento', e.target.value)} />
+                        <TextInput
+                            id="numero_documento"
+                            className="mt-1 block w-full"
+                            inputMode={formatoDoc.soloNumeros ? 'numeric' : 'text'}
+                            maxLength={formatoDoc.maxLength}
+                            placeholder={formatoDoc.placeholder}
+                            value={data.numero_documento}
+                            onChange={(e) => cambiarNumeroDocumento(e.target.value)}
+                        />
+                        {!errors.numero_documento && <p className="mt-1 text-xs text-gray-400">{formatoDoc.ayuda}</p>}
                         <InputError className="mt-1" message={errors.numero_documento} />
                     </div>
 
                     <div>
                         <InputLabel htmlFor="celular" value="Celular" />
-                        <TextInput id="celular" className="mt-1 block w-full" value={data.celular ?? ''} onChange={(e) => setData('celular', e.target.value)} />
+                        <TextInput
+                            id="celular"
+                            className="mt-1 block w-full"
+                            inputMode="numeric"
+                            maxLength={9}
+                            placeholder="987654321"
+                            value={data.celular ?? ''}
+                            onChange={(e) => cambiarCelular(e.target.value)}
+                        />
                         <InputError className="mt-1" message={errors.celular} />
                     </div>
                     <div>
