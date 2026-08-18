@@ -45,6 +45,7 @@ class DashboardController extends Controller
                 'PAGADO' => collect($cobros)->where('estado_pago', 'PAGADO')->count(),
             ],
             'morosidadTotal' => round(collect($cobros)->sum('deuda_anterior'), 2),
+            'carteraVencidaCount' => count($cobroService->carteraVencida()),
             'vencimientosContrato' => $avisoService->vencimientosContrato(),
             'consumoAnterior' => $dashboardService->consumoPorUnidadPeriodoAnterior($periodo),
         ]);
