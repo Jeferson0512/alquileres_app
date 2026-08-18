@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Unidad extends Model
 {
@@ -16,4 +17,9 @@ class Unidad extends Model
     ];
 
     public const TIPOS = ['CUARTO', 'MINI_DPTO', 'DEPARTAMENTO', 'LOCAL', 'DEPOSITO', 'AREA_COMUN', 'MEDIDOR_GENERAL', 'OTRO'];
+
+    public function ocupaciones(): HasMany
+    {
+        return $this->hasMany(OcupacionUnidad::class, 'id_unidad', 'id_unidad');
+    }
 }
