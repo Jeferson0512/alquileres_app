@@ -47,6 +47,13 @@ class OcupacionController extends Controller
                 ->withExists('user')
                 ->get(['id_persona', 'nombres', 'apellidos', 'email']),
             'renovarDesde' => $renovarDesde,
+            // Capa visual nueva: el mapa del inmueble por piso -- independiente
+            // del filtro/paginación de la tabla de abajo, siempre refleja la
+            // ocupación ACTIVA real de cada unidad activa.
+            'unidadesMapa' => Unidad::where('estado', 'ACTIVO')
+                ->with(['ocupacionActiva' => fn ($q) => $q->select('id_ocupacion', 'id_unidad', 'id_persona', 'fecha_fin')->with('persona:id_persona,nombres,apellidos')])
+                ->orderBy('piso')->orderBy('codigo_unidad')
+                ->get(['id_unidad', 'codigo_unidad', 'nombre_unidad', 'piso']),
         ]);
     }
 
