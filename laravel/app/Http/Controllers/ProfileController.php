@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\SecurityAuditService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -43,13 +44,18 @@ class ProfileController extends Controller
     /**
      * Delete the user's account.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, SecurityAuditService $audit): RedirectResponse
     {
         $request->validate([
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
+
+        // Antes de logout/delete -- son los ultimos datos que van a estar
+        // disponibles de este usuario. No hay evento nativo de Laravel para
+        // "borro su propia cuenta", por eso el registro manual.
+        $audit->log('CUENTA_ELIMINADA', $user->id, $user->email);
 
         Auth::logout();
 
