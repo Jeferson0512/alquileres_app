@@ -214,32 +214,33 @@ export default function Index({ inquilinos, filtro, estadoFiltro, totalActivos, 
     };
 
     return (
-        <AdminLayout title="Inquilinos" description={`${totalActivos} activos de ${totalRegistrados} registrados`}>
+        <AdminLayout
+            title="Inquilinos"
+            description={`${totalActivos} activos de ${totalRegistrados} registrados`}
+            actions={puede('inquilinos.crear') && (
+                <button
+                    type="button"
+                    onClick={abrirNuevo}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                >
+                    <Plus className="h-4 w-4" /> Nuevo inquilino
+                </button>
+            )}
+        >
             <Head title="Inquilinos" />
 
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-3">
-                    <StatusTabs value={estadoFiltro} options={ESTADO_TABS} onChange={cambiarEstado} />
-                    <div className="relative">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                        <input
-                            type="search"
-                            placeholder="Buscar por nombre, apellido o documento..."
-                            value={q}
-                            onChange={(e) => buscar(e.target.value)}
-                            className="w-72 rounded-lg border-gray-300 py-2 pl-8 text-sm shadow-sm focus:border-primary focus:ring-primary"
-                        />
-                    </div>
+            <div className="mb-4 flex flex-wrap items-center gap-3">
+                <StatusTabs value={estadoFiltro} options={ESTADO_TABS} onChange={cambiarEstado} />
+                <div className="relative">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input
+                        type="search"
+                        placeholder="Buscar por nombre, apellido o documento..."
+                        value={q}
+                        onChange={(e) => buscar(e.target.value)}
+                        className="w-72 rounded-lg border-gray-300 py-2 pl-8 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                    />
                 </div>
-                {puede('inquilinos.crear') && (
-                    <button
-                        type="button"
-                        onClick={abrirNuevo}
-                        className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-                    >
-                        <Plus className="h-4 w-4" /> Nuevo inquilino
-                    </button>
-                )}
             </div>
 
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">

@@ -316,7 +316,7 @@ function NotificacionesBell() {
     );
 }
 
-export default function AdminLayout({ title, description, children, periodo, periodos, onPeriodoChange }) {
+export default function AdminLayout({ title, description, actions, children, periodo, periodos, onPeriodoChange }) {
     const { auth, navigation, url } = usePage().props;
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
     const user = auth.user;
@@ -432,13 +432,16 @@ export default function AdminLayout({ title, description, children, periodo, per
                 </header>
 
                 <main className="p-4 sm:p-6">
-                    {(breadcrumb.length > 0 || title) && (
-                        <div className="mb-3">
-                            {breadcrumb.length > 0 && (
-                                <p className="mb-1 text-xs text-gray-400">{breadcrumb.join(' / ')}</p>
-                            )}
-                            {title && <h1 className="text-lg font-semibold text-gray-900">{title}</h1>}
-                            {description && <p className="mt-0.5 text-sm text-gray-500">{description}</p>}
+                    {breadcrumb.length > 0 && (
+                        <p className="mb-1 text-xs text-gray-400">{breadcrumb.join(' / ')}</p>
+                    )}
+                    {(title || actions) && (
+                        <div className="mb-3 flex flex-wrap items-end justify-between gap-2.5">
+                            <div>
+                                {title && <h1 className="text-lg font-semibold text-gray-900">{title}</h1>}
+                                {description && <p className="mt-0.5 text-sm text-gray-500">{description}</p>}
+                            </div>
+                            {actions && <div className="shrink-0">{actions}</div>}
                         </div>
                     )}
                     {children}

@@ -204,20 +204,17 @@ export default function Index({ periodos }) {
         <AdminLayout
             title="Periodos"
             description="Ciclos de facturación mensuales, en orden — cada uno empieza justo donde termina el anterior."
+            actions={puedeEditar && (
+                <button
+                    type="button"
+                    onClick={() => setNuevoAbierto(true)}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                >
+                    <Plus className="h-4 w-4" /> Nuevo periodo
+                </button>
+            )}
         >
             <Head title="Periodos" />
-
-            <div className="mb-5 flex items-center justify-end">
-                {puedeEditar && (
-                    <button
-                        type="button"
-                        onClick={() => setNuevoAbierto(true)}
-                        className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-                    >
-                        <Plus className="h-4 w-4" /> Nuevo periodo
-                    </button>
-                )}
-            </div>
 
             <div className="relative">
                 {periodos.map((p, i) => {

@@ -230,20 +230,20 @@ export default function Index({ unidades, tipos, estadoFiltro, todosCodigos }) {
     const activas = unidades.data.filter((u) => u.estado === 'ACTIVO');
 
     return (
-        <AdminLayout title="Unidades" description="1 inmueble · catálogo de unidades y su alquiler base">
+        <AdminLayout
+            title="Unidades"
+            description="1 inmueble · catálogo de unidades y su alquiler base"
+            actions={puede('unidades.crear') && (
+                <button
+                    type="button"
+                    onClick={abrirNueva}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
+                >
+                    <Plus className="h-4 w-4" /> Nueva unidad
+                </button>
+            )}
+        >
             <Head title="Unidades" />
-
-            <div className="mb-5 flex items-center justify-end">
-                {puede('unidades.crear') && (
-                    <button
-                        type="button"
-                        onClick={abrirNueva}
-                        className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark"
-                    >
-                        <Plus className="h-4 w-4" /> Nueva unidad
-                    </button>
-                )}
-            </div>
 
             {estadoFiltro !== 'INACTIVO' && activas.length > 0 && (
                 <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
@@ -277,10 +277,20 @@ export default function Index({ unidades, tipos, estadoFiltro, todosCodigos }) {
                 </div>
             )}
 
+            {estadoFiltro === 'ACTIVO' && activas.length === 0 && (
+                <p className="mb-6 rounded-lg border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
+                    Sin unidades activas todavía.
+                </p>
+            )}
+
             <div className="mb-4">
                 <StatusTabs value={estadoFiltro} options={ESTADO_TABS} onChange={cambiarEstado} />
             </div>
 
+            {/* El catálogo de cards de arriba ya cubre "Activas" con las mismas
+                acciones (editar/dar de baja) -- la tabla solo aporta algo real
+                en "De baja"/"Todas", que las cards no muestran. */}
+            {estadoFiltro !== 'ACTIVO' && (
             <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                     <thead className="bg-gray-50">
@@ -333,6 +343,7 @@ export default function Index({ unidades, tipos, estadoFiltro, todosCodigos }) {
                 </table>
                 <Pagination meta={unidades} onPageChange={cambiarPagina} />
             </div>
+            )}
 
             <UnidadModal key={editando?.id_unidad ?? 'nueva'} show={modalAbierto} onClose={() => setModalAbierto(false)} unidad={editando} tipos={tipos} todosCodigos={todosCodigos} />
         </AdminLayout>
