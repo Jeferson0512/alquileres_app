@@ -11,7 +11,12 @@ function AuditoriaBadge({ estado }) {
     return <Badge variant={AUDITORIA_VARIANTS[estado] ?? 'gray'}>{AUDITORIA_LABELS[estado] ?? estado}</Badge>;
 }
 
-export default function Index({ periodo, periodos, lecturas }) {
+// Cambiar de periodo navega con preserveState, así que esta instancia del
+// componente sigue montada -- pero useState(() => ...) solo lee su valor
+// inicial una vez. Sin remount, la tabla se queda pegada en las lecturas del
+// periodo anterior aunque lleguen props nuevas. index.jsx delega en este
+// componente con key={periodo.id_periodo} para forzar el remount.
+function LecturasTabla({ periodo, periodos, lecturas }) {
     const { errors, auth } = usePage().props;
     const [valores, setValores] = useState(() => Object.fromEntries(lecturas.map((l) => [l.id_lectura, l.lectura_actual])));
     const [saving, setSaving] = useState(false);
@@ -155,4 +160,8 @@ export default function Index({ periodo, periodos, lecturas }) {
             </div>
         </AdminLayout>
     );
+}
+
+export default function Index({ periodo, periodos, lecturas }) {
+    return <LecturasTabla key={periodo.id_periodo} periodo={periodo} periodos={periodos} lecturas={lecturas} />;
 }

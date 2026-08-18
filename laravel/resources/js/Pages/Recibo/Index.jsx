@@ -8,7 +8,13 @@ import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { ArrowRight, Copy } from 'lucide-react';
 import { useEffect } from 'react';
 
-export default function Index({ periodo, periodos, recibo, tieneAnterior }) {
+// Cambiar de periodo navega con preserveState (para no perder scroll/UI),
+// así que esta instancia del componente sigue montada -- pero useForm() solo
+// lee su valor inicial una vez. Sin remount, el formulario se queda pegado
+// en los datos del periodo anterior aunque lleguen props nuevas del server.
+// index.jsx delega en este componente con key={periodo.id_periodo} para
+// forzar el remount y que useForm se re-inicialice con el recibo correcto.
+function ReciboForm({ periodo, periodos, recibo, tieneAnterior }) {
     const { errors, auth } = usePage().props;
     const puede = auth.permissions.includes('recibo.editar');
     const editable = periodo.estado === 'ABIERTO' && puede;
@@ -188,4 +194,8 @@ export default function Index({ periodo, periodos, recibo, tieneAnterior }) {
             </form>
         </AdminLayout>
     );
+}
+
+export default function Index({ periodo, periodos, recibo, tieneAnterior }) {
+    return <ReciboForm key={periodo.id_periodo} periodo={periodo} periodos={periodos} recibo={recibo} tieneAnterior={tieneAnterior} />;
 }

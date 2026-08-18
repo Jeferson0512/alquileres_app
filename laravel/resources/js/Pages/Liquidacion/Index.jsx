@@ -2,7 +2,12 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Index({ periodo, periodos, meta, data }) {
+// Cambiar de periodo navega con preserveState, así que esta instancia del
+// componente sigue montada -- pero useState(() => ...) solo lee su valor
+// inicial una vez. Sin remount, los ajustes se quedan pegados en los del
+// periodo anterior aunque lleguen props nuevas. index.jsx delega en este
+// componente con key={periodo.id_periodo} para forzar el remount.
+function LiquidacionTabla({ periodo, periodos, meta, data }) {
     const { errors, auth } = usePage().props;
     const puedeGenerar = auth.permissions.includes('liquidacion.generar');
     const [ajustes, setAjustes] = useState(() => Object.fromEntries((data || []).map((r) => [r.id_unidad, r.ajuste])));
@@ -83,4 +88,8 @@ export default function Index({ periodo, periodos, meta, data }) {
             </div>
         </AdminLayout>
     );
+}
+
+export default function Index({ periodo, periodos, meta, data }) {
+    return <LiquidacionTabla key={periodo.id_periodo} periodo={periodo} periodos={periodos} meta={meta} data={data} />;
 }
