@@ -36,13 +36,50 @@ const emptyForm = {
     tiene_medidor: 'SI', medidor_codigo: '', tarifa_alquiler_base: '', observacion: '',
 };
 
-function UnidadModal({ show, onClose, unidad, tipos }) {
+const ORDINALES = {
+    1: 'Primer', 2: 'Segundo', 3: 'Tercer', 4: 'Cuarto', 5: 'Quinto',
+    6: 'Sexto', 7: 'Séptimo', 8: 'Octavo', 9: 'Noveno', 10: 'Décimo',
+};
+
+// Sigue el patrón real ya usado en los datos (código = piso + correlativo de
+// 2 dígitos, ej. piso 2 -> 201, 202...) -- mira TODOS los códigos del piso,
+// incluidas las unidades dadas de baja, para no repetir un código ya usado.
+function sugerirParaPiso(piso, todosCodigos) {
+    const prefijo = String(piso);
+    const secuencias = todosCodigos
+        .filter((c) => String(c.piso) === prefijo)
+        .map((c) => {
+            const resto = String(c.codigo_unidad).startsWith(prefijo) ? String(c.codigo_unidad).slice(prefijo.length) : null;
+            return resto && /^\d+$/.test(resto) ? parseInt(resto, 10) : NaN;
+        })
+        .filter((n) => !isNaN(n));
+    const siguiente = (secuencias.length ? Math.max(...secuencias) : 0) + 1;
+    return {
+        codigo: `${prefijo}${String(siguiente).padStart(2, '0')}`,
+        nombre: `${ORDINALES[piso] ?? `Piso ${piso}`} Piso`,
+    };
+}
+
+function UnidadModal({ show, onClose, unidad, tipos, todosCodigos }) {
     const editando = unidad ?? null;
+    const sugerenciaInicial = editando ? null : sugerirParaPiso(emptyForm.piso, todosCodigos);
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         ...emptyForm,
+        ...(sugerenciaInicial ? { codigo_unidad: sugerenciaInicial.codigo, nombre_unidad: sugerenciaInicial.nombre } : {}),
         ...editando,
         estado: editando?.estado ?? 'ACTIVO',
     });
+
+    // Solo sugiere en alta -- en edición no queremos pisarle el código/nombre
+    // reales a una unidad ya existente solo porque cambió el piso.
+    const cambiarPiso = (piso) => {
+        if (editando) {
+            setData('piso', piso);
+            return;
+        }
+        const sugerencia = sugerirParaPiso(piso, todosCodigos);
+        setData((prev) => ({ ...prev, piso, codigo_unidad: sugerencia.codigo, nombre_unidad: sugerencia.nombre }));
+    };
 
     const submit = (e) => {
         e.preventDefault();
@@ -68,17 +105,19 @@ function UnidadModal({ show, onClose, unidad, tipos }) {
                     <div>
                         <InputLabel htmlFor="codigo_unidad" value="Código *" />
                         <TextInput id="codigo_unidad" className="mt-1 block w-full" maxLength={20} value={data.codigo_unidad} onChange={(e) => setData('codigo_unidad', e.target.value)} isFocused />
+                        {!editando && !errors.codigo_unidad && <p className="mt-1 text-xs text-gray-400">Sugerido según el piso — lo podés cambiar.</p>}
                         <InputError className="mt-1" message={errors.codigo_unidad} />
                     </div>
                     <div>
                         <InputLabel htmlFor="nombre_unidad" value="Nombre *" />
                         <TextInput id="nombre_unidad" className="mt-1 block w-full" maxLength={100} value={data.nombre_unidad} onChange={(e) => setData('nombre_unidad', e.target.value)} />
+                        {!editando && !errors.nombre_unidad && <p className="mt-1 text-xs text-gray-400">Sugerido — completalo (ej. "{data.nombre_unidad} 3C").</p>}
                         <InputError className="mt-1" message={errors.nombre_unidad} />
                     </div>
 
                     <div>
                         <InputLabel htmlFor="piso" value="Piso *" />
-                        <TextInput id="piso" type="number" min={0} max={50} className="mt-1 block w-full" value={data.piso} onChange={(e) => setData('piso', e.target.value)} />
+                        <TextInput id="piso" type="number" min={0} max={50} className="mt-1 block w-full" value={data.piso} onChange={(e) => cambiarPiso(e.target.value)} />
                         <InputError className="mt-1" message={errors.piso} />
                     </div>
                     <div>
@@ -159,7 +198,7 @@ function UnidadModal({ show, onClose, unidad, tipos }) {
     );
 }
 
-export default function Index({ unidades, tipos, estadoFiltro }) {
+export default function Index({ unidades, tipos, estadoFiltro, todosCodigos }) {
     const { auth } = usePage().props;
     const [modalAbierto, setModalAbierto] = useState(false);
     const [editando, setEditando] = useState(null);
@@ -212,7 +251,13 @@ export default function Index({ unidades, tipos, estadoFiltro }) {
                         const info = TIPO_INFO[u.tipo_unidad] ?? TIPO_INFO.OTRO;
                         const Icon = info.icon;
                         return (
-                            <div key={u.id_unidad} className="rounded-lg border border-gray-200 bg-white p-3">
+                            <div key={u.id_unidad} className="relative rounded-lg border border-gray-200 bg-white p-3">
+                                {(puede('unidades.editar')) && (
+                                    <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
+                                        <IconButton icon={Pencil} label="Editar" variant="primary" onClick={() => abrirEditar(u)} />
+                                        <IconButton icon={Ban} label="Dar de baja" variant="danger" onClick={() => toggleEstado(u)} />
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-2.5">
                                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-light text-primary-dark">
                                         <Icon className="h-4 w-4" />
@@ -289,7 +334,7 @@ export default function Index({ unidades, tipos, estadoFiltro }) {
                 <Pagination meta={unidades} onPageChange={cambiarPagina} />
             </div>
 
-            <UnidadModal key={editando?.id_unidad ?? 'nueva'} show={modalAbierto} onClose={() => setModalAbierto(false)} unidad={editando} tipos={tipos} />
+            <UnidadModal key={editando?.id_unidad ?? 'nueva'} show={modalAbierto} onClose={() => setModalAbierto(false)} unidad={editando} tipos={tipos} todosCodigos={todosCodigos} />
         </AdminLayout>
     );
 }

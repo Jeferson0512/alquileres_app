@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Unidad;
+use App\Models\UnidadMedidorCompartido;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -20,6 +21,11 @@ class UnidadController extends Controller
                 ->orderBy('piso')->orderBy('codigo_unidad')->paginate(20)->withQueryString(),
             'tipos' => Unidad::TIPOS,
             'estadoFiltro' => $estado,
+            // Todos los códigos existentes (cualquier estado) para sugerir el
+            // siguiente correlativo por piso en el formulario de alta -- si no
+            // se incluyeran las dadas de baja, se podría repetir un código que
+            // ya se usó antes.
+            'todosCodigos' => Unidad::select('piso', 'codigo_unidad')->get(),
         ]);
     }
 
@@ -86,6 +92,13 @@ class UnidadController extends Controller
         // ocupación (igual que assertSinActivaSolapada cuida el caso inverso).
         if ($nuevoEstado === 'INACTIVO' && $unidad->ocupaciones()->where('estado', 'ACTIVO')->exists()) {
             return back()->with('error', 'No se puede dar de baja: la unidad tiene una ocupación activa. Finalizá el contrato primero.');
+        }
+
+        // Si esta unidad es el medidor titular de otra(s) unidad(es)
+        // dependientes (ver UnidadMedidorCompartido), darla de baja las deja
+        // sin medidor de referencia para calcular su prorrateo de luz.
+        if ($nuevoEstado === 'INACTIVO' && UnidadMedidorCompartido::where('id_unidad_titular', $unidad->id_unidad)->where('activo', true)->exists()) {
+            return back()->with('error', 'No se puede dar de baja: esta unidad es el medidor titular de otra(s) unidad(es) dependientes. Reasigná esa relación primero.');
         }
 
         $unidad->update(['estado' => $nuevoEstado]);
