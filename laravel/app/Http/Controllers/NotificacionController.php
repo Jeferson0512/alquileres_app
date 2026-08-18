@@ -18,12 +18,21 @@ class NotificacionController extends Controller
 {
     public function index(Request $request, NotificacionFeedService $feed): Response
     {
-        $estado = $request->query('estado', 'PENDIENTE');
+        $estado = $request->query('estado', 'TODAS');
         $page = (int) $request->query('page', 1);
 
         return Inertia::render('Notificaciones/Index', [
-            'notificaciones' => $feed->paginado($estado, $page),
+            // OJO: no llamar esta prop "notificaciones" -- ese nombre ya lo
+            // comparte globalmente HandleInertiaRequests (array plano para
+            // la campanita) y un prop de página con el mismo nombre lo pisa,
+            // rompiendo la campanita en esta misma pantalla (paginador
+            // {data,links,...} en vez de array -- items.filter explota).
+            'feed' => $feed->paginado($estado, $page),
             'estadoFiltro' => $estado,
+            // Total real sin leer (todas las páginas/filtros) -- si se
+            // calculara solo con lo que trae la página actual, el botón
+            // "marcar todas leídas" podría quedar mal habilitado/deshabilitado.
+            'totalSinLeer' => $feed->totalSinLeer(),
         ]);
     }
 

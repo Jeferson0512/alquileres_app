@@ -28,6 +28,13 @@ class NotificacionFeedService
     {
         $items = $this->todas()->filter(fn (array $item) => $estadoFiltro === 'TODAS' || $item['estado'] === $estadoFiltro)->values();
 
+        if ($estadoFiltro === 'TODAS') {
+            // Pendientes primero (todavia necesitan accion), resueltas despues.
+            // sortBy es estable (PHP 8+), asi que dentro de cada grupo se
+            // mantiene el orden cronologico descendente que ya trae todas().
+            $items = $items->sortBy(fn (array $item) => $item['estado'] === 'PENDIENTE' ? 0 : 1)->values();
+        }
+
         return new LengthAwarePaginator(
             $items->slice(($page - 1) * $porPagina, $porPagina)->values(),
             $items->count(),
@@ -35,6 +42,17 @@ class NotificacionFeedService
             $page,
             ['path' => request()->url(), 'query' => request()->query()],
         );
+    }
+
+    /**
+     * Conteo total sin leer, sin importar el filtro/pagina actual -- lo
+     * necesita el resumen de la cabecera y el estado del boton "marcar
+     * todas leidas" (que no puede depender solo de lo que se ve en la
+     * pagina actual, o queda mal si hay no-leidas en otras paginas).
+     */
+    public function totalSinLeer(): int
+    {
+        return $this->todas()->where('leido', false)->count();
     }
 
     public function marcarTodasLeidas(): void
