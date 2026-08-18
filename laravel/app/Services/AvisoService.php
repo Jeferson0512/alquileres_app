@@ -8,8 +8,13 @@ class AvisoService
 {
     /**
      * Ocupaciones ACTIVAS cuya fecha_fin real vence dentro de los proximos
-     * 60 dias. URGENTE si quedan <= 7 dias (mismo umbral que el legacy
+     * 60 dias -- o que YA vencieron y nadie las finalizo/renovo todavia.
+     * URGENTE si quedan <= 7 dias (mismo umbral que el legacy
      * api/modules/avisos/index.php, que solo ajustaba <= 7 vs. el resto).
+     * VENCIDO si fecha_fin ya paso: antes esos casos se descartaban del
+     * todo (dias_restantes < 0 quedaba fuera del filtro), asi que un
+     * contrato vencido hace semanas era invisible tanto en el Dashboard
+     * como en Avisos -- justo el caso mas urgente de todos.
      *
      * Usa `o.fecha_fin` -- el dato real guardado en la ocupacion -- en vez
      * de recalcular fecha_inicio + 6 meses: aunque la mayoria de contratos
@@ -38,8 +43,15 @@ class AvisoService
             $venc = new \DateTime($row->fecha_vencimiento_contrato);
             $diasRestantes = (int) $hoy->diff($venc)->format('%r%a');
 
-            if ($diasRestantes >= 0 && $diasRestantes <= 60) {
-                $nivel = $diasRestantes <= 7 ? 'URGENTE' : 'PROXIMO';
+            if ($diasRestantes <= 60) {
+                $nivel = match (true) {
+                    $diasRestantes < 0 => 'VENCIDO',
+                    $diasRestantes <= 7 => 'URGENTE',
+                    default => 'PROXIMO',
+                };
+                $mensaje = $diasRestantes < 0
+                    ? "Contrato de {$row->inquilino} ({$row->codigo_unidad}) venció hace ".abs($diasRestantes).' dia(s)'
+                    : "Contrato de {$row->inquilino} ({$row->codigo_unidad}) vence en {$diasRestantes} dia(s)";
                 $avisos[] = [
                     'tipo' => 'VENCIMIENTO_CONTRATO',
                     'id_referencia' => (int) $row->id_ocupacion,
@@ -51,7 +63,7 @@ class AvisoService
                     'fecha_vencimiento' => $row->fecha_vencimiento_contrato,
                     'dias_restantes' => $diasRestantes,
                     'nivel' => $nivel,
-                    'mensaje' => "Contrato de {$row->inquilino} ({$row->codigo_unidad}) vence en {$diasRestantes} dia(s)",
+                    'mensaje' => $mensaje,
                 ];
             }
         }

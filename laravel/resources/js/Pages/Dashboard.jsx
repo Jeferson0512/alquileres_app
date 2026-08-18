@@ -1,7 +1,7 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
 import {
-    AlertTriangle, Calculator, CalendarClock, Gauge, Info, Wallet, Zap,
+    AlertOctagon, AlertTriangle, Calculator, CalendarClock, Gauge, Info, Wallet, Zap,
 } from 'lucide-react';
 import Chart from 'react-apexcharts';
 
@@ -178,18 +178,20 @@ export default function Dashboard({
                     ) : (
                         <div className="max-h-[196px] space-y-2 overflow-y-auto pr-1">
                             {vencimientosContrato.map((aviso) => {
+                                const vencido = aviso.nivel === 'VENCIDO';
                                 const urgente = aviso.nivel === 'URGENTE';
+                                const color = vencido || urgente ? 'danger' : 'warning';
                                 return (
-                                    <div key={aviso.id_referencia} className={`flex items-center gap-3 rounded-lg border-l-4 bg-surface p-3 ${urgente ? 'border-danger' : 'border-warning'}`}>
-                                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${urgente ? 'bg-red-100 text-danger' : 'bg-amber-100 text-warning'}`}>
-                                            {urgente ? <AlertTriangle className="h-4 w-4" /> : <CalendarClock className="h-4 w-4" />}
+                                    <div key={aviso.id_referencia} className={`flex items-center gap-3 rounded-lg border-l-4 bg-surface p-3 ${color === 'danger' ? 'border-danger' : 'border-warning'} ${vencido ? 'bg-red-50/60' : ''}`}>
+                                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${color === 'danger' ? 'bg-red-100 text-danger' : 'bg-amber-100 text-warning'}`}>
+                                            {vencido ? <AlertOctagon className="h-4 w-4" /> : urgente ? <AlertTriangle className="h-4 w-4" /> : <CalendarClock className="h-4 w-4" />}
                                         </span>
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate text-sm font-medium text-gray-800">{aviso.inquilino}</p>
                                             <p className="text-xs text-gray-400">Unidad {aviso.codigo_unidad}</p>
                                         </div>
-                                        <div className={`shrink-0 rounded-full px-2.5 py-1 text-center text-xs font-bold text-white ${urgente ? 'bg-danger' : 'bg-warning'}`}>
-                                            {aviso.dias_restantes}d
+                                        <div className={`shrink-0 rounded-full px-2.5 py-1 text-center text-xs font-bold text-white ${color === 'danger' ? 'bg-danger' : 'bg-warning'}`}>
+                                            {vencido ? `Vencido ${Math.abs(aviso.dias_restantes)}d` : `${aviso.dias_restantes}d`}
                                         </div>
                                     </div>
                                 );

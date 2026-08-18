@@ -476,8 +476,8 @@ export default function Index({ periodo, periodos, cobros, config, vencimientosC
             {vencimientosContrato.length > 0 && (
                 <div className="mb-4 space-y-2">
                     {vencimientosContrato.map((aviso) => (
-                        <div key={aviso.id_referencia} className={`rounded-lg px-4 py-2 text-sm ${aviso.nivel === 'URGENTE' ? 'bg-red-50 text-danger' : 'bg-amber-50 text-warning'}`}>
-                            <strong>{aviso.nivel === 'URGENTE' ? 'Urgente' : 'Próximo a vencer'}:</strong> {aviso.mensaje}
+                        <div key={aviso.id_referencia} className={`rounded-lg px-4 py-2 text-sm ${aviso.nivel !== 'PROXIMO' ? 'bg-red-50 text-danger' : 'bg-amber-50 text-warning'}`}>
+                            <strong>{aviso.nivel === 'VENCIDO' ? 'Vencido' : aviso.nivel === 'URGENTE' ? 'Urgente' : 'Próximo a vencer'}:</strong> {aviso.mensaje}
                         </div>
                     ))}
                 </div>
