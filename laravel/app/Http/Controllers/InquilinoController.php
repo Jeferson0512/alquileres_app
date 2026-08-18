@@ -23,6 +23,8 @@ class InquilinoController extends Controller
                     ->orWhere('numero_documento', 'like', "%{$q}%");
             }))
             ->when($estado !== 'TODOS', fn ($query) => $query->where('estado', $estado))
+            ->withExists('user')
+            ->with('ocupacionActiva.unidad:id_unidad,codigo_unidad,nombre_unidad')
             ->orderBy('apellidos')->orderBy('nombres')
             ->paginate(20)->withQueryString();
 
@@ -30,6 +32,8 @@ class InquilinoController extends Controller
             'inquilinos' => $inquilinos,
             'filtro' => $q,
             'estadoFiltro' => $estado,
+            'totalActivos' => Persona::inquilinos()->where('estado', 'ACTIVO')->count(),
+            'totalRegistrados' => Persona::inquilinos()->count(),
         ]);
     }
 

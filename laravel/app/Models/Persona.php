@@ -29,4 +29,16 @@ class Persona extends Model
     {
         return $this->hasOne(User::class, 'id_persona', 'id_persona');
     }
+
+    /**
+     * La ocupación ACTIVO más reciente de este inquilino (una persona puede
+     * tener varias ocupaciones a lo largo del tiempo, pero como mucho una
+     * activa a la vez -- ver assertSinActivaSolapada en OcupacionController).
+     */
+    public function ocupacionActiva(): HasOne
+    {
+        return $this->hasOne(OcupacionUnidad::class, 'id_persona', 'id_persona')
+            ->where('estado', 'ACTIVO')
+            ->latest('fecha_inicio');
+    }
 }
