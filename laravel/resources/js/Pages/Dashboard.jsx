@@ -71,7 +71,16 @@ export default function Dashboard({
                     size: '72%',
                     labels: {
                         show: true,
-                        value: { fontSize: '22px', fontWeight: 700, color: '#0f172a', formatter: () => `${pctCobrado.toFixed(0)}%` },
+                        // ApexCharts por defecto reemplaza el centro con el
+                        // nombre/valor del segmento al pasar el mouse encima
+                        // (ej. "Vencido" tapando el % de cobrado). Como ese
+                        // reemplazo pisa el texto en vez de ocultarlo, la
+                        // forma confiable de dejar el centro fijo es hacer
+                        // que name/value ignoren lo que les manda el hover y
+                        // devuelvan siempre el mismo texto -- no alcanza con
+                        // apagarlos (eso deja el centro vacío en esta versión).
+                        name: { show: true, fontSize: '11px', color: '#94a3b8', formatter: () => 'Cobrado del periodo' },
+                        value: { show: true, fontSize: '22px', fontWeight: 700, color: '#0f172a', offsetY: -4, formatter: () => `${pctCobrado.toFixed(0)}%` },
                         total: { show: true, label: 'Cobrado del periodo', fontSize: '11px', color: '#94a3b8', formatter: () => `${pctCobrado.toFixed(0)}%` },
                     },
                 },
