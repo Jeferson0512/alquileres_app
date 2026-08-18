@@ -1,4 +1,5 @@
 import Dropdown from '@/Components/Dropdown';
+import { iniciales } from '@/lib/iniciales';
 import MESES from '@/lib/meses';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
@@ -243,12 +244,6 @@ const NOTIFICACION_ICONOS = {
 function iconoDe(item) {
     const clave = item.tipo === 'RENOVACION' ? item.tipo : `${item.tipo}_${item.subestado}`;
     return NOTIFICACION_ICONOS[clave] ?? NOTIFICACION_ICONOS.RENOVACION;
-}
-
-function iniciales(nombre) {
-    const partes = String(nombre ?? '').trim().split(/\s+/).filter(Boolean);
-    if (partes.length === 0) return '?';
-    return (partes[0][0] + (partes[1]?.[0] ?? '')).toUpperCase();
 }
 
 function NotificacionesBell() {
