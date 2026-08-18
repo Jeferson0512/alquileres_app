@@ -156,7 +156,8 @@ function OcupacionModal({ show, onClose, editando, data, setData, errors, proces
                     <div>
                         <InputLabel htmlFor="fecha_fin" value="Fecha fin" />
                         <TextInput id="fecha_fin" type="date" className="mt-1 block w-full" value={data.fecha_fin} onChange={(e) => setData('fecha_fin', e.target.value)} />
-                        <p className="mt-1 text-xs text-gray-400">Se sugiere 6 meses desde el inicio; podés ajustarla.</p>
+                        {!errors.fecha_fin && <p className="mt-1 text-xs text-gray-400">Se sugiere 6 meses desde el inicio; podés ajustarla.</p>}
+                        <InputError className="mt-1" message={errors.fecha_fin} />
                     </div>
 
                     <div>

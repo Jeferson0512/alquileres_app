@@ -70,7 +70,14 @@ class InquilinoController extends Controller
             // Celular peruano: 9 dígitos, siempre empieza con 9 (RENIEC/telcos
             // ya no usan otro prefijo para líneas móviles).
             'celular' => ['nullable', 'regex:/^9\d{8}$/'],
-            'email' => ['required', 'email', 'max:120'],
+            // El email de la ficha es el mismo que se usa como login del
+            // portal (ver OcupacionController::validarDatosUsuarioPortal) --
+            // sin unicidad acá, dos inquilinos podrían compartir email y
+            // el alta de portal del segundo fallaría de forma confusa.
+            'email' => [
+                'required', 'email', 'max:120',
+                Rule::unique('personas', 'email')->ignore($ignorar?->id_persona, 'id_persona'),
+            ],
             'direccion' => ['nullable', 'string', 'max:255'],
             'observacion' => ['nullable', 'string', 'max:255'],
             'estado' => ['nullable', Rule::in(['ACTIVO', 'INACTIVO'])],

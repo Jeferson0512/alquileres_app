@@ -60,10 +60,10 @@ class OcupacionController extends Controller
     private function rules(): array
     {
         return [
-            'id_unidad' => ['required', 'integer'],
-            'id_persona' => ['required', 'integer'],
+            'id_unidad' => ['required', 'integer', 'exists:unidades,id_unidad'],
+            'id_persona' => ['required', 'integer', 'exists:personas,id_persona'],
             'fecha_inicio' => ['required', 'date'],
-            'fecha_fin' => ['nullable', 'date'],
+            'fecha_fin' => ['nullable', 'date', 'after:fecha_inicio'],
             'monto_alquiler' => ['nullable', 'numeric', 'min:0'],
             'garantia' => ['nullable', 'numeric', 'min:0'],
             'estado' => ['nullable', Rule::in(['ACTIVO', 'FINALIZADO', 'ANULADO'])],
