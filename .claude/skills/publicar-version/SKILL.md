@@ -5,12 +5,42 @@ description: Publica una nueva version de Alquileres App - commit y push a GitHu
 
 # Publicar una nueva version
 
-Publicar tiene **dos mitades que no son lo mismo**, y esa es la idea central de este skill:
+"Publicar" en este proyecto son **tres cosas distintas** que no hay que confundir:
 
-1. **Git** lleva el *codigo fuente*.
-2. **El servidor** necesita ademas cosas que git **no** transporta (dependencias, build del frontend, `.env`, esquema de BD).
+1. **Versionar** — marcar un punto estable del historial con un tag (`v1.0.0`,
+   `v1.1.0`...) para poder volver atras si algo sale mal. No toca ningun
+   servidor, es puro git local/GitHub. Ver "Versionado del proyecto" mas abajo.
+2. **Publicar a GitHub** (Parte A) — `git push` del codigo al repo publico.
+   Esto **no** actualiza la app que ven los usuarios.
+3. **Desplegar a produccion** (Parte B) — llevar el codigo ya pusheado al
+   servidor donde corre la app en vivo, mas todo lo que git no transporta
+   (dependencias, build del frontend, `.env`, esquema de BD).
 
-Hacer solo `git push` **no** actualiza produccion. Un `git pull` en el servidor tampoco alcanza por si solo.
+Hacer solo `git push` **no** actualiza produccion. Un `git pull` en el servidor tampoco alcanza por si solo. Y taggear una version tampoco implica ni pushear ni desplegar nada — es un paso previo e independiente.
+
+## Versionado del proyecto (tags y ramas, no confundir con el deploy)
+
+El **estado estable de referencia es el tag `v1.0.0`** (creado 2026-08-17, commit
+`ad946ba`, ya en `origin`). Es el punto al que se vuelve si un desarrollo
+posterior sale mal — no requiere servidor ni deploy, es solo git:
+
+```powershell
+git checkout v1.0.0                              # mirar como estaba esa version
+git reset --hard v1.0.0                          # descartar todo lo posterior y volver ahi
+```
+
+Convencion para trabajar en cambios grandes o experimentales sin arriesgar
+`main`:
+
+- Los cambios de una version nueva (ej. "v2") van en una **rama propia**
+  (ej. `v2-desarrollo`), no directo en `main`.
+- Si la rama sale bien: fusionar a `main` y crear un tag nuevo
+  (`v1.1.0` para cambios chicos, `v2.0.0` para cambios grandes).
+- Si sale mal: se borra la rama y `main`/el ultimo tag quedan intactos.
+
+Un tag o una rama nueva **no es un despliegue**. Que `main` tenga tag
+`v2.0.0` no significa que el servidor de produccion ya sirva esa version —
+eso solo pasa cuando se completa la Parte B de este skill.
 
 ## Contexto del proyecto (leer antes de tocar nada)
 
@@ -147,7 +177,7 @@ DB_DATABASE=...  DB_USERNAME=...  DB_PASSWORD=...
 
 ```bash
 php artisan down
-git reset --hard <commit-anterior>
+git reset --hard <commit-anterior-o-tag>   # ej. v1.0.0, o el hash del commit previo
 composer install --no-dev --optimize-autoloader
 npm ci && npm run build
 php artisan optimize
