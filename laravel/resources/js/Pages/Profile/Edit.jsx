@@ -9,21 +9,22 @@ export default function Edit({ mustVerifyEmail, status }) {
         <AdminLayout title="Mi perfil">
             <Head title="Mi perfil" />
 
-            <div className="mx-auto max-w-2xl space-y-4">
-                <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
-                    <UpdateProfileInformationForm
-                        mustVerifyEmail={mustVerifyEmail}
-                        status={status}
-                        className="max-w-xl"
-                    />
+            <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+                        <UpdateProfileInformationForm
+                            mustVerifyEmail={mustVerifyEmail}
+                            status={status}
+                        />
+                    </div>
+
+                    <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+                        <UpdatePasswordForm />
+                    </div>
                 </div>
 
-                <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
-                    <UpdatePasswordForm className="max-w-xl" />
-                </div>
-
-                <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
-                    <DeleteUserForm className="max-w-xl" />
+                <div className="rounded-lg border border-danger/30 border-t-4 border-t-danger bg-white p-4 sm:p-6">
+                    <DeleteUserForm />
                 </div>
             </div>
         </AdminLayout>

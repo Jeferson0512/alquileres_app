@@ -53,10 +53,11 @@ export default function DeleteUserForm({ className = '' }) {
                 </h2>
 
                 <p className="mt-1 text-sm text-gray-600">
-                    Una vez que se elimine tu cuenta, todos sus recursos y
-                    datos se borrarán permanentemente. Antes de eliminarla,
-                    descargá cualquier dato o información que quieras
-                    conservar.
+                    Esto elimina únicamente tu cuenta de acceso (login, email
+                    y contraseña) — no borra tus datos como inquilino ni
+                    ningún historial del sistema (ocupaciones, cobros, pagos,
+                    comprobantes). Esa información pertenece al negocio, no a
+                    la cuenta, y queda intacta.
                 </p>
             </header>
 
@@ -71,21 +72,21 @@ export default function DeleteUserForm({ className = '' }) {
                     </h2>
 
                     <p className="mt-1 text-sm text-gray-600">
-                        Una vez que se elimine tu cuenta, todos sus recursos y
-                        datos se borrarán permanentemente. Ingresá tu
-                        contraseña para confirmar que querés eliminarla de
-                        forma definitiva.
+                        Se elimina de forma permanente tu acceso al sistema
+                        (no vas a poder volver a iniciar sesión con este
+                        usuario). Tu historial de negocio no se toca. Ingresá
+                        tu contraseña para confirmar.
                     </p>
 
                     <div className="mt-6">
                         <InputLabel
-                            htmlFor="password"
+                            htmlFor="delete_password"
                             value="Contraseña"
                             className="sr-only"
                         />
 
                         <TextInput
-                            id="password"
+                            id="delete_password"
                             type="password"
                             name="password"
                             ref={passwordInput}
