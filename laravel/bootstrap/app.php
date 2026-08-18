@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\EnsureUsuarioActivo::class,
+            \App\Http\Middleware\RememberPeriodoActual::class,
         ]);
 
         $middleware->alias([

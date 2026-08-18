@@ -25,13 +25,24 @@ class Periodo extends Model
 
     /**
      * Replica getPeriodoId() de api/config/helpers.php: si se pasa un id
-     * explicito lo usa (y valida que exista), si no toma el periodo mas
-     * reciente registrado.
+     * explicito lo usa (y valida que exista). Si no, cae al ultimo periodo
+     * elegido en la sesion (ver RememberPeriodoActual) -- sin esto, cambiar
+     * de periodo en una vista y navegar a otra por el sidebar perdia la
+     * seleccion porque esa navegacion nueva llega sin ?periodo_id= en la
+     * URL. Recien si tampoco hay nada en sesion, usa el mas reciente.
      */
     public static function actual(?int $periodoId = null): self
     {
         if ($periodoId) {
             return static::findOrFail($periodoId);
+        }
+
+        $idSesion = session('periodo_id');
+        if ($idSesion) {
+            $periodo = static::find($idSesion);
+            if ($periodo) {
+                return $periodo;
+            }
         }
 
         return static::orderByDesc('anio')->orderByDesc('mes')->firstOrFail();
