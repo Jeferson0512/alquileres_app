@@ -190,9 +190,13 @@ function formatMoneyText(value) {
 }
 
 async function generateAvisoPng(row, config, periodo, saldoTotal, deudaAnterior, isPaid) {
+    // El umbral se evalua contra el consumo del PERIODO COMPLETO de la
+    // unidad (todos los tramos sumados, decision 5.6) -- lo que se
+    // muestra sigue siendo el consumo propio de este cobro/tramo.
     const consumo = Number(row?.consumo_kwh || 0);
+    const consumoPeriodoUnidad = Number(row?.consumo_periodo_unidad ?? consumo);
     const avisoMinimoKwh = getAvisoMinimoKwh(config);
-    const isLowConsumo = consumo < avisoMinimoKwh;
+    const isLowConsumo = consumoPeriodoUnidad < avisoMinimoKwh;
     const displayConsumo = isLowConsumo ? 0 : consumo;
 
     const tenantName = formatTenantDisplayName(row);
@@ -432,8 +436,8 @@ export default function Index({ periodo, periodos, cobros, config, vencimientosC
     const handleCompartir = async () => {
         if (!selected) return;
         const text = buildSummaryText(selected);
-        const consumo = Number(selected?.consumo_kwh || 0);
-        const isLowConsumo = consumo < getAvisoMinimoKwh(config);
+        const consumoPeriodoUnidad = Number(selected?.consumo_periodo_unidad ?? selected?.consumo_kwh ?? 0);
+        const isLowConsumo = consumoPeriodoUnidad < getAvisoMinimoKwh(config);
         try {
             if (!isLowConsumo) {
                 const blob = await generateAvisoPng(selected, config, periodo, saldoTotalPendiente(selected), deudaAnterior(selected), isPagadoCompleto(selected));
@@ -550,8 +554,8 @@ function AvisoPreview({ row, config, periodo, avisoMinimoKwh, deudaAnteriorReal,
     const otros = Number(row.otros_conceptos || 0);
     const pagado = getPagadoTotal(row);
     const saldoPeriodo = getSaldoPendiente(row);
-    const consumo = Number(row?.consumo_kwh || 0);
-    const isLowConsumo = consumo < avisoMinimoKwh;
+    const consumoPeriodoUnidad = Number(row?.consumo_periodo_unidad ?? row?.consumo_kwh ?? 0);
+    const isLowConsumo = consumoPeriodoUnidad < avisoMinimoKwh;
     const hasDeudaAnterior = deudaAnterior > 0;
     const saldoLabel = isPaid ? 'Pagado' : (hasDeudaAnterior ? 'Pendiente total' : 'Pendiente del mes');
     const totalPrincipal = isPaid ? Math.max(pagado, Number(row.total_cobrar || 0)) : (hasDeudaAnterior ? saldoTotal : saldoPeriodo);

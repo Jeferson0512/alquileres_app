@@ -76,7 +76,7 @@ CREATE TABLE `cobros_mensuales` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp(),
   PRIMARY KEY (`id_cobro`),
-  UNIQUE KEY `uq_cobro_periodo_persona_unidad` (`id_periodo`,`id_persona`,`id_unidad`),
+  UNIQUE KEY `uq_cobro_periodo_unidad_ocupacion` (`id_periodo`,`id_unidad`,`id_ocupacion`),
   KEY `idx_cobro_periodo` (`id_periodo`),
   KEY `idx_cobro_persona` (`id_persona`),
   KEY `idx_cobro_unidad` (`id_unidad`),
@@ -462,6 +462,41 @@ CREATE TABLE `liquidacion_luz_detalle` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `liquidacion_luz_tramo`
+--
+
+DROP TABLE IF EXISTS `liquidacion_luz_tramo`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `liquidacion_luz_tramo` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_liquidacion_detalle` int(10) unsigned NOT NULL,
+  `id_periodo` int(10) unsigned NOT NULL,
+  `id_unidad` int(10) unsigned NOT NULL,
+  `id_ocupacion` int(10) unsigned DEFAULT NULL,
+  `id_persona` int(10) unsigned DEFAULT NULL,
+  `fecha_desde` date NOT NULL,
+  `fecha_hasta` date NOT NULL,
+  `dias` smallint(5) unsigned NOT NULL,
+  `lectura_desde` decimal(12,2) NOT NULL,
+  `lectura_hasta` decimal(12,2) NOT NULL,
+  `consumo_kwh` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `porcentaje_tramo` decimal(10,6) NOT NULL DEFAULT 0.000000,
+  `total_pagar_luz` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `fecha_calculo` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_tramo_periodo_unidad_desde` (`id_periodo`,`id_unidad`,`fecha_desde`),
+  KEY `idx_tramo_ocupacion` (`id_ocupacion`),
+  KEY `fk_tramo_liquidacion_detalle` (`id_liquidacion_detalle`),
+  KEY `fk_tramo_unidad` (`id_unidad`),
+  CONSTRAINT `fk_tramo_liquidacion_detalle` FOREIGN KEY (`id_liquidacion_detalle`) REFERENCES `liquidacion_luz_detalle` (`id_liquidacion_detalle`),
+  CONSTRAINT `fk_tramo_ocupacion` FOREIGN KEY (`id_ocupacion`) REFERENCES `ocupacion_unidad` (`id_ocupacion`),
+  CONSTRAINT `fk_tramo_periodo` FOREIGN KEY (`id_periodo`) REFERENCES `periodos` (`id_periodo`),
+  CONSTRAINT `fk_tramo_unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidades` (`id_unidad`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `migrations`
 --
 
@@ -473,7 +508,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1477,4 +1512,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-09-02  0:51:25
+-- Dump completed on 2026-09-02  5:09:44

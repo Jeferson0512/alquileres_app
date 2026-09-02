@@ -141,6 +141,18 @@ class PortalReciboController extends Controller
      * Para Luz, replica la regla de minimo_kwh_aviso (ver skill
      * reglas-negocio-facturacion): si el consumo real del periodo esta por
      * debajo del umbral configurado, se oculta el numero real de kWh.
+     *
+     * Lee el snapshot cobros_mensuales.consumo_kwh en vez de re-consultar
+     * liquidacion_luz_detalle -- con mas de un tramo por unidad (Fase 2),
+     * matchear por (periodo, unidad) ya no encuentra al saliente, y de
+     * paso evita que regenerar una liquidacion vieja cambie los kWh
+     * impresos en un recibo ya cobrado (RF-16).
+     *
+     * El umbral se evalua contra el consumo del PERIODO COMPLETO de la
+     * unidad (todos los tramos/cobros sumados, decision 5.6) -- un tramo
+     * corto individual case casi siempre por debajo del minimo aunque el
+     * total del mes sea consumo normal. Lo que se MUESTRA sigue siendo el
+     * consumo propio de este cobro (su tramo), no el total de la unidad.
      */
     private function detalleConcepto(\App\Models\CobroMensualDetalle $detalle, CobroMensual $cobro): string
     {
@@ -148,13 +160,14 @@ class PortalReciboController extends Controller
             return $detalle->descripcion ?? '';
         }
 
-        $consumo = (float) DB::table('liquidacion_luz_detalle')
+        $consumoPeriodoUnidad = (float) DB::table('cobros_mensuales')
             ->where('id_periodo', $cobro->id_periodo)
             ->where('id_unidad', $cobro->id_unidad)
-            ->value('consumo_kwh') ?? 0;
+            ->where('estado_pago', '!=', 'ANULADO')
+            ->sum('consumo_kwh');
 
         $minimoKwh = (float) (ConfigCobranza::where('id_inmueble', $cobro->unidad->id_inmueble)->value('minimo_kwh_aviso') ?? 13.5);
-        $consumoMostrado = $consumo < $minimoKwh ? 0 : $consumo;
+        $consumoMostrado = $consumoPeriodoUnidad < $minimoKwh ? 0 : (float) $cobro->consumo_kwh;
 
         return number_format($consumoMostrado, 2).' kWh del periodo';
     }

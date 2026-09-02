@@ -1,6 +1,14 @@
+import Badge from '@/Components/Badge';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+
+const ESTADO_VARIANTS = { OCUPADA: 'info', VACIA: 'gray', CORTE_PENDIENTE: 'warning' };
+const ESTADO_LABELS = { OCUPADA: 'Ocupada', VACIA: 'Vacía', CORTE_PENDIENTE: 'Corte pendiente' };
+
+function fmtCorta(fecha) {
+    return new Date(`${String(fecha).slice(0, 10)}T00:00:00`).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+}
 
 // Cambiar de periodo navega con preserveState, así que esta instancia del
 // componente sigue montada -- pero useState(() => ...) solo lee su valor
@@ -61,25 +69,53 @@ function LiquidacionTabla({ periodo, periodos, meta, data }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {(data || []).map((r) => (
-                            <tr key={r.id_unidad} className={r.participa_liquidacion ? '' : 'opacity-50'}>
-                                <td className="px-4 py-2 font-medium text-gray-800">{r.codigo_unidad} · {r.inquilino}</td>
-                                <td className="px-4 py-2 text-gray-500">{r.estado_unidad}</td>
-                                <td className="px-4 py-2 text-right text-gray-500">{r.consumo_kwh.toFixed(2)}</td>
-                                <td className="px-4 py-2 text-right text-gray-500">{(r.porcentaje_participacion * 100).toFixed(2)}%</td>
-                                <td className="px-4 py-2 text-right text-gray-500">{Number(r.monto_consumo).toFixed(2)}</td>
-                                <td className="px-4 py-2 text-right text-gray-500">{Number(r.gasto_comun).toFixed(2)}</td>
-                                <td className="px-4 py-2 text-right">
-                                    {r.participa_liquidacion && periodo.estado === 'ABIERTO' ? (
-                                        <input type="number" step="0.01" value={ajustes[r.id_unidad] ?? 0}
-                                            onChange={(e) => setAjustes((a) => ({ ...a, [r.id_unidad]: e.target.value }))}
-                                            className="w-24 rounded-md border-gray-300 text-right text-sm" />
-                                    ) : Number(r.ajuste).toFixed(2)}
-                                </td>
-                                <td className="px-4 py-2 text-right font-medium text-gray-700">{Number(r.total_pagar_luz).toFixed(2)}</td>
-                                <td className="px-4 py-2 text-right font-semibold text-primary">{Number(r.total_cobrar).toFixed(2)}</td>
-                            </tr>
-                        ))}
+                        {(data || []).map((r) => {
+                            const tramos = r.tramos || [];
+                            const tieneVariosTramos = tramos.length > 1;
+
+                            return (
+                                <Fragment key={r.id_unidad}>
+                                    <tr className={r.participa_liquidacion ? '' : 'opacity-50'}>
+                                        <td className="px-4 py-2 font-medium text-gray-800">{r.codigo_unidad} · {r.inquilino}</td>
+                                        <td className="px-4 py-2">
+                                            <div className="flex flex-wrap items-center gap-1">
+                                                <Badge variant={ESTADO_VARIANTS[r.estado_unidad] ?? 'gray'}>{ESTADO_LABELS[r.estado_unidad] ?? r.estado_unidad}</Badge>
+                                                {r.consumo_vacante_kwh > 0 && (
+                                                    <span className="text-xs text-gray-400" title="Consumo de tramos sin ocupante este período -- su costo ya está repartido como gasto común entre las unidades ocupadas, no lo paga nadie aparte.">
+                                                        +{Number(r.consumo_vacante_kwh).toFixed(2)} kWh vacante
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-2 text-right text-gray-500">{r.consumo_kwh.toFixed(2)}</td>
+                                        <td className="px-4 py-2 text-right text-gray-500">{(r.porcentaje_participacion * 100).toFixed(2)}%</td>
+                                        <td className="px-4 py-2 text-right text-gray-500">{Number(r.monto_consumo).toFixed(2)}</td>
+                                        <td className="px-4 py-2 text-right text-gray-500">{Number(r.gasto_comun).toFixed(2)}</td>
+                                        <td className="px-4 py-2 text-right">
+                                            {r.participa_liquidacion && periodo.estado === 'ABIERTO' ? (
+                                                <input type="number" step="0.01" value={ajustes[r.id_unidad] ?? 0}
+                                                    onChange={(e) => setAjustes((a) => ({ ...a, [r.id_unidad]: e.target.value }))}
+                                                    className="w-24 rounded-md border-gray-300 text-right text-sm" />
+                                            ) : Number(r.ajuste).toFixed(2)}
+                                        </td>
+                                        <td className="px-4 py-2 text-right font-medium text-gray-700">{Number(r.total_pagar_luz).toFixed(2)}</td>
+                                        <td className="px-4 py-2 text-right font-semibold text-primary">{Number(r.total_cobrar).toFixed(2)}</td>
+                                    </tr>
+                                    {tieneVariosTramos && tramos.map((t) => (
+                                        <tr key={`${r.id_unidad}-${t.fecha_desde}`} className="bg-gray-50/70 text-xs text-gray-500">
+                                            <td className="px-4 py-1.5 pl-8" colSpan={2}>
+                                                ↳ {fmtCorta(t.fecha_desde)}–{fmtCorta(t.fecha_hasta)} ({t.dias} d) · {t.inquilino || 'Vacante'}
+                                            </td>
+                                            <td className="px-4 py-1.5 text-right font-mono">{Number(t.consumo_kwh).toFixed(2)}</td>
+                                            <td className="px-4 py-1.5 text-right font-mono">{(Number(t.porcentaje_tramo) * 100).toFixed(1)}%</td>
+                                            <td className="px-4 py-1.5" colSpan={3}></td>
+                                            <td className="px-4 py-1.5 text-right font-mono font-medium">{Number(t.total_pagar_luz).toFixed(2)}</td>
+                                            <td></td>
+                                        </tr>
+                                    ))}
+                                </Fragment>
+                            );
+                        })}
                         {(!data || data.length === 0) && (
                             <tr><td colSpan={9} className="px-4 py-6 text-center text-gray-400">Sin recibo o lecturas para este periodo todavía.</td></tr>
                         )}

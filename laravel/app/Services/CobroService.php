@@ -20,10 +20,31 @@ use Illuminate\Validation\ValidationException;
  * "Programado" = lo que el sistema calcula que DEBERIA cobrarse este
  * periodo; distinto de lo que ya quedo grabado (snapshot) en
  * cobros_mensuales, que una vez generado no cambia solo.
+ *
+ * Fase 2 (docs/implementacion-ocupaciones-parciales.md): cada fila
+ * programada ahora es un TRAMO (LiquidacionService::repartirPorTramos()),
+ * no una unidad -- una unidad con 2 tramos genera 2 cobros. Con una sola
+ * ocupacion cubriendo el periodo (el caso de siempre) hay exactamente un
+ * tramo y el resultado es identico al de antes de esta fase: el factor de
+ * prorrateo dias_tramo/dias_periodo da 1.0 exacto.
  */
 class CobroService
 {
-    public static function key(int $idUnidad, int $idPersona): string
+    /**
+     * Identidad de un cobro: por ocupacion cuando se conoce (el caso
+     * normal, viene de un tramo real), con fallback a persona solo para
+     * cobros historicos de antes de que existiera id_ocupacion (ver
+     * database/schema/cobros_id_ocupacion.sql -- 3 filas de la migracion
+     * de Fase 0 se quedaron sin poder backfillearse, ver ese script para
+     * el porque). Prefijos o/p para que un id_ocupacion y un id_persona
+     * con el mismo numero nunca choquen.
+     */
+    public static function key(int $idUnidad, ?int $idOcupacion, ?int $idPersona = null): string
+    {
+        return $idOcupacion !== null ? "{$idUnidad}:o{$idOcupacion}" : "{$idUnidad}:p{$idPersona}";
+    }
+
+    private static function overrideKey(int $idUnidad, int $idPersona): string
     {
         return "{$idUnidad}:{$idPersona}";
     }
@@ -58,21 +79,36 @@ class CobroService
         }
     }
 
-    private function armarFilaCobro(int $idUnidad, int $idPersona, float $montoAlquiler, float $montoLuz, float $ajusteMinimoLuz, array $overridesByKey, float $tarifaAgua, float $tarifaGas, float $tarifaMant, ?string $fechaVencimiento): array
+    /**
+     * $factor = dias_tramo/dias_periodo se aplica a alquiler y a las
+     * tarifas fijas (agua/gas/mantenimiento) -- misma categoria de cargo
+     * fijo que el alquiler, prorratea igual (decision 5.1/5.2). La luz NO
+     * lleva factor: ya viene prorrateada de origen, es el total_pagar_luz
+     * de ESTE tramo (LiquidacionService::repartirPorTramos()). El ajuste
+     * de minimo tampoco -- ya es la porcion de ESTE tramo (ver
+     * buildProgramados()).
+     */
+    private function armarFilaCobro(int $idUnidad, int $idOcupacion, int $idPersona, float $montoAlquilerBase, float $montoLuz, float $ajusteMinimoLuz, array $overridesByKey, float $tarifaAgua, float $tarifaGas, float $tarifaMant, ?string $fechaVencimiento, float $factor, float $consumoKwh, int $diasTramo): array
     {
-        $montoAlquiler = round($montoAlquiler, 2);
         $montoLuz = round($montoLuz, 2);
         $ajusteMinimoLuz = round($ajusteMinimoLuz, 2);
+        $montoAlquiler = round($montoAlquilerBase * $factor, 2);
 
-        $keyBase = self::key($idUnidad, $idPersona);
-        $montoAgua = round($overridesByKey["{$keyBase}:AGUA"] ?? $tarifaAgua, 2);
-        $montoGas = round($overridesByKey["{$keyBase}:GAS"] ?? $tarifaGas, 2);
-        $montoOtros = round($overridesByKey["{$keyBase}:MANTENIMIENTO"] ?? $tarifaMant, 2);
+        $overrideKey = self::overrideKey($idUnidad, $idPersona);
+        $baseAgua = $overridesByKey["{$overrideKey}:AGUA"] ?? $tarifaAgua;
+        $baseGas = $overridesByKey["{$overrideKey}:GAS"] ?? $tarifaGas;
+        $baseMant = $overridesByKey["{$overrideKey}:MANTENIMIENTO"] ?? $tarifaMant;
+        $montoAgua = round($baseAgua * $factor, 2);
+        $montoGas = round($baseGas * $factor, 2);
+        $montoOtros = round($baseMant * $factor, 2);
         $totalCobrar = round($montoAlquiler + $montoLuz + $ajusteMinimoLuz + $montoAgua + $montoGas + $montoOtros, 2);
 
         $observacion = 'Cobro generado desde Laravel';
         if ($ajusteMinimoLuz > 0) {
             $observacion .= ' | Ajuste mínimo luz: S/ ' . number_format($ajusteMinimoLuz, 2, '.', '');
+        }
+        if ($factor < 0.999) {
+            $observacion .= " | Tramo parcial: {$diasTramo} día(s) de este período";
         }
 
         $detalles = [
@@ -85,9 +121,11 @@ class CobroService
         ];
 
         return [
-            'key' => $keyBase,
+            'key' => self::key($idUnidad, $idOcupacion),
             'id_unidad' => $idUnidad,
+            'id_ocupacion' => $idOcupacion,
             'id_persona' => $idPersona,
+            'consumo_kwh' => round($consumoKwh, 2),
             'monto_alquiler' => $montoAlquiler,
             'monto_luz' => $montoLuz,
             'ajuste_minimo_luz' => $ajusteMinimoLuz,
@@ -106,6 +144,7 @@ class CobroService
         $idInmueble = Inmueble::activoActual()->id_inmueble;
         $recibo = DB::table('recibos_luz')->where('id_periodo', $periodo->id_periodo)->first();
         $fechaVencimiento = $recibo->fecha_vencimiento ?? $periodo->fecha_fin;
+        $diasPeriodo = (int) $periodo->fecha_inicio->diffInDays($periodo->fecha_fin) + 1;
 
         $tarifas = TarifaServicio::where('id_inmueble', $idInmueble)->where('activo', 1)->pluck('monto', 'servicio');
         $tarifaAgua = (float) ($tarifas['AGUA'] ?? 15.0);
@@ -115,7 +154,7 @@ class CobroService
 
         $overridesByKey = [];
         foreach (CobroOverrideServicio::where('id_periodo', $periodo->id_periodo)->get() as $override) {
-            $overridesByKey[self::key($override->id_unidad, $override->id_persona) . ':' . $override->servicio] = (float) $override->monto;
+            $overridesByKey[self::overrideKey($override->id_unidad, $override->id_persona) . ':' . $override->servicio] = (float) $override->monto;
         }
 
         $medidorPorTitular = [];
@@ -126,57 +165,94 @@ class CobroService
             ];
         }
 
-        $rows = DB::table('liquidacion_luz_detalle as ll')
-            ->join('lecturas_unidad as l', 'l.id_lectura', '=', 'll.id_lectura')
-            ->join('ocupacion_unidad as o', 'o.id_ocupacion', '=', 'l.id_ocupacion')
-            ->where('ll.id_periodo', $periodo->id_periodo)
-            ->get(['ll.id_unidad', 'll.id_persona', 'll.total_pagar_luz', 'o.monto_alquiler']);
+        $tramos = DB::table('liquidacion_luz_tramo as t')
+            ->where('t.id_periodo', $periodo->id_periodo)
+            ->whereNotNull('t.id_ocupacion') // un tramo vacante nunca genera cobro
+            ->orderBy('t.id_unidad')->orderBy('t.fecha_desde')
+            ->get(['t.id_unidad', 't.id_ocupacion', 't.id_persona', 't.fecha_desde', 't.fecha_hasta', 't.dias', 't.consumo_kwh', 't.total_pagar_luz']);
+
+        $idsOcupacion = $tramos->pluck('id_ocupacion')->unique()->all();
+        $alquilerPorOcupacion = DB::table('ocupacion_unidad')->whereIn('id_ocupacion', $idsOcupacion)->pluck('monto_alquiler', 'id_ocupacion');
+
+        // El minimo de luz es por UNIDAD (decision 5.5), no por tramo --
+        // liquidacion_luz_detalle.total_pagar_luz ya es la suma exacta de
+        // los tramos de esa unidad, se lee directo en vez de re-sumar.
+        $totalLuzPorUnidad = DB::table('liquidacion_luz_detalle')->where('id_periodo', $periodo->id_periodo)->pluck('total_pagar_luz', 'id_unidad');
 
         $resultado = [];
-        foreach ($rows as $row) {
-            $idUnidad = (int) $row->id_unidad;
-            $idPersona = (int) $row->id_persona;
-            $montoLuzTotal = round((float) $row->total_pagar_luz, 2);
-            $montoAlquiler = round((float) $row->monto_alquiler, 2);
-            $montoLuzTitular = $montoLuzTotal;
-            $filaDependiente = null;
+        foreach ($tramos->groupBy('id_unidad') as $idUnidad => $tramosUnidad) {
+            $tramosUnidad = $tramosUnidad->values();
+            $totalLuzUnidad = (float) ($totalLuzPorUnidad[$idUnidad] ?? 0);
+            $ajusteMinimoUnidad = $montoMinimoLuz > 0 && $totalLuzUnidad < $montoMinimoLuz
+                ? round($montoMinimoLuz - $totalLuzUnidad, 2) : 0.0;
 
-            $relacion = $medidorPorTitular[$idUnidad] ?? null;
-            if ($relacion && $relacion['porcentaje_dependiente'] > 0) {
-                // Vigente en EL PERIODO que se esta generando, no "ACTIVO" al
-                // momento de correr esto -- si no, al regenerar un periodo
-                // viejo el cobro del dependiente se le atribuye al ocupante
-                // de HOY en vez de al de ese periodo. Mismo criterio que usa
-                // LecturaService::sincronizar() para la ocupacion vigente.
-                $ocupacionDependiente = DB::table('ocupacion_unidad')
-                    ->where('id_unidad', $relacion['id_unidad_dependiente'])
-                    ->where('estado', '!=', 'ANULADO')
-                    ->where('fecha_inicio', '<=', $periodo->fecha_fin)
-                    ->where(function ($q) use ($periodo) {
-                        $q->whereNull('fecha_fin')->orWhere('fecha_fin', '>=', $periodo->fecha_inicio);
-                    })
-                    ->orderByDesc('fecha_inicio')->orderByDesc('id_ocupacion')
-                    ->first();
+            $n = $tramosUnidad->count();
+            $acumuladoMinimo = 0.0;
 
-                if ($ocupacionDependiente) {
-                    $montoLuzDependiente = round($montoLuzTotal * $relacion['porcentaje_dependiente'] / 100, 2);
-                    $montoLuzTitular = round($montoLuzTotal - $montoLuzDependiente, 2);
+            foreach ($tramosUnidad as $i => $tramo) {
+                $idOcupacion = (int) $tramo->id_ocupacion;
+                $idPersona = (int) $tramo->id_persona;
+                $diasTramo = (int) $tramo->dias;
+                $factor = $diasPeriodo > 0 ? $diasTramo / $diasPeriodo : 1.0;
+                $montoLuzTramo = round((float) $tramo->total_pagar_luz, 2);
+                $montoAlquilerBase = (float) ($alquilerPorOcupacion[$idOcupacion] ?? 0);
 
-                    $filaDependiente = $this->armarFilaCobro(
-                        $relacion['id_unidad_dependiente'], (int) $ocupacionDependiente->id_persona,
-                        (float) $ocupacionDependiente->monto_alquiler, $montoLuzDependiente, 0.0,
-                        $overridesByKey, $tarifaAgua, $tarifaGas, $tarifaMant, $fechaVencimiento
-                    );
+                if ($ajusteMinimoUnidad > 0) {
+                    $pesoTramo = $totalLuzUnidad > 0 ? ($montoLuzTramo / $totalLuzUnidad) : (1 / $n);
+                    $ajusteMinimoTramo = $i === $n - 1
+                        ? round($ajusteMinimoUnidad - $acumuladoMinimo, 2)
+                        : round($ajusteMinimoUnidad * $pesoTramo, 2);
+                    $acumuladoMinimo += $ajusteMinimoTramo;
+                } else {
+                    $ajusteMinimoTramo = 0.0;
                 }
-            }
 
-            $ajusteMinimoLuzTitular = $montoMinimoLuz > 0 && $montoLuzTitular < $montoMinimoLuz
-                ? round($montoMinimoLuz - $montoLuzTitular, 2) : 0;
+                $montoLuzTitular = $montoLuzTramo;
+                $filaDependiente = null;
 
-            $resultado[] = $this->armarFilaCobro($idUnidad, $idPersona, $montoAlquiler, $montoLuzTitular, $ajusteMinimoLuzTitular, $overridesByKey, $tarifaAgua, $tarifaGas, $tarifaMant, $fechaVencimiento);
+                $relacion = $medidorPorTitular[$idUnidad] ?? null;
+                if ($relacion && $relacion['porcentaje_dependiente'] > 0) {
+                    // Vigente durante ESTE tramo del titular (no todo el
+                    // periodo) -- si el dependiente tambien cambiara de
+                    // ocupacion a mitad de este tramo especifico, se le
+                    // atribuye a quien este vigente al cierre del tramo,
+                    // mismo criterio que lecturas_unidad. Sub-dividir la
+                    // porcion del dependiente en sus propios tramos si
+                    // *el* tambien tuviera mas de uno queda para cuando
+                    // haga falta -- hoy no hay ninguna relacion activa en
+                    // produccion (unidades_medidor_compartido vacia).
+                    $ocupacionDependiente = DB::table('ocupacion_unidad')
+                        ->where('id_unidad', $relacion['id_unidad_dependiente'])
+                        ->where('estado', '!=', 'ANULADO')
+                        ->where('fecha_inicio', '<=', $tramo->fecha_hasta)
+                        ->where(function ($q) use ($tramo) {
+                            $q->whereNull('fecha_fin')->orWhere('fecha_fin', '>=', $tramo->fecha_desde);
+                        })
+                        ->orderByDesc('fecha_inicio')->orderByDesc('id_ocupacion')
+                        ->first();
 
-            if ($filaDependiente !== null) {
-                $resultado[] = $filaDependiente;
+                    if ($ocupacionDependiente) {
+                        $montoLuzDependiente = round($montoLuzTramo * $relacion['porcentaje_dependiente'] / 100, 2);
+                        $montoLuzTitular = round($montoLuzTramo - $montoLuzDependiente, 2);
+
+                        $filaDependiente = $this->armarFilaCobro(
+                            $relacion['id_unidad_dependiente'], (int) $ocupacionDependiente->id_ocupacion, (int) $ocupacionDependiente->id_persona,
+                            (float) $ocupacionDependiente->monto_alquiler, $montoLuzDependiente, 0.0,
+                            $overridesByKey, $tarifaAgua, $tarifaGas, $tarifaMant, $fechaVencimiento,
+                            $factor, 0.0, $diasTramo
+                        );
+                    }
+                }
+
+                $resultado[] = $this->armarFilaCobro(
+                    (int) $idUnidad, $idOcupacion, $idPersona, $montoAlquilerBase, $montoLuzTitular, $ajusteMinimoTramo,
+                    $overridesByKey, $tarifaAgua, $tarifaGas, $tarifaMant, $fechaVencimiento,
+                    $factor, (float) $tramo->consumo_kwh, $diasTramo
+                );
+
+                if ($filaDependiente !== null) {
+                    $resultado[] = $filaDependiente;
+                }
             }
         }
 
@@ -203,7 +279,10 @@ class CobroService
     /**
      * Genera los cobros del periodo desde cero. Bloqueado si ya hay pagos
      * registrados (protege el historial) — para corregir un periodo con
-     * pagos ya existentes hay que usar forceRefresh().
+     * pagos ya existentes hay que usar forceRefresh(). LiquidacionService
+     * ya bloquea antes si falta algun corte (decision 5.8) -- si
+     * buildProgramados() corre es porque liquidacion_luz_tramo ya esta
+     * completo para este periodo.
      */
     public function generar(Periodo $periodo): void
     {
@@ -227,6 +306,8 @@ class CobroService
                     'id_periodo' => $periodo->id_periodo,
                     'id_persona' => $row['id_persona'],
                     'id_unidad' => $row['id_unidad'],
+                    'id_ocupacion' => $row['id_ocupacion'],
+                    'consumo_kwh' => $row['consumo_kwh'],
                     'monto_alquiler' => $row['monto_alquiler'],
                     'monto_luz' => $row['monto_luz'],
                     'ajuste_minimo_luz' => $row['ajuste_minimo_luz'],
@@ -291,11 +372,19 @@ class CobroService
      */
     public function listarParaPeriodo(Periodo $periodo): array
     {
+        $diasPeriodo = (int) $periodo->fecha_inicio->diffInDays($periodo->fecha_fin) + 1;
+
         $rows = DB::table('cobros_mensuales as c')
             ->join('unidades as u', 'u.id_unidad', '=', 'c.id_unidad')
             ->join('personas as p', 'p.id_persona', '=', 'c.id_persona')
-            ->leftJoin('liquidacion_luz_detalle as ll', function ($j) {
-                $j->on('ll.id_periodo', '=', 'c.id_periodo')->on('ll.id_unidad', '=', 'c.id_unidad')->on('ll.id_persona', '=', 'c.id_persona');
+            // Solo para mostrar el rango de fechas cuando el cobro es de un
+            // tramo parcial (traslado, cambio de inquilino a mitad de
+            // periodo) -- el join es 1:1 porque una ocupacion aparece a lo
+            // sumo una vez por periodo en liquidacion_luz_tramo.
+            ->leftJoin('liquidacion_luz_tramo as t', function ($j) {
+                $j->on('t.id_periodo', '=', 'c.id_periodo')
+                    ->on('t.id_unidad', '=', 'c.id_unidad')
+                    ->on('t.id_ocupacion', '=', 'c.id_ocupacion');
             })
             ->where('c.id_periodo', $periodo->id_periodo)
             ->where('c.estado_pago', '!=', 'ANULADO')
@@ -304,12 +393,29 @@ class CobroService
                 'c.id_cobro', 'c.id_persona', 'c.id_unidad', 'u.codigo_unidad', 'u.nombre_unidad',
                 'p.nombres', 'p.apellidos',
                 DB::raw("CONCAT(p.nombres, ' ', p.apellidos) as inquilino"),
-                'll.consumo_kwh', 'c.monto_alquiler', 'c.monto_luz', 'c.ajuste_minimo_luz',
+                // Snapshot propio del cobro, no un join a la liquidacion --
+                // con mas de un tramo por unidad, matchear liquidacion por
+                // (periodo,unidad,persona) dejaba de encontrar al saliente.
+                // De paso arregla que regenerar una liquidacion vieja podia
+                // cambiar los kWh impresos en un recibo ya cobrado (RF-16).
+                'c.consumo_kwh', 'c.monto_alquiler', 'c.monto_luz', 'c.ajuste_minimo_luz',
                 'c.monto_agua', 'c.monto_gas', 'c.otros_conceptos', 'c.total_cobrar',
                 'c.fecha_vencimiento', 'c.estado_pago', 'c.observacion',
+                't.fecha_desde as tramo_desde', 't.fecha_hasta as tramo_hasta', 't.dias as tramo_dias',
             ]);
 
-        return $rows->map(function ($row) use ($periodo) {
+        // Consumo del PERIODO COMPLETO de cada unidad (todos sus
+        // tramos/cobros sumados) -- decision 5.6: minimo_kwh_aviso se
+        // evalua contra esto, no contra el consumo propio de cada tramo
+        // (un tramo corto individual casi siempre da por debajo del
+        // minimo aunque el total del mes sea consumo normal).
+        $consumoPeriodoPorUnidad = DB::table('cobros_mensuales')
+            ->where('id_periodo', $periodo->id_periodo)
+            ->where('estado_pago', '!=', 'ANULADO')
+            ->groupBy('id_unidad')
+            ->pluck(DB::raw('SUM(consumo_kwh)'), 'id_unidad');
+
+        return $rows->map(function ($row) use ($periodo, $consumoPeriodoPorUnidad, $diasPeriodo) {
             $pagadoTotal = (float) (Pago::where('id_cobro', $row->id_cobro)->where('estado', 'REGISTRADO')->sum('monto_pagado'));
             $saldoPendiente = max((float) $row->total_cobrar - $pagadoTotal, 0);
 
@@ -330,6 +436,8 @@ class CobroService
                 'pagado_total' => round($pagadoTotal, 2),
                 'saldo_pendiente' => round($saldoPendiente, 2),
                 'deuda_anterior' => round($deudaAnterior, 2),
+                'consumo_periodo_unidad' => round((float) ($consumoPeriodoPorUnidad[$row->id_unidad] ?? $row->consumo_kwh), 2),
+                'tramo_parcial' => $row->tramo_dias !== null && (int) $row->tramo_dias < $diasPeriodo,
             ]);
         })->all();
     }
@@ -408,7 +516,7 @@ class CobroService
         if ($actuales->isEmpty()) {
             throw ValidationException::withMessages(['general' => 'No existen cobros generados en este periodo. Usa primero la generación normal.']);
         }
-        $actualesByKey = $actuales->keyBy(fn ($c) => self::key($c->id_unidad, $c->id_persona));
+        $actualesByKey = $actuales->keyBy(fn ($c) => self::key($c->id_unidad, $c->id_ocupacion, $c->id_persona));
 
         $pagos = Pago::whereIn('id_cobro', $actuales->pluck('id_cobro'))->get();
         $pagosRegistrados = $pagos->filter(fn ($p) => $p->estado === 'REGISTRADO')->sortBy(fn ($p) => $p->fecha_pago . '#' . str_pad((string) $p->id_pago, 12, '0', STR_PAD_LEFT))->values();
@@ -447,6 +555,7 @@ class CobroService
                 foreach ($programados as $row) {
                     $cobro = CobroMensual::create([
                         'id_periodo' => $periodo->id_periodo, 'id_persona' => $row['id_persona'], 'id_unidad' => $row['id_unidad'],
+                        'id_ocupacion' => $row['id_ocupacion'], 'consumo_kwh' => $row['consumo_kwh'],
                         'monto_alquiler' => $row['monto_alquiler'], 'monto_luz' => $row['monto_luz'], 'ajuste_minimo_luz' => $row['ajuste_minimo_luz'],
                         'monto_agua' => $row['monto_agua'], 'monto_gas' => $row['monto_gas'], 'otros_conceptos' => $row['otros_conceptos'],
                         'descuento' => 0, 'mora' => 0, 'total_cobrar' => $row['total_cobrar'],
@@ -474,6 +583,7 @@ class CobroService
                 $actual->update([
                     'monto_alquiler' => $programado['monto_alquiler'], 'monto_luz' => $programado['monto_luz'], 'ajuste_minimo_luz' => $programado['ajuste_minimo_luz'],
                     'monto_agua' => $programado['monto_agua'], 'monto_gas' => $programado['monto_gas'], 'otros_conceptos' => $programado['otros_conceptos'],
+                    'consumo_kwh' => $programado['consumo_kwh'],
                     'total_cobrar' => $programado['total_cobrar'], 'fecha_vencimiento' => $programado['fecha_vencimiento'],
                     'estado_pago' => 'PENDIENTE', 'observacion' => $programado['observacion'],
                 ]);

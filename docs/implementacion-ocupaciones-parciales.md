@@ -137,6 +137,91 @@ Nada de esto factura. `LiquidacionService` y `CobroService` siguen leyendo `lect
 
 ---
 
-## Fase 2 — Atribución de consumo + prorrateo (pendiente)
+## Fase 2 — Atribución de consumo + prorrateo ✅ completa
+
+Esta fase sí cambia dinero. Aplica las decisiones de negocio 5.1-5.9 (ver [`diseno-ocupaciones-parciales.md`](diseno-ocupaciones-parciales.md) §Decisiones).
+
+### 1. La regla central: la fórmula de luz no se toca, se le agrega un paso después
+
+`LiquidacionService` sigue calculando exactamente igual que siempre — IGV, `roundUpToTenth`, el % de participación congelado si el consumo no cambió. Todo eso opera **por unidad**, como antes. Lo nuevo es un paso posterior: una vez que la unidad tiene su `total_pagar_luz`, se reparte entre sus tramos ocupados (`LiquidacionService::repartirPorTramos()`) proporcional al `consumo_kwh` de cada uno, con el **residuo en el último tramo** — misma técnica que ya usaba `unidades_medidor_compartido` para partir el consumo entre dos unidades sin perder centavos. Con un solo tramo (el caso de siempre) no hay reparto que hacer: se lleva el total tal cual, sin ningún redondeo intermedio nuevo.
+
+```
+total_pagar_luz de la unidad = 94.4
+  Ana (60/80 kWh, no es el último) → round(94.4 * 0.75, 2) = 70.8
+  Beto (20/80 kWh, es el último)   → round(94.4 - 70.8, 2) = 23.6   (residuo exacto)
+```
+
+### 2. El consumo vacante no se pierde ni lo absorbe el dueño — se reparte (decisión 5.4)
+
+Antes, una unidad 100% vacía se excluía del cálculo y su ausencia agrandaba el "gasto común" a repartir entre las demás. Ahora se aplica el **mismo mecanismo** a un tramo vacante *dentro* de una unidad ocupada: su consumo se excluye de lo que entra a `calcularPorcentajes()`, así que el costo de esos kWh queda automáticamente en `diferencia_comun` y se reparte proporcional entre las unidades ocupadas — no hace falta lógica nueva, es el mismo camino que ya existía.
+
+Ajuste real que esto forzó: el filtro que antes excluía una fila con `consumo_kwh == 0` pasó de ser **por tramo** a ser **por unidad** (`filasPorUnidadConTramos()` en `LiquidacionService`) — un tramo ocupado de pocos días puede dar 0 kWh reales y aun así necesita cobrar alquiler prorrateado; lo que se excluye es la unidad completa solo si *ningún* tramo suyo tiene consumo facturable.
+
+### 3. Un cobro por tramo, no por unidad
+
+`CobroService::buildProgramados()` pasa a leer `liquidacion_luz_tramo` en vez de `liquidacion_luz_detalle` — cada fila que devuelve es un tramo, no una unidad. Una unidad con 2 tramos genera 2 cobros. Esto es, literalmente, lo que resuelve el caso original que arrancó todo esto (alguien se retira, entra otro — antes el consumo entero se le atribuía al que cierra el período; ahora cada uno paga el suyo) y el caso de traslado (201→202 el mismo período: dos cobros, uno por unidad, cada uno con su propio tramo).
+
+**`CobroService::key()` cambió de `"{unidad}:{persona}"` a `"{unidad}:o{ocupación}"`** (con fallback a persona solo para 3 cobros históricos de antes del backfill de Fase 0). Es el cambio más delicado de toda la fase: sin él, `forceRefresh()` no puede distinguir dos tramos de la misma unidad y colapsaría uno en el otro, perdiendo un cobro en silencio. Por eso en Fase 0 se dejó *sin tocar* a propósito — cambiarlo antes de que `armarFilaCobro()` poblara `id_ocupacion` habría roto la comparación programado-vs-actual para *todos* los cobros, no solo los de tramos múltiples.
+
+### 4. El prorrateo de días — alquiler y servicios fijos, no luz
+
+Decisión 5.1/5.2/5.3: cualquier tramo parcial prorratea alquiler, agua, gas y mantenimiento por `factor = dias_tramo / dias_periodo` (días **reales** del período — no son 30 fijos, hubo uno de 14). La luz **no** lleva factor: ya viene prorrateada de origen, es el `total_pagar_luz` de ese tramo específico. Los overrides manuales (`cobros_overrides_servicio`) también se prorratean — se tratan como un reemplazo de la tarifa estándar, sujeto a la misma regla que todo lo demás en esa categoría.
+
+Con un solo tramo cubriendo el período completo, `factor = dias_tramo / dias_periodo` da `1.0` exacto (mismo numerador y denominador, sin deriva de punto flotante) — el caso común queda bit a bit idéntico al de antes de esta fase.
+
+### 5. El mínimo de luz es por unidad, no por tramo (decisión 5.5)
+
+Si se calculara por tramo, un traslado a mitad de mes pagaría **dos** mínimos ese mes. En cambio: se calcula una sola vez sobre el `total_pagar_luz` de la unidad completa (leído de `liquidacion_luz_detalle`, que ya es la suma exacta de sus tramos), y si cae por debajo del mínimo configurado, el ajuste se reparte entre los tramos con el mismo criterio de residuo que la luz.
+
+### 6. Bloqueo si falta un corte (decisión 5.8)
+
+`LiquidacionService::generar()` revisa el estado de los tramos *antes* de calcular nada — si alguna unidad tiene un tramo `CORTE_PENDIENTE`, lanza `ValidationException` nombrando la unidad específica y **no genera nada para nadie**, ni siquiera para las unidades que sí estaban completas. Es a propósito: un período generado a medias es más difícil de razonar que uno que directamente no se generó. `preview()` no bloquea (es de solo lectura) — simplemente excluye esa unidad de la vista previa.
+
+### 7. Snapshot de consumo — cierra un problema que ya existía
+
+`cobros_mensuales` gana la columna `consumo_kwh` (ya agregada en Fase 0, recién usada acá). `listarParaPeriodo()`, `PortalReciboController::detalleConcepto()` y el `minimo_kwh_aviso` de Avisos dejaron de re-consultar `liquidacion_luz_detalle` por `(periodo, unidad, persona)` — con más de un tramo por unidad ese join ya no encontraba al inquilino saliente. De paso arregla algo que **ya pasaba antes** de esta fase: regenerar la liquidación de un período viejo podía cambiar los kWh impresos en un recibo ya cobrado, aunque el dinero no cambiara (RF-16 lo prohíbe para el monto, pero no protegía el kWh mostrado).
+
+El umbral de `minimo_kwh_aviso` (decisión 5.6) se evalúa contra el consumo del **período completo de la unidad** (todos los tramos sumados, campo nuevo `consumo_periodo_unidad`), no contra el tramo individual — si no, un tramo corto casi siempre mostraría 0.00 kWh aunque el mes completo haya sido consumo normal. Lo que se **muestra** sigue siendo el consumo propio de ese cobro/tramo.
+
+### 8. Qué cambió en cada archivo
+
+| Archivo | Qué hace ahora |
+|---|---|
+| `app/Services/LiquidacionService.php` | `filasPorUnidadConTramos()` (privado, única fuente para preview/generar), `repartirPorTramos()`, persiste `liquidacion_luz_tramo` además de `liquidacion_luz_detalle` |
+| `app/Services/CobroService.php` | `key()` con `id_ocupacion`; `buildProgramados()` lee tramos; `armarFilaCobro()` con factor de prorrateo; mínimo de luz repartido; medidor compartido resuelto por tramo del titular |
+| `app/Http/Controllers/PortalReciboController.php` | `detalleConcepto()` lee el snapshot en vez de re-consultar liquidación |
+| `resources/js/Pages/Liquidacion/Index.jsx` | sub-filas por tramo, badge de estado (incluye `Corte pendiente`), nota de consumo vacante |
+| `resources/js/Pages/Cobros/Index.jsx` | rango de fechas bajo el código de unidad cuando el cobro es de un tramo parcial |
+| `resources/js/Pages/Avisos/Index.jsx` | umbral de consumo bajo evaluado contra el período completo de la unidad |
+| `database/migrations/..._create_liquidacion_luz_tramo_table.php` | tabla nueva (grupo 2) |
+
+### 9. Simplificaciones deliberadas
+
+- **Medidor compartido + tramos múltiples del dependiente**: si la unidad titular tiene varios tramos, cada uno reparte su porción al dependiente por separado (correcto). Si el dependiente *también* tuviera varios tramos dentro del rango de un mismo tramo del titular, no se sub-divide más allá de resolver "quién está vigente al cierre de ese tramo" — documentado en el código, no implementado a fondo porque `unidades_medidor_compartido` no tiene ninguna fila activa en producción hoy.
+- **`INCONSISTENTE` sigue siendo solo informativo** (heredado de Fase 1) — no bloquea la generación, a diferencia de `CORTE_PENDIENTE`.
+
+### 10. Gotcha real encontrado en el camino
+
+Al borrar y regenerar, `liquidacion_luz_tramo` tiene una FK hacia `liquidacion_luz_detalle` — hay que borrar el hijo (`liquidacion_luz_tramo`) antes que el padre, si no MySQL rechaza el delete con "Cannot delete or update a parent row". El orden importa aunque ambos borrados estén en la misma transacción.
+
+### 11. Cobertura de tests
+
+18 tests nuevos entre `LiquidacionServiceTest.php` (reparto entre tramos con residuo exacto, consumo vacante repartido vía gasto común, bloqueo por corte pendiente) y `CobroServiceTest.php` (un cobro por tramo con alquiler prorrateado, cada uno con el alquiler de su propia ocupación, mínimo de luz repartido 50/50 con residuo). Los fixtures de `CobroServiceTest`/`PagoServiceTest` que antes insertaban `liquidacion_luz_detalle` a mano pasaron a generar vía `LiquidacionService` real, para que también quede la fila de tramo que `CobroService` necesita.
+
+**El golden test (`PeriodoHistoricoGoldenTest`, período real 11, 8 unidades) pasó centavo a centavo en cada paso de esta fase** — la reescritura completa de `LiquidacionService` y `CobroService` no cambió ni un céntimo para el caso de una sola ocupación por unidad. Suite completa: 59/63 (los 4 que fallan son de scaffolding de Laravel sin relación, ya fallaban antes de esta fase).
+
+### 12. La unicidad de `cobros_mensuales` — aplicada, con una desviación del plan
+
+`uq_cobro_periodo_persona_unidad` → `uq_cobro_periodo_unidad_ocupacion (id_periodo, id_unidad, id_ocupacion)`, vía `database/schema/cobros_unicidad_por_ocupacion.sql`, con backup previo. Desbloquea el único escenario que de verdad la necesitaba: una **renovación de contrato con cambio de precio a mitad de período, misma persona, misma unidad** (decisión 5.9 — ya ocurrió una vez en producción, persona 4/unidad 5/período 9). Probado con un test dedicado que genera dos cobros para esa misma persona sin que la base los rechace como duplicados. Los otros 3 escenarios originales (retiro a mitad de período, dos inquilinos en la misma unidad, traslado entre unidades) no la necesitaban — todos con personas distintas, la unicidad vieja ya los permitía.
+
+**Desviación del plan original:** el plan decía "`id_ocupacion` pasa a `NOT NULL` (ya backfilleado en 0.5)". Verificado antes de aplicar: **no** está 100% backfilleado — quedan 3/63 cobros históricos en `NULL` a propósito (período 2/feb-2026, ya `PAGADO`, sin ninguna ocupación real que cubra esas fechas — ver `database/schema/cobros_id_ocupacion.sql`, sección Fase 0). Forzar `NOT NULL` habría hecho fallar el `ALTER`. Se dejó `id_ocupacion` nullable: MySQL/MariaDB trata cada `NULL` como distinto dentro de un `UNIQUE`, y esas 3 filas ya están en `(periodo, unidad)` distintos entre sí, así que no hay riesgo real de colisión — y el código de aplicación siempre puebla `id_ocupacion` en cobros nuevos, así que ese hueco no crece.
+
+### 13. Lo que falta
+
+- Verificación visual en navegador de las páginas tocadas (Lecturas, Liquidación, Cobros, Avisos) — mismo límite en toda esta implementación: sin credenciales ni herramienta de browser en este entorno.
+
+---
+
+## Fase 3 — Traslado como acción de primera clase (pendiente)
 
 _Se completa esta sección cuando se implemente._

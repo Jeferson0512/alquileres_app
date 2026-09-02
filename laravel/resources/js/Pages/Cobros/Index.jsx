@@ -14,6 +14,10 @@ function EstadoBadge({ estado }) {
     return <Badge variant={ESTADO_COBRO_VARIANTS[estado] ?? 'gray'}>{estado}</Badge>;
 }
 
+function fmtCorta(fecha) {
+    return new Date(`${String(fecha).slice(0, 10)}T00:00:00`).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit' });
+}
+
 function PagoModal({ cobro, onClose }) {
     const [conceptos, setConceptos] = useState(null);
     const [seleccion, setSeleccion] = useState({}); // { id_cobro_detalle: monto_aplicado }
@@ -372,7 +376,14 @@ export default function Index({ periodo, periodos, cobros, carteraVencida }) {
                     <tbody className="divide-y divide-gray-100">
                         {filtrados.map((c) => (
                             <tr key={c.id_cobro}>
-                                <td className="px-3 py-2 font-medium text-gray-800">{c.codigo_unidad}</td>
+                                <td className="px-3 py-2 font-medium text-gray-800">
+                                    {c.codigo_unidad}
+                                    {c.tramo_parcial && (
+                                        <span className="mt-0.5 block text-[11px] font-normal text-gray-400" title="Este cobro cubre solo una parte del período (traslado o cambio de inquilino)">
+                                            {fmtCorta(c.tramo_desde)}–{fmtCorta(c.tramo_hasta)} ({c.tramo_dias} d)
+                                        </span>
+                                    )}
+                                </td>
                                 <td className="px-3 py-2 text-gray-500">{c.inquilino}</td>
                                 <td className="px-3 py-2 text-right text-gray-500">{Number(c.monto_alquiler).toFixed(2)}</td>
                                 <td className="px-3 py-2 text-right text-gray-500">{(Number(c.monto_luz) + Number(c.ajuste_minimo_luz)).toFixed(2)}</td>

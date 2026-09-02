@@ -4,6 +4,7 @@ use App\Models\CobroMensual;
 use App\Models\Pago;
 use App\Models\Periodo;
 use App\Services\CobroService;
+use App\Services\LiquidacionService;
 use App\Services\PagoService;
 use Tests\TestCase;
 
@@ -12,17 +13,18 @@ function pagoEscenario(TestCase $test): CobroMensual
     $idInmueble = $test->crearInmueble();
     $test->crearTarifas($idInmueble, ['AGUA' => 40.0, 'GAS' => 0.0, 'MANTENIMIENTO' => 0.0]);
     $idPeriodo = $test->crearPeriodo();
-    $idRecibo = $test->crearRecibo($idInmueble, $idPeriodo, ['precio_kwh' => 1.0, 'total_recibo' => 118.0, 'fecha_vencimiento' => '2099-01-15']);
+    $test->crearRecibo($idInmueble, $idPeriodo, ['precio_kwh' => 1.0, 'total_recibo' => 118.0, 'fecha_vencimiento' => '2099-01-15']);
 
     $idUnidad = $test->crearUnidad($idInmueble, ['codigo_unidad' => 'P']);
     $idPersona = $test->crearPersona(['nombres' => 'Paola']);
     $idOcupacion = $test->crearOcupacion($idUnidad, $idPersona, ['monto_alquiler' => 350]);
-    $idLectura = $test->crearLectura($idPeriodo, $idUnidad, $idOcupacion, 0, 100);
-    $test->crearLiquidacionDetalle($idPeriodo, $idInmueble, $idUnidad, $idPersona, $idLectura, $idRecibo, [
-        'consumo_kwh' => 100, 'porcentaje_participacion' => 1, 'monto_consumo' => 118, 'total_pagar_luz' => 118,
-    ]);
+    $test->crearLectura($idPeriodo, $idUnidad, $idOcupacion, 0, 100);
 
+    // total_pagar_luz = 118 -- generado real via LiquidacionService en vez
+    // de insertado a mano, asi tambien queda liquidacion_luz_tramo (lo que
+    // CobroService::buildProgramados() lee desde Fase 2).
     $periodo = Periodo::actual($idPeriodo);
+    (new LiquidacionService())->generar($periodo, []);
     (new CobroService())->generar($periodo);
 
     // total_cobrar = 350 (alquiler) + 118 (luz) + 40 (agua) = 508
