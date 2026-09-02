@@ -117,6 +117,17 @@ trait AlquileresFixtures
         ]);
     }
 
+    public function crearCorte(int $idPeriodo, int $idUnidad, string $fechaCorte, array $overrides = []): int
+    {
+        return DB::table('lecturas_corte')->insertGetId(array_merge([
+            'id_periodo' => $idPeriodo,
+            'id_unidad' => $idUnidad,
+            'fecha_corte' => $fechaCorte,
+            'lectura_corte' => null,
+            'origen' => 'AUTO',
+        ], $overrides));
+    }
+
     public function crearLiquidacionDetalle(int $idPeriodo, int $idInmueble, int $idUnidad, ?int $idPersona, int $idLectura, int $idReciboLuz, array $overrides = []): int
     {
         return DB::table('liquidacion_luz_detalle')->insertGetId(array_merge([

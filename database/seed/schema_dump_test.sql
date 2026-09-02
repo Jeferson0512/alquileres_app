@@ -358,6 +358,38 @@ CREATE TABLE `jobs` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `lecturas_corte`
+--
+
+DROP TABLE IF EXISTS `lecturas_corte`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `lecturas_corte` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_periodo` int(10) unsigned NOT NULL,
+  `id_unidad` int(10) unsigned NOT NULL,
+  `fecha_corte` date NOT NULL,
+  `id_ocupacion_sale` int(10) unsigned DEFAULT NULL,
+  `id_ocupacion_entra` int(10) unsigned DEFAULT NULL,
+  `lectura_corte` decimal(12,2) DEFAULT NULL,
+  `origen` enum('AUTO','MANUAL') NOT NULL DEFAULT 'AUTO',
+  `observacion` varchar(255) DEFAULT NULL,
+  `registrado_por` varchar(191) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_corte_periodo_unidad_fecha` (`id_periodo`,`id_unidad`,`fecha_corte`),
+  KEY `fk_corte_unidad` (`id_unidad`),
+  KEY `fk_corte_ocupacion_sale` (`id_ocupacion_sale`),
+  KEY `fk_corte_ocupacion_entra` (`id_ocupacion_entra`),
+  CONSTRAINT `fk_corte_ocupacion_entra` FOREIGN KEY (`id_ocupacion_entra`) REFERENCES `ocupacion_unidad` (`id_ocupacion`),
+  CONSTRAINT `fk_corte_ocupacion_sale` FOREIGN KEY (`id_ocupacion_sale`) REFERENCES `ocupacion_unidad` (`id_ocupacion`),
+  CONSTRAINT `fk_corte_periodo` FOREIGN KEY (`id_periodo`) REFERENCES `periodos` (`id_periodo`),
+  CONSTRAINT `fk_corte_unidad` FOREIGN KEY (`id_unidad`) REFERENCES `unidades` (`id_unidad`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `lecturas_unidad`
 --
 
@@ -441,7 +473,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1445,4 +1477,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-09-02  0:42:11
+-- Dump completed on 2026-09-02  0:51:25

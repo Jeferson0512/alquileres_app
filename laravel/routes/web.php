@@ -90,6 +90,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/lecturas', [LecturaController::class, 'index'])->middleware('permission:lecturas.ver')->name('lecturas.index');
     Route::post('/lecturas', [LecturaController::class, 'save'])->middleware('permission:lecturas.registrar')->name('lecturas.save');
     Route::post('/lecturas/sync', [LecturaController::class, 'sync'])->middleware('permission:lecturas.sincronizar')->name('lecturas.sync');
+    Route::post('/lecturas/corte', [LecturaController::class, 'registrarCorte'])->middleware('permission:lecturas.registrar')->name('lecturas.corte.registrar');
 
     // Recibo de luz
     Route::get('/recibo', [ReciboController::class, 'index'])->middleware('permission:recibo.ver')->name('recibo.index');
