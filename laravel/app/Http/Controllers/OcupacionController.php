@@ -85,6 +85,33 @@ class OcupacionController extends Controller
     }
 
     /**
+     * Convención fijada para fecha_inicio/fecha_fin: cerrado-cerrado, sin
+     * solape -- fecha_inicio de una ocupación nueva = fecha_fin de la
+     * anterior + 1 día. assertSinActivaSolapada() ya evita dos filas
+     * ACTIVO a la vez, pero no evita que una ocupación nueva se solape en
+     * fechas con una ya FINALIZADO de la misma unidad (así se colaron los
+     * solapes de 1 día que hay hoy en datos reales). Esta valida contra
+     * cualquier ocupación no ANULADO, sea cual sea su estado.
+     */
+    private function assertSinSolapeFechas(int $idUnidad, string $fechaInicio, ?string $fechaFin, ?int $exceptId = null): void
+    {
+        $existe = OcupacionUnidad::where('id_unidad', $idUnidad)
+            ->where('estado', '!=', 'ANULADO')
+            ->when($exceptId, fn ($q) => $q->where('id_ocupacion', '!=', $exceptId))
+            ->where('fecha_inicio', '<=', $fechaFin ?? '9999-12-31')
+            ->where(function ($q) use ($fechaInicio) {
+                $q->whereNull('fecha_fin')->orWhere('fecha_fin', '>=', $fechaInicio);
+            })
+            ->exists();
+
+        if ($existe) {
+            throw ValidationException::withMessages([
+                'fecha_inicio' => 'Las fechas se solapan con otra ocupación de esta unidad. La fecha de inicio debe ser la fecha de fin de la anterior + 1 día.',
+            ]);
+        }
+    }
+
+    /**
      * Valida los campos de alta de cuenta (si vinieron) ANTES de tocar la
      * base de datos -- se llama antes de abrir la transaccion para que un
      * error de validacion nunca deje una ocupacion creada/editada a medias
@@ -140,6 +167,7 @@ class OcupacionController extends Controller
         $data['garantia'] = $data['garantia'] ?? 0;
 
         $this->assertSinActivaSolapada($data['id_unidad']);
+        $this->assertSinSolapeFechas($data['id_unidad'], $data['fecha_inicio'], $data['fecha_fin'] ?? null);
 
         $usuarioData = $this->validarDatosUsuarioPortal($request, $data['id_persona']);
 
@@ -187,6 +215,9 @@ class OcupacionController extends Controller
 
         if ($data['estado'] === 'ACTIVO') {
             $this->assertSinActivaSolapada($data['id_unidad'], $ocupacion->id_ocupacion);
+        }
+        if ($data['estado'] !== 'ANULADO') {
+            $this->assertSinSolapeFechas($data['id_unidad'], $data['fecha_inicio'], $data['fecha_fin'] ?? null, $ocupacion->id_ocupacion);
         }
 
         $usuarioData = $this->validarDatosUsuarioPortal($request, $data['id_persona']);

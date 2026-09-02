@@ -13,8 +13,8 @@ class CobroMensual extends Model
     public $timestamps = true;
 
     protected $fillable = [
-        'id_periodo', 'id_persona', 'id_unidad',
-        'monto_alquiler', 'monto_luz', 'ajuste_minimo_luz', 'monto_agua', 'monto_gas',
+        'id_periodo', 'id_persona', 'id_unidad', 'id_ocupacion',
+        'monto_alquiler', 'monto_luz', 'consumo_kwh', 'ajuste_minimo_luz', 'monto_agua', 'monto_gas',
         'otros_conceptos', 'descuento', 'mora', 'total_cobrar',
         'fecha_vencimiento', 'estado_pago', 'observacion',
     ];
@@ -49,9 +49,20 @@ class CobroMensual extends Model
      * el bug de esta sesion (Fase 0/1 de docs/requerimientos-proyecto.md).
      * `monto_alquiler` en este registro queda congelado al momento de
      * generar el cobro; esto compara contra el valor VIGENTE del contrato.
+     *
+     * Antes buscaba por (id_unidad, id_persona, estado=ACTIVO) -- fallaba
+     * en falso negativo silencioso para cualquier cobro cuyo contrato ya
+     * esta FINALIZADO (el inquilino se mudo despues de facturarlo). Ahora
+     * usa el vinculo directo id_ocupacion; el fallback solo es para las
+     * pocas filas historicas sin backfill (ver
+     * database/schema/cobros_id_ocupacion.sql).
      */
     public function ocupacion(): ?OcupacionUnidad
     {
+        if ($this->id_ocupacion) {
+            return OcupacionUnidad::find($this->id_ocupacion);
+        }
+
         return OcupacionUnidad::where('id_unidad', $this->id_unidad)
             ->where('id_persona', $this->id_persona)
             ->where('estado', 'ACTIVO')

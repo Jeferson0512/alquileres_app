@@ -143,8 +143,19 @@ class CobroService
 
             $relacion = $medidorPorTitular[$idUnidad] ?? null;
             if ($relacion && $relacion['porcentaje_dependiente'] > 0) {
+                // Vigente en EL PERIODO que se esta generando, no "ACTIVO" al
+                // momento de correr esto -- si no, al regenerar un periodo
+                // viejo el cobro del dependiente se le atribuye al ocupante
+                // de HOY en vez de al de ese periodo. Mismo criterio que usa
+                // LecturaService::sincronizar() para la ocupacion vigente.
                 $ocupacionDependiente = DB::table('ocupacion_unidad')
-                    ->where('id_unidad', $relacion['id_unidad_dependiente'])->where('estado', 'ACTIVO')
+                    ->where('id_unidad', $relacion['id_unidad_dependiente'])
+                    ->where('estado', '!=', 'ANULADO')
+                    ->where('fecha_inicio', '<=', $periodo->fecha_fin)
+                    ->where(function ($q) use ($periodo) {
+                        $q->whereNull('fecha_fin')->orWhere('fecha_fin', '>=', $periodo->fecha_inicio);
+                    })
+                    ->orderByDesc('fecha_inicio')->orderByDesc('id_ocupacion')
                     ->first();
 
                 if ($ocupacionDependiente) {

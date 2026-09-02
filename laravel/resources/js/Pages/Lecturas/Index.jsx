@@ -113,12 +113,13 @@ function LecturasTabla({ periodo, periodos, lecturas }) {
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {lecturas.map((l) => {
+                            // La auditoria es solo indicador visual (igual que el legacy) --
+                            // no bloquea la edicion. Bloquear cuando auditoria=OK rompia el
+                            // caso de una unidad recien sincronizada (actual = anterior
+                            // todavia, auditoria da OK por construccion) y el de cargar mas
+                            // de una lectura dentro del mismo periodo abierto (ej. lectura de
+                            // corte al retirarse un inquilino, despues la de cierre).
                             const necesitaAtencion = l.auditoria_lectura_anterior !== 'OK';
-                            // Las filas OK ya coinciden con el histórico esperado -- se
-                            // dejan bloqueadas para no pisarlas sin querer durante la
-                            // edición en lote; las que necesitan atención (Revisar/Sin
-                            // histórico) quedan editables y resaltadas.
-                            const puedeEditarFila = editable && necesitaAtencion;
                             return (
                                 <tr key={l.id_lectura} className={necesitaAtencion ? 'bg-warning/5' : ''}>
                                     <td className="px-4 py-2 font-medium text-gray-800">{l.codigo_unidad} · {l.nombre_unidad}</td>
@@ -126,22 +127,13 @@ function LecturasTabla({ periodo, periodos, lecturas }) {
                                     <td className="px-4 py-2 text-right font-mono text-gray-500">{l.lectura_anterior.toFixed(2)}</td>
                                     <td className="px-4 py-2"><AuditoriaBadge estado={l.auditoria_lectura_anterior} /></td>
                                     <td className="px-4 py-2 text-right">
-                                        {puedeEditarFila ? (
+                                        {editable ? (
                                             <input
                                                 type="number"
                                                 step="0.01"
                                                 value={valores[l.id_lectura]}
                                                 onChange={(e) => setValores((v) => ({ ...v, [l.id_lectura]: e.target.value }))}
-                                                className="w-28 rounded-md border-warning/40 bg-white text-right font-mono text-sm focus:border-primary focus:ring-primary"
-                                            />
-                                        ) : editable ? (
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                value={valores[l.id_lectura]}
-                                                readOnly
-                                                title="Ya coincide con el histórico esperado."
-                                                className="w-28 rounded-md border-gray-200 bg-gray-50 text-right font-mono text-sm text-gray-500"
+                                                className={`w-28 rounded-md bg-white text-right font-mono text-sm focus:border-primary focus:ring-primary ${necesitaAtencion ? 'border-warning/40' : 'border-gray-300'}`}
                                             />
                                         ) : (
                                             <span className="font-mono text-gray-700">{l.lectura_actual.toFixed(2)}</span>

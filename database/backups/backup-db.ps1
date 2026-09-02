@@ -63,6 +63,12 @@ $args = @(
     "-P$DbPort",
     "-u$DbUser",
     "--routines", "--triggers", "--events",
+    # El mysqldump 8.4.x de Laragon corre contra un server MariaDB (no
+    # MySQL) -- sin estos dos flags falla con "Unknown table
+    # 'column_statistics' in information_schema" (exit code 2). Sin este
+    # flag el backup automatico vino fallando en silencio del 20/08 al
+    # 02/09/2026 (ver backup.log).
+    "--column-statistics=0", "--no-tablespaces",
     $DbName
 )
 if ($DbPassword -ne "") {
