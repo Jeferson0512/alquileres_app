@@ -67,6 +67,8 @@ table { width: 100%; border-collapse: collapse; }
 .debt-box table td { color: #D97706; font-size: 10.5px; font-weight: bold; }
 .debt-box table td.r { text-align: right; }
 
+.transfer-box { background: #E9F0FE; padding: 9px 14px; margin: 0 0 14px; border-radius: 10px; color: #1D4ED8; font-size: 10px; }
+
 .totals { width: 230px; margin-left: auto; margin-top: 6px; }
 .totals td { padding: 5px 0; font-size: 10.5px; color: #5B6478; }
 .totals td.r { text-align: right; }

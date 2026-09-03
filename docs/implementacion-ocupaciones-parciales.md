@@ -222,6 +222,49 @@ Al borrar y regenerar, `liquidacion_luz_tramo` tiene una FK hacia `liquidacion_l
 
 ---
 
-## Fase 3 — Traslado como acción de primera clase (pendiente)
+## Fase 3 — Traslado como acción de primera clase ✅ completa
 
-_Se completa esta sección cuando se implemente._
+Reemplaza el flujo manual de dos pantallas (Finalizar + Crear ocupación nueva) por una sola acción, y resuelve 3.4/3.5/3.6 sobre lo que Fase 2 ya dejó funcionando.
+
+### 1. `TrasladoService` — qué hace en una sola transacción
+
+Un solo método (`trasladar()`) que: finaliza la ocupación de origen (`FINALIZADO`, `motivo_fin='MUDANZA'`), crea la ocupación destino (`fecha_inicio` = fecha del traslado + 1 día, misma persona), crea el vínculo en `traslados_ocupacion`, y crea **las dos lecturas de corte ya con el número cargado** (no placeholders pendientes — el admin las escribe en el momento, que es exactamente el problema que originó toda esta migración). El prorrateo de dinero no lo calcula este service — ya lo resuelve `CobroService` automáticamente en cuanto ve los dos tramos.
+
+**Decisión 5.10 (garantía):** se copia tal cual de origen a destino. El alquiler de la unidad destino es un dato nuevo — unidades distintas, precios distintos, no tendría sentido copiarlo.
+
+**Validaciones antes de tocar nada:** unidad destino sin ocupación activa, fecha dentro del período (antes del cierre), ambas unidades ya sincronizadas este período (si no, no hay `lecturas_unidad` donde colgar el corte), sin corte ya cargado en esa fecha, período sin pagos registrados.
+
+**Simplificación respecto al diseño original:** la tabla `traslados_ocupacion` no tiene columna `regla_alquiler` — en el diseño original iba a ser el "gancho" para cuando se decidiera si el alquiler se prorratea en un traslado, pero esa decisión (5.1/5.2, prorratear siempre por días) ya estaba tomada y ya implementada por Fase 2 antes de escribir esta tabla. La columna hubiera quedado sin uso real.
+
+### 2. `deuda_anterior` sigue la cadena de traslados (decisión 5.11)
+
+`CobroService::unidadesEnCadenaTraslado($idOcupacion)` camina hacia atrás por `traslados_ocupacion` desde la ocupación actual, juntando el `id_unidad` de cada eslabón. `listarParaPeriodo()` y `PortalReciboController::deudaAnterior()` (el mismo método, público, reusado en los dos lugares) ahora buscan deuda en **todas** las unidades de la cadena, no solo la actual — si no, el saldo pendiente de la unidad vieja desaparecía de la vista apenas alguien se trasladaba.
+
+### 3. Portal y Cobros (decisión 5.12, 3.6)
+
+Como cada tramo ya genera su propio `CobroMensual` (Fase 2), "dos recibos separados" ya salía gratis — no hizo falta ningún cambio estructural. Lo que sí se agregó: una nota cruzada en el PDF (`notaTraslado()`) cuando el cobro es un lado de un traslado — "Te trasladaste a/desde la unidad X el DD/MM" — y en la pantalla de Cobros del admin, un badge `⇄ {unidad}` junto al código de unidad que, al hacer clic, filtra la tabla al cobro complementario (reutiliza el buscador que ya existía, no hizo falta un link real).
+
+### 4. Qué cambió en cada archivo
+
+| Archivo | Qué hace ahora |
+|---|---|
+| `app/Services/TrasladoService.php` (nuevo) | `trasladar()`: finaliza origen, crea destino, vincula, crea los dos cortes |
+| `app/Models/TrasladoOcupacion.php` (nuevo) | modelo Eloquent de `traslados_ocupacion` |
+| `app/Services/CobroService.php` | `unidadesEnCadenaTraslado()` (público); `listarParaPeriodo()` expone `traslado` (badge) además de `deuda_anterior` con la cadena |
+| `app/Http/Controllers/OcupacionController.php` | `trasladar()` (endpoint), `index()` expone `periodo` (antes no lo pasaba) |
+| `app/Http/Controllers/PortalReciboController.php` | `notaTraslado()`, `deudaAnterior()` usa la cadena |
+| `app/Models/OcupacionUnidad.php` | `cobros()` usa el FK directo `id_ocupacion` en vez del indirecto por `(unidad, persona)` que el propio docblock ya denunciaba (dead code, no se usaba en ningún lado, pero quedaba desactualizado) |
+| `routes/web.php` | `POST /ocupaciones/{ocupacion}/trasladar` — sin permiso propio en el catálogo, exige `ocupaciones.crear` **y** `ocupaciones.finalizar` juntos (lo que la acción realmente hace) |
+| `resources/js/Pages/Ocupaciones/Index.jsx` | modal "Trasladar a otra unidad" + botón en la tabla |
+| `resources/js/Pages/Cobros/Index.jsx` | badge de traslado clickeable |
+| `resources/views/portal/_recibo-contenido.blade.php` | nota cruzada cuando aplica |
+| `database/migrations/..._create_traslados_ocupacion_table.php` | tabla nueva (grupo 2) |
+
+### 5. Cobertura de tests
+
+9 tests nuevos en `TrasladoServiceTest.php` (finaliza origen + crea destino + garantía copiada + los dos cortes cargados; el prorrateo automático de Fase 2 factura las dos unidades correctamente sin alquiler duplicado; las 3 validaciones) + 2 tests agregados a `CobroServiceTest.php` (deuda sigue la cadena hasta la unidad vieja; badge de traslado apunta a la unidad complementaria en ambos cobros). Suite completa: 65/69 (los 4 que fallan son de scaffolding de Laravel sin relación).
+
+### 6. Lo que falta
+
+- Verificación visual en navegador — mismo límite de siempre en esta implementación.
+- El prototipo visual compartido ("Torre de Control") tiene una capa de pulido que todavía no está en la app real (tipografía Plus Jakarta Sans/IBM Plex Mono, sidebar oscuro con estados activos más trabajados) — la paleta de color ya coincide exactamente, el resto queda pendiente para una pasada de diseño aparte, a pedido explícito del usuario.

@@ -38,15 +38,15 @@ class OcupacionUnidad extends Model
     }
 
     /**
-     * cobros_mensuales NO tiene columna id_ocupacion — el vinculo es
-     * indirecto por (id_unidad, id_persona). Es exactamente la ausencia de
-     * esta relacion explicita la que causo el bug de monto_alquiler
+     * Vinculo directo desde Fase 2 (docs/implementacion-ocupaciones-parciales.md)
+     * -- cobros_mensuales.id_ocupacion cierra el gap que este mismo
+     * docblock denunciaba antes: el vinculo indirecto por (id_unidad,
+     * id_persona) fue lo que causo el bug de monto_alquiler
      * desincronizado que origino esta migracion.
      */
     public function cobros(): HasMany
     {
-        return $this->hasMany(CobroMensual::class, 'id_unidad', 'id_unidad')
-            ->where('cobros_mensuales.id_persona', $this->id_persona);
+        return $this->hasMany(CobroMensual::class, 'id_ocupacion', 'id_ocupacion');
     }
 
     /**

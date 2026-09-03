@@ -103,6 +103,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/ocupaciones/{ocupacion}', [OcupacionController::class, 'update'])->middleware('permission:ocupaciones.crear')->name('ocupaciones.update');
     Route::delete('/ocupaciones/{ocupacion}', [OcupacionController::class, 'destroy'])->middleware('permission:ocupaciones.finalizar')->name('ocupaciones.destroy');
     Route::patch('/ocupaciones/{ocupacion}/anular', [OcupacionController::class, 'anular'])->middleware('permission:ocupaciones.finalizar')->name('ocupaciones.anular');
+    // Sin permiso propio en el catálogo (docs/requerimientos-proyecto.md
+    // punto 6) -- exige los dos que ya representan lo que la acción hace
+    // (crear + finalizar) en vez de agregar uno nuevo solo para esto.
+    Route::post('/ocupaciones/{ocupacion}/trasladar', [OcupacionController::class, 'trasladar'])->middleware(['permission:ocupaciones.crear', 'permission:ocupaciones.finalizar'])->name('ocupaciones.trasladar');
 
     // Notificaciones (historial de renovaciones pendientes/resueltas) -- disponible
     // para cualquier usuario autenticado, no solo quien puede finalizar ocupaciones.

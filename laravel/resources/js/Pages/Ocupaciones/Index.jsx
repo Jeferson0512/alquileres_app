@@ -12,7 +12,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import confirmDialog from '@/lib/confirm';
 import formatDate from '@/lib/date';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
-import { Ban, Layers, Pencil, Plus, UserX } from 'lucide-react';
+import { ArrowRightLeft, Ban, Layers, Pencil, Plus, UserX } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const ESTADO_TABS = [
@@ -228,13 +228,99 @@ function OcupacionModal({ show, onClose, editando, data, setData, errors, proces
     );
 }
 
-export default function Index({ ocupaciones, unidades, inquilinos, estadoFiltro, renovarDesde, unidadesMapa }) {
+function TrasladoModal({ ocupacion, periodo, unidadesLibres, onClose }) {
+    const { data, setData, post, processing, errors } = useForm({
+        id_unidad_destino: '',
+        fecha_traslado: periodo?.id_periodo ? new Date().toISOString().slice(0, 10) : '',
+        lectura_corte_origen: '',
+        lectura_corte_destino: '',
+        monto_alquiler_destino: '',
+        observacion: '',
+        periodo_id: periodo?.id_periodo ?? '',
+    });
+
+    const submit = (e) => {
+        e.preventDefault();
+        post(route('ocupaciones.trasladar', ocupacion.id_ocupacion), { onSuccess: onClose });
+    };
+
+    return (
+        <Modal show onClose={onClose} maxWidth="sm">
+            <form onSubmit={submit} className="p-5">
+                <h3 className="mb-1 text-base font-semibold text-gray-800">Trasladar a otra unidad</h3>
+                <p className="mb-4 text-sm text-gray-500">
+                    Desde: {ocupacion.unidad?.codigo_unidad} · {ocupacion.persona?.nombres} {ocupacion.persona?.apellidos}
+                </p>
+
+                {errors.general && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-danger">{errors.general}</p>}
+
+                <div className="space-y-3">
+                    <div>
+                        <InputLabel htmlFor="id_unidad_destino" value="Hacia *" />
+                        <select id="id_unidad_destino" value={data.id_unidad_destino} onChange={(e) => setData('id_unidad_destino', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary">
+                            <option value="">-- elegir unidad --</option>
+                            {unidadesLibres.map((u) => <option key={u.id_unidad} value={u.id_unidad}>{u.codigo_unidad} · {u.nombre_unidad}</option>)}
+                        </select>
+                        <InputError className="mt-1" message={errors.id_unidad_destino} />
+                        {unidadesLibres.length === 0 && <p className="mt-1 text-xs text-warning">No hay unidades disponibles ahora mismo.</p>}
+                    </div>
+
+                    <div>
+                        <InputLabel htmlFor="fecha_traslado" value="Fecha del traslado *" />
+                        <TextInput id="fecha_traslado" type="date" min={periodo?.fecha_inicio} max={periodo?.fecha_fin} className="mt-1 block w-full" value={data.fecha_traslado} onChange={(e) => setData('fecha_traslado', e.target.value)} />
+                        <InputError className="mt-1" message={errors.fecha_traslado} />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 rounded-lg border border-gray-100 p-3">
+                        <div>
+                            <InputLabel htmlFor="lectura_corte_origen" value={`Lectura de ${ocupacion.unidad?.codigo_unidad ?? 'origen'} *`} />
+                            <TextInput id="lectura_corte_origen" type="number" step="0.01" className="mt-1 block w-full" value={data.lectura_corte_origen} onChange={(e) => setData('lectura_corte_origen', e.target.value)} />
+                            <InputError className="mt-1" message={errors.lectura_corte_origen} />
+                        </div>
+                        <div>
+                            <InputLabel htmlFor="lectura_corte_destino" value="Lectura de la unidad nueva *" />
+                            <TextInput id="lectura_corte_destino" type="number" step="0.01" className="mt-1 block w-full" value={data.lectura_corte_destino} onChange={(e) => setData('lectura_corte_destino', e.target.value)} />
+                            <InputError className="mt-1" message={errors.lectura_corte_destino} />
+                        </div>
+                        <p className="col-span-2 text-xs text-gray-400">Lectura del medidor de cada unidad ese día — corte de salida y de entrada.</p>
+                    </div>
+
+                    <div>
+                        <InputLabel htmlFor="monto_alquiler_destino" value="Alquiler en la unidad nueva (S/) *" />
+                        <TextInput id="monto_alquiler_destino" type="number" step="0.01" className="mt-1 block w-full" value={data.monto_alquiler_destino} onChange={(e) => setData('monto_alquiler_destino', e.target.value)} />
+                        <InputError className="mt-1" message={errors.monto_alquiler_destino} />
+                        <p className="mt-1 text-xs text-gray-400">La garantía se traslada tal cual — no hace falta cargarla de nuevo.</p>
+                    </div>
+
+                    <div>
+                        <InputLabel htmlFor="observacion_traslado" value="Observación" />
+                        <TextInput id="observacion_traslado" className="mt-1 block w-full" value={data.observacion} onChange={(e) => setData('observacion', e.target.value)} />
+                    </div>
+
+                    <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-warning">
+                        Este mes se generarán dos cobros (uno por cada unidad), cada uno prorrateado por los días que ocupó cada una.
+                    </div>
+                </div>
+
+                <div className="mt-4 flex justify-end gap-3">
+                    <SecondaryButton type="button" onClick={onClose}>Cancelar</SecondaryButton>
+                    <PrimaryButton disabled={processing || unidadesLibres.length === 0}>Confirmar traslado</PrimaryButton>
+                </div>
+            </form>
+        </Modal>
+    );
+}
+
+export default function Index({ ocupaciones, unidades, inquilinos, estadoFiltro, renovarDesde, unidadesMapa, periodo }) {
     const { auth } = usePage().props;
     const [editing, setEditing] = useState(null);
     const [finalizando, setFinalizando] = useState(null);
+    const [trasladando, setTrasladando] = useState(null);
     const { data, setData, post, patch, processing, errors, reset } = useForm(emptyForm);
 
     const puede = (p) => auth.permissions.includes(p);
+    const puedeTrasladar = puede('ocupaciones.crear') && puede('ocupaciones.finalizar') && periodo?.estado === 'ABIERTO';
+    const unidadesLibres = unidadesMapa.filter((u) => !u.ocupacion_activa);
 
     const prefillRenovacion = (ocupacionVieja, fechaFinUsada) => {
         const base = fechaFinUsada ?? ocupacionVieja.fecha_fin;
@@ -450,6 +536,9 @@ export default function Index({ ocupaciones, unidades, inquilinos, estadoFiltro,
                                         {puede('ocupaciones.crear') && (
                                             <IconButton icon={Pencil} label="Editar" variant="primary" onClick={() => startEdit(o)} />
                                         )}
+                                        {puedeTrasladar && o.estado === 'ACTIVO' && (
+                                            <IconButton icon={ArrowRightLeft} label="Trasladar a otra unidad" variant="primary" onClick={() => setTrasladando(o)} />
+                                        )}
                                         {puede('ocupaciones.finalizar') && o.estado === 'ACTIVO' && (
                                             <IconButton icon={UserX} label="Finalizar ocupación" variant="danger" onClick={() => setFinalizando(o)} />
                                         )}
@@ -491,6 +580,10 @@ export default function Index({ ocupaciones, unidades, inquilinos, estadoFiltro,
 
             {finalizando && (
                 <FinalizarModal ocupacion={finalizando} onClose={() => setFinalizando(null)} onFinalizado={onFinalizado} />
+            )}
+
+            {trasladando && (
+                <TrasladoModal ocupacion={trasladando} periodo={periodo} unidadesLibres={unidadesLibres} onClose={() => setTrasladando(null)} />
             )}
         </AdminLayout>
     );

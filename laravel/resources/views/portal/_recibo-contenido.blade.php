@@ -38,6 +38,10 @@
         </table>
     </div>
 
+    @if($notaTraslado)
+        <div class="transfer-box">{{ $notaTraslado }}</div>
+    @endif
+
     <div class="receipt-body">
         <table class="concepts">
             <thead>

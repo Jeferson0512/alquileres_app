@@ -508,7 +508,7 @@ CREATE TABLE `migrations` (
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1254,7 +1254,7 @@ CREATE TABLE `security_audit_log` (
   KEY `security_audit_log_evento_creado_en_index` (`evento`,`creado_en`),
   KEY `security_audit_log_user_id_index` (`user_id`),
   CONSTRAINT `security_audit_log_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=66 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1320,6 +1320,31 @@ CREATE TABLE `tarifas_servicios` (
   PRIMARY KEY (`id_tarifa`),
   UNIQUE KEY `uk_inmueble_servicio` (`id_inmueble`,`servicio`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `traslados_ocupacion`
+--
+
+DROP TABLE IF EXISTS `traslados_ocupacion`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `traslados_ocupacion` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `id_ocupacion_origen` int(10) unsigned NOT NULL,
+  `id_ocupacion_destino` int(10) unsigned NOT NULL,
+  `fecha_traslado` date NOT NULL,
+  `observacion` varchar(255) DEFAULT NULL,
+  `creado_por` varchar(191) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_traslado_origen` (`id_ocupacion_origen`),
+  UNIQUE KEY `uq_traslado_destino` (`id_ocupacion_destino`),
+  KEY `idx_traslado_fecha` (`fecha_traslado`),
+  CONSTRAINT `fk_traslado_destino` FOREIGN KEY (`id_ocupacion_destino`) REFERENCES `ocupacion_unidad` (`id_ocupacion`),
+  CONSTRAINT `fk_traslado_origen` FOREIGN KEY (`id_ocupacion_origen`) REFERENCES `ocupacion_unidad` (`id_ocupacion`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1512,4 +1537,4 @@ DELIMITER ;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-09-02  5:09:44
+-- Dump completed on 2026-09-03  2:05:27

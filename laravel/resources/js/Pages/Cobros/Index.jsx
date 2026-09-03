@@ -377,7 +377,18 @@ export default function Index({ periodo, periodos, cobros, carteraVencida }) {
                         {filtrados.map((c) => (
                             <tr key={c.id_cobro}>
                                 <td className="px-3 py-2 font-medium text-gray-800">
-                                    {c.codigo_unidad}
+                                    <div className="flex items-center gap-1.5">
+                                        {c.codigo_unidad}
+                                        {c.traslado && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setBuscar(c.traslado.con)}
+                                                title={`Traslado ${c.codigo_unidad} ↔ ${c.traslado.con} el ${formatDate(c.traslado.fecha)} — clic para ver el otro cobro`}
+                                            >
+                                                <Badge variant="info">⇄ {c.traslado.con}</Badge>
+                                            </button>
+                                        )}
+                                    </div>
                                     {c.tramo_parcial && (
                                         <span className="mt-0.5 block text-[11px] font-normal text-gray-400" title="Este cobro cubre solo una parte del período (traslado o cambio de inquilino)">
                                             {fmtCorta(c.tramo_desde)}–{fmtCorta(c.tramo_hasta)} ({c.tramo_dias} d)

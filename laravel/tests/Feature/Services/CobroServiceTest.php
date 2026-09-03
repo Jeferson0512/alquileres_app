@@ -4,6 +4,7 @@ use App\Models\CobroMensual;
 use App\Models\Periodo;
 use App\Services\CobroService;
 use App\Services\LiquidacionService;
+use App\Services\TrasladoService;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
@@ -236,4 +237,57 @@ test('una renovacion con cambio de precio a mitad de periodo (misma persona, mis
     $cobroNuevo = $cobros->firstWhere('id_ocupacion', $ocupacionNueva);
     expect((float) $cobroViejo->monto_alquiler)->toBe(250.0) // 500*0.5
         ->and((float) $cobroNuevo->monto_alquiler)->toBe(450.0); // 900*0.5
+});
+
+test('listarParaPeriodo() sigue la deuda anterior a traves de un traslado, hasta la unidad vieja (decision 5.11)', function () {
+    $idInmueble = $this->crearInmueble();
+    $this->crearTarifas($idInmueble, ['AGUA' => 0.0, 'GAS' => 0.0, 'MANTENIMIENTO' => 0.0]);
+    $idUnidadA = $this->crearUnidad($idInmueble, ['codigo_unidad' => 'A']);
+    $idUnidadB = $this->crearUnidad($idInmueble, ['codigo_unidad' => 'B']);
+    $idPersona = $this->crearPersona();
+
+    // Periodo 1: Juan en la unidad A, cobro de 200 sin pagar -- deuda que
+    // deberia seguirlo despues del traslado.
+    $idPeriodo1 = $this->crearPeriodo(mes: 3);
+    $ocupacionA = $this->crearOcupacion($idUnidadA, $idPersona, ['fecha_inicio' => '2099-01-01', 'monto_alquiler' => 200]);
+    $this->crearRecibo($idInmueble, $idPeriodo1, ['precio_kwh' => 1.0, 'total_recibo' => 0]);
+    // lectura_actual > 0 -- 0 consumo excluye la unidad de la liquidacion
+    // entera (regla 2.3) y no se genera ningun cobro para ella.
+    $this->crearLectura($idPeriodo1, $idUnidadA, $ocupacionA, 0, 10);
+    $periodo1 = Periodo::actual($idPeriodo1);
+    (new LiquidacionService())->generar($periodo1, []);
+    (new CobroService())->generar($periodo1);
+
+    // Periodo 2: Juan se traslada de A a B a mitad de mes.
+    $idPeriodo2 = $this->crearPeriodo(mes: 4); // 30 dias
+    $this->crearRecibo($idInmueble, $idPeriodo2, ['precio_kwh' => 1.0, 'total_recibo' => 0]);
+    // lectura_actual > 0 en las dos -- si diera 0 consumo, la unidad queda
+    // excluida de la liquidacion entera (regla 2.3) y no se genera ningun
+    // cobro para ella.
+    $this->crearLectura($idPeriodo2, $idUnidadA, $ocupacionA, 0, 10);
+    $this->crearLectura($idPeriodo2, $idUnidadB, null, 0, 10);
+    $periodo2 = Periodo::actual($idPeriodo2);
+
+    // Cortes con valor propio (no 0) -- si el tramo de Juan diera 0 kWh en
+    // alguna de las dos unidades, esa unidad quedaria excluida de la
+    // liquidacion entera (regla 2.3) y no generaria cobro para nadie ahi.
+    $traslado = (new TrasladoService())->trasladar($periodo2, $ocupacionA, $idUnidadB, '2099-04-15', 5.0, 3.0, 300.0, null, 'Admin Test');
+
+    (new LiquidacionService())->generar($periodo2, []);
+    (new CobroService())->generar($periodo2);
+
+    $filas = (new CobroService())->listarParaPeriodo($periodo2);
+    $filaA = collect($filas)->firstWhere('id_unidad', $idUnidadA);
+    $filaB = collect($filas)->firstWhere('id_unidad', $idUnidadB);
+
+    expect($filaB)->not->toBeNull()
+        ->and($filaB['deuda_anterior'])->toBe(200.0);
+
+    // 3.6: el badge de traslado apunta cada cobro al codigo de la unidad
+    // COMPLEMENTARIA (A apunta a B, B apunta a A) -- y ambos son tramos
+    // parciales (15 dias de 30), no el periodo completo.
+    expect($filaA['traslado']['con'])->toBe('B')
+        ->and($filaB['traslado']['con'])->toBe('A')
+        ->and($filaA['tramo_parcial'])->toBeTrue()
+        ->and($filaB['tramo_parcial'])->toBeTrue();
 });

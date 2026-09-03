@@ -7,6 +7,7 @@ use App\Models\CobroMensualDetalle;
 use App\Models\CobroOverrideServicio;
 use App\Models\ConceptoCobro;
 use App\Models\Inmueble;
+use App\Models\OcupacionUnidad;
 use App\Models\Pago;
 use App\Models\PagoAuditoria;
 use App\Models\PagoDetalle;
@@ -390,7 +391,7 @@ class CobroService
             ->where('c.estado_pago', '!=', 'ANULADO')
             ->orderBy('u.codigo_unidad')
             ->get([
-                'c.id_cobro', 'c.id_persona', 'c.id_unidad', 'u.codigo_unidad', 'u.nombre_unidad',
+                'c.id_cobro', 'c.id_persona', 'c.id_unidad', 'c.id_ocupacion', 'u.codigo_unidad', 'u.nombre_unidad',
                 'p.nombres', 'p.apellidos',
                 DB::raw("CONCAT(p.nombres, ' ', p.apellidos) as inquilino"),
                 // Snapshot propio del cobro, no un join a la liquidacion --
@@ -415,14 +416,38 @@ class CobroService
             ->groupBy('id_unidad')
             ->pluck(DB::raw('SUM(consumo_kwh)'), 'id_unidad');
 
-        return $rows->map(function ($row) use ($periodo, $consumoPeriodoPorUnidad, $diasPeriodo) {
+        // Badge "Traslado" (decision 5.12/3.6): para cada cobro de este
+        // periodo que sea un lado de un traslado, el codigo de la unidad
+        // COMPLEMENTARIA -- una sola consulta por (origen, destino) en vez
+        // de una por fila.
+        $idsOcupacion = $rows->pluck('id_ocupacion')->filter()->unique()->all();
+        $trasladoPorOcupacion = [];
+        foreach (DB::table('traslados_ocupacion as t')
+            ->join('ocupacion_unidad as oo', 'oo.id_ocupacion', '=', 't.id_ocupacion_origen')
+            ->join('ocupacion_unidad as od', 'od.id_ocupacion', '=', 't.id_ocupacion_destino')
+            ->join('unidades as uo', 'uo.id_unidad', '=', 'oo.id_unidad')
+            ->join('unidades as ud', 'ud.id_unidad', '=', 'od.id_unidad')
+            ->where(fn ($q) => $q->whereIn('t.id_ocupacion_origen', $idsOcupacion)->orWhereIn('t.id_ocupacion_destino', $idsOcupacion))
+            ->get(['t.id_ocupacion_origen', 't.id_ocupacion_destino', 't.fecha_traslado', 'uo.codigo_unidad as codigo_origen', 'ud.codigo_unidad as codigo_destino']) as $t) {
+            $trasladoPorOcupacion[$t->id_ocupacion_origen] = ['con' => $t->codigo_destino, 'fecha' => $t->fecha_traslado];
+            $trasladoPorOcupacion[$t->id_ocupacion_destino] = ['con' => $t->codigo_origen, 'fecha' => $t->fecha_traslado];
+        }
+
+        return $rows->map(function ($row) use ($periodo, $consumoPeriodoPorUnidad, $diasPeriodo, $trasladoPorOcupacion) {
             $pagadoTotal = (float) (Pago::where('id_cobro', $row->id_cobro)->where('estado', 'REGISTRADO')->sum('monto_pagado'));
             $saldoPendiente = max((float) $row->total_cobrar - $pagadoTotal, 0);
+
+            // Decision 5.11: la deuda sigue a la persona a traves de un
+            // traslado -- se incluye la unidad de origen (y la suya, y la
+            // suya...) ademas de la actual, no solo esta. Sin la cadena, el
+            // saldo pendiente de la unidad vieja desaparecia de la vista al
+            // trasladarse.
+            $unidadesCadena = $this->unidadesEnCadenaTraslado((int) $row->id_ocupacion);
 
             $deudaAnterior = (float) DB::table('cobros_mensuales as ca')
                 ->join('periodos as pprev', 'pprev.id_periodo', '=', 'ca.id_periodo')
                 ->where('ca.id_persona', $row->id_persona)
-                ->where('ca.id_unidad', $row->id_unidad)
+                ->whereIn('ca.id_unidad', $unidadesCadena)
                 ->where('ca.id_cobro', '!=', $row->id_cobro)
                 ->where('ca.estado_pago', '!=', 'ANULADO')
                 ->where('pprev.fecha_inicio', '<', $periodo->fecha_inicio)
@@ -438,8 +463,36 @@ class CobroService
                 'deuda_anterior' => round($deudaAnterior, 2),
                 'consumo_periodo_unidad' => round((float) ($consumoPeriodoPorUnidad[$row->id_unidad] ?? $row->consumo_kwh), 2),
                 'tramo_parcial' => $row->tramo_dias !== null && (int) $row->tramo_dias < $diasPeriodo,
+                'traslado' => $trasladoPorOcupacion[$row->id_ocupacion] ?? null,
             ]);
         })->all();
+    }
+
+    /**
+     * Camina hacia atras por traslados_ocupacion desde una ocupacion,
+     * juntando el id_unidad de cada eslabon -- decision 5.11. Si nunca hubo
+     * traslado, devuelve solo la unidad de la ocupacion misma (el caso de
+     * siempre). Corta si detecta un ciclo (no deberia poder pasar, dado que
+     * cada ocupacion es origen o destino de a lo sumo un traslado, pero
+     * mejor no confiar en eso a ciegas). Publico porque
+     * PortalReciboController::deudaAnterior() tambien lo necesita para el
+     * mismo calculo, del lado del inquilino.
+     */
+    public function unidadesEnCadenaTraslado(int $idOcupacion): array
+    {
+        $unidades = [];
+        $visitados = [];
+        $actual = OcupacionUnidad::find($idOcupacion);
+
+        while ($actual && !in_array($actual->id_ocupacion, $visitados, true)) {
+            $visitados[] = $actual->id_ocupacion;
+            $unidades[] = (int) $actual->id_unidad;
+
+            $idOrigen = DB::table('traslados_ocupacion')->where('id_ocupacion_destino', $actual->id_ocupacion)->value('id_ocupacion_origen');
+            $actual = $idOrigen ? OcupacionUnidad::find($idOrigen) : null;
+        }
+
+        return $unidades;
     }
 
     /**

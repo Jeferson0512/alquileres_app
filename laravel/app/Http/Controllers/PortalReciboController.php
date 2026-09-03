@@ -6,7 +6,9 @@ use App\Models\CobroMensual;
 use App\Models\ConfigCobranza;
 use App\Models\Inmueble;
 use App\Models\Pago;
+use App\Services\CobroService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -118,6 +120,7 @@ class PortalReciboController extends Controller
                 'monto' => (float) $d->monto_programado,
             ])->all(),
             'deudaAnterior' => $this->deudaAnterior($cobro),
+            'notaTraslado' => $this->notaTraslado($cobro),
             'subtotalPeriodo' => (float) $cobro->total_cobrar,
             'pagadoTotal' => $pagadoTotal,
             'saldoTotal' => $saldoTotal,
@@ -173,16 +176,55 @@ class PortalReciboController extends Controller
     }
 
     /**
-     * Suma de saldo_pendiente de OTROS cobros (misma persona+unidad) de
-     * periodos anteriores al de este recibo -- mismo criterio que ya usa
-     * CobroService::listarParaPeriodo() para el admin.
+     * Nota cruzada cuando este cobro es de un tramo con traslado de por
+     * medio (decision 5.12: dos recibos separados, uno por unidad, no uno
+     * consolidado) -- avisa que existe un recibo complementario de la otra
+     * unidad ese mismo mes.
+     */
+    private function notaTraslado(CobroMensual $cobro): ?string
+    {
+        $idOcupacion = (int) $cobro->id_ocupacion;
+
+        $comoOrigen = DB::table('traslados_ocupacion as t')
+            ->join('ocupacion_unidad as o', 'o.id_ocupacion', '=', 't.id_ocupacion_destino')
+            ->join('unidades as u', 'u.id_unidad', '=', 'o.id_unidad')
+            ->where('t.id_ocupacion_origen', $idOcupacion)
+            ->first(['t.fecha_traslado', 'u.codigo_unidad']);
+
+        if ($comoOrigen) {
+            return "Te trasladaste a la unidad {$comoOrigen->codigo_unidad} el ".Carbon::parse($comoOrigen->fecha_traslado)->format('d/m/Y').
+                ' — el consumo y alquiler desde esa fecha se facturan en el recibo complementario de esa unidad.';
+        }
+
+        $comoDestino = DB::table('traslados_ocupacion as t')
+            ->join('ocupacion_unidad as o', 'o.id_ocupacion', '=', 't.id_ocupacion_origen')
+            ->join('unidades as u', 'u.id_unidad', '=', 'o.id_unidad')
+            ->where('t.id_ocupacion_destino', $idOcupacion)
+            ->first(['t.fecha_traslado', 'u.codigo_unidad']);
+
+        if ($comoDestino) {
+            return "Te trasladaste desde la unidad {$comoDestino->codigo_unidad} el ".Carbon::parse($comoDestino->fecha_traslado)->format('d/m/Y').
+                ' — el consumo y alquiler de antes de esa fecha están en el recibo complementario de esa unidad.';
+        }
+
+        return null;
+    }
+
+    /**
+     * Suma de saldo_pendiente de OTROS cobros (misma persona, mismas
+     * unidades) de periodos anteriores al de este recibo -- mismo criterio
+     * que usa CobroService::listarParaPeriodo() para el admin, incluida la
+     * cadena de traslados (decision 5.11): si el inquilino se trasladó de
+     * unidad, la deuda de la unidad vieja lo sigue acá también.
      */
     private function deudaAnterior(CobroMensual $cobro): float
     {
+        $unidadesCadena = (new CobroService())->unidadesEnCadenaTraslado((int) $cobro->id_ocupacion);
+
         return (float) DB::table('cobros_mensuales as ca')
             ->join('periodos as pprev', 'pprev.id_periodo', '=', 'ca.id_periodo')
             ->where('ca.id_persona', $cobro->id_persona)
-            ->where('ca.id_unidad', $cobro->id_unidad)
+            ->whereIn('ca.id_unidad', $unidadesCadena)
             ->where('ca.id_cobro', '!=', $cobro->id_cobro)
             ->where('ca.estado_pago', '!=', 'ANULADO')
             ->where('pprev.fecha_inicio', '<', $cobro->periodo->fecha_inicio)

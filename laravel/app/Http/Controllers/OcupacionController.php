@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\OcupacionUnidad;
+use App\Models\Periodo;
 use App\Models\Persona;
 use App\Models\RenovacionPendiente;
 use App\Models\Unidad;
 use App\Models\User;
+use App\Services\TrasladoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,9 +41,18 @@ class OcupacionController extends Controller
             $renovarDesde = $pendiente?->ocupacionAnterior;
         }
 
+        // Para el modal de traslado: necesita saber el periodo ABIERTO
+        // vigente para poder registrar los cortes ahi. Solo lectura de sus
+        // datos basicos -- Ocupaciones no tiene selector de periodo propio.
+        $periodoActual = Periodo::actual();
+
         return Inertia::render('Ocupaciones/Index', [
             'ocupaciones' => $ocupacions,
             'estadoFiltro' => $estado,
+            'periodo' => $periodoActual ? [
+                'id_periodo' => $periodoActual->id_periodo, 'estado' => $periodoActual->estado,
+                'fecha_inicio' => $periodoActual->fecha_inicio->toDateString(), 'fecha_fin' => $periodoActual->fecha_fin->toDateString(),
+            ] : null,
             'unidades' => Unidad::where('estado', 'ACTIVO')->orderBy('codigo_unidad')->get(['id_unidad', 'codigo_unidad', 'nombre_unidad', 'tarifa_alquiler_base']),
             'inquilinos' => Persona::inquilinos()->where('estado', 'ACTIVO')->orderBy('apellidos')
                 ->withExists('user')
@@ -279,5 +290,39 @@ class OcupacionController extends Controller
         $ocupacion->update(['estado' => 'ANULADO']);
 
         return back()->with('success', 'Ocupación anulada correctamente');
+    }
+
+    /**
+     * Traslado a otra unidad en un solo paso (Fase 3, ver
+     * docs/implementacion-ocupaciones-parciales.md) -- reemplaza el flujo
+     * manual de Finalizar + Crear ocupacion nueva por separado.
+     */
+    public function trasladar(Request $request, OcupacionUnidad $ocupacion, TrasladoService $service): RedirectResponse
+    {
+        $data = $request->validate([
+            'periodo_id' => ['required', 'integer', 'exists:periodos,id_periodo'],
+            'id_unidad_destino' => ['required', 'integer', 'exists:unidades,id_unidad'],
+            'fecha_traslado' => ['required', 'date'],
+            'lectura_corte_origen' => ['required', 'numeric', 'min:0'],
+            'lectura_corte_destino' => ['required', 'numeric', 'min:0'],
+            'monto_alquiler_destino' => ['required', 'numeric', 'min:0'],
+            'observacion' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $periodo = Periodo::actual($data['periodo_id']);
+
+        $service->trasladar(
+            $periodo,
+            $ocupacion->id_ocupacion,
+            $data['id_unidad_destino'],
+            $data['fecha_traslado'],
+            (float) $data['lectura_corte_origen'],
+            (float) $data['lectura_corte_destino'],
+            (float) $data['monto_alquiler_destino'],
+            $data['observacion'] ?? null,
+            $request->user()->name,
+        );
+
+        return back()->with('success', 'Traslado registrado correctamente');
     }
 }
