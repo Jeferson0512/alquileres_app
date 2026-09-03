@@ -109,16 +109,36 @@ class TramoResolver
                 continue;
             }
 
-            if ($desde->gt($cursor)) {
-                $segmentos[] = ['desde' => $cursor->copy(), 'hasta' => $desde->copy()->subDay(), 'id_ocupacion' => null, 'id_persona' => null];
+            // Renovacion sin cambio de terminos (misma persona, mismo
+            // alquiler, sin hueco con el tramo anterior) -- no hay nada
+            // que partir, se extiende el tramo anterior en vez de abrir
+            // uno nuevo. Exigir un corte ahi no cambiaria ni un centavo,
+            // solo trabajo extra. Si el alquiler SI cambio (decision 5.9)
+            // o es otra persona, se sigue partiendo como antes.
+            $anterior = end($segmentos);
+            $esRenovacionSinCambios = $anterior !== false
+                && $anterior['id_ocupacion'] !== null
+                && $desde->equalTo($cursor)
+                && (int) $anterior['id_persona'] === (int) $ocupacion->id_persona
+                && round((float) $anterior['monto_alquiler'], 2) === round((float) $ocupacion->monto_alquiler, 2);
+
+            if ($esRenovacionSinCambios) {
+                $ultimoIndice = count($segmentos) - 1;
+                $segmentos[$ultimoIndice]['hasta'] = $hasta->copy();
+                $segmentos[$ultimoIndice]['id_ocupacion'] = $ocupacion->id_ocupacion; // la mas reciente = "de cierre" del tramo fusionado
+            } else {
+                if ($desde->gt($cursor)) {
+                    $segmentos[] = ['desde' => $cursor->copy(), 'hasta' => $desde->copy()->subDay(), 'id_ocupacion' => null, 'id_persona' => null, 'monto_alquiler' => null];
+                }
+
+                $segmentos[] = ['desde' => $desde->copy(), 'hasta' => $hasta->copy(), 'id_ocupacion' => $ocupacion->id_ocupacion, 'id_persona' => $ocupacion->id_persona, 'monto_alquiler' => (float) $ocupacion->monto_alquiler];
             }
 
-            $segmentos[] = ['desde' => $desde->copy(), 'hasta' => $hasta->copy(), 'id_ocupacion' => $ocupacion->id_ocupacion, 'id_persona' => $ocupacion->id_persona];
             $cursor = $hasta->copy()->addDay();
         }
 
         if ($cursor->lte($finPeriodo)) {
-            $segmentos[] = ['desde' => $cursor->copy(), 'hasta' => $finPeriodo->copy(), 'id_ocupacion' => null, 'id_persona' => null];
+            $segmentos[] = ['desde' => $cursor->copy(), 'hasta' => $finPeriodo->copy(), 'id_ocupacion' => null, 'id_persona' => null, 'monto_alquiler' => null];
         }
 
         return $fechasCorteManual === [] ? $segmentos : $this->partirEnFechasManuales($segmentos, $fechasCorteManual);

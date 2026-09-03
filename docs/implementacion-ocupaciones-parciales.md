@@ -87,6 +87,8 @@ Capa 2 (+ corte manual 15/07): [01/07 ── Juan ── 15/07][16/07 ── Jua
 
 **Invariantes garantizados** (probados en `TramoResolverTest`): cobertura exacta del período sin huecos ni solapes; suma de `consumo_kwh` de tramos conocidos == `lectura_actual - lectura_anterior`; con una sola ocupación y sin cortes, un único tramo idéntico al período completo.
 
+**Fix agregado después de Fase 3 (detectado probando en vivo):** una renovación de contrato crea una fila nueva en `ocupacion_unidad` aunque sea la misma persona — eso generaba un `CORTE_PENDIENTE` para *cualquier* renovación, incluidas las que no cambian nada (mismo inquilino, mismo alquiler; ej. la unidad 101 del propio dueño). `segmentar()` ahora fusiona dos ocupaciones consecutivas de la misma persona y el mismo `monto_alquiler` en un único tramo, sin pedir corte — pero **solo si el alquiler cambió** (decisión 5.9) sigue partiendo, porque ahí la separación sí importa para facturar cada tramo a su propio precio.
+
 ### 3. Cuándo se crea un corte — las dos vías
 
 **Automático**, dentro de `sincronizar()` (botón "Sincronizar unidades"): en cada unidad recalcula las fronteras entre ocupaciones y crea un placeholder `AUTO` en cada una que todavía no exista. Nunca pisa un corte existente — tenga o no valor, sea `AUTO` o `MANUAL`.

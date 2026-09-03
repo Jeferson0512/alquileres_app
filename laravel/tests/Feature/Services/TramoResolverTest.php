@@ -165,3 +165,38 @@ test('tramosParaPeriodo con idUnidad filtra solo esa unidad aunque haya otras co
     expect($tramos)->toHaveCount(1);
     expect($tramos[0]['id_unidad'])->toBe($ctx['idUnidad']);
 });
+
+test('una renovacion de contrato con el mismo alquiler y la misma persona no parte el tramo -- no pide corte', function () {
+    $ctx = periodoAbril($this);
+    $idPersona = $this->crearPersona();
+    // Igual que el caso real que origino este fix: unidad 101/Jeferson,
+    // ocupacion 1 -> 62, mismo alquiler (0), renovada_de_id encadenado.
+    $ocupacionVieja = $this->crearOcupacion($ctx['idUnidad'], $idPersona, ['fecha_inicio' => '2099-01-01', 'fecha_fin' => '2099-04-15', 'estado' => 'FINALIZADO', 'motivo_fin' => 'RENOVACION', 'monto_alquiler' => 300]);
+    $ocupacionNueva = $this->crearOcupacion($ctx['idUnidad'], $idPersona, ['fecha_inicio' => '2099-04-16', 'monto_alquiler' => 300, 'renovada_de_id' => $ocupacionVieja]);
+    $this->crearLectura($ctx['idPeriodo'], $ctx['idUnidad'], $ocupacionNueva, 100, 250);
+
+    $tramos = (new TramoResolver())->tramosParaPeriodo(Periodo::actual($ctx['idPeriodo']));
+
+    // Un solo tramo que cubre todo el periodo -- no dos, no CORTE_PENDIENTE.
+    expect($tramos)->toHaveCount(1);
+    expect($tramos[0])
+        ->fecha_desde->toBe('2099-04-01')->fecha_hasta->toBe('2099-04-30')
+        // La ocupacion "de cierre" (la mas nueva) es la que queda vinculada.
+        ->id_ocupacion->toBe($ocupacionNueva)
+        ->lectura_desde->toBe(100.0)->lectura_hasta->toBe(250.0)->consumo_kwh->toBe(150.0)
+        ->estado->toBe('OK');
+});
+
+test('una renovacion de contrato con alquiler DISTINTO si parte el tramo (decision 5.9) -- pide corte', function () {
+    $ctx = periodoAbril($this);
+    $idPersona = $this->crearPersona();
+    $ocupacionVieja = $this->crearOcupacion($ctx['idUnidad'], $idPersona, ['fecha_inicio' => '2099-01-01', 'fecha_fin' => '2099-04-15', 'estado' => 'FINALIZADO', 'motivo_fin' => 'RENOVACION', 'monto_alquiler' => 300]);
+    $ocupacionNueva = $this->crearOcupacion($ctx['idUnidad'], $idPersona, ['fecha_inicio' => '2099-04-16', 'monto_alquiler' => 400, 'renovada_de_id' => $ocupacionVieja]);
+    $this->crearLectura($ctx['idPeriodo'], $ctx['idUnidad'], $ocupacionNueva, 100, 250);
+
+    $tramos = (new TramoResolver())->tramosParaPeriodo(Periodo::actual($ctx['idPeriodo']));
+
+    expect($tramos)->toHaveCount(2);
+    expect($tramos[0]['id_ocupacion'])->toBe($ocupacionVieja)->and($tramos[0]['estado'])->toBe('CORTE_PENDIENTE');
+    expect($tramos[1]['id_ocupacion'])->toBe($ocupacionNueva);
+});
