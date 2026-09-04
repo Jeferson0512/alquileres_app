@@ -61,6 +61,9 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     // Reportes
     Route::get('/reportes', [ReporteController::class, 'index'])->middleware('permission:reportes.ver')->name('reportes.index');
+    Route::get('/reportes/financiero/pdf', [ReporteController::class, 'exportarFinancieroPdf'])->middleware('permission:reportes.ver')->name('reportes.financiero.pdf');
+    Route::get('/reportes/ocupacion/pdf', [ReporteController::class, 'exportarOcupacionPdf'])->middleware('permission:reportes.ver')->name('reportes.ocupacion.pdf');
+    Route::get('/reportes/consumo/pdf', [ReporteController::class, 'exportarConsumoPdf'])->middleware('permission:reportes.ver')->name('reportes.consumo.pdf');
 
     // Periodos
     Route::get('/periodos', [PeriodoController::class, 'index'])->middleware('permission:periodos.ver')->name('periodos.index');
