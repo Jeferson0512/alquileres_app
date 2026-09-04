@@ -166,6 +166,14 @@ Laravel — eso rompe la convención del proyecto para tablas grupo 1.
 
 Con esto, "el usuario aún no eligió hosting" **ya no aplica** — el flujo de abajo es directamente ejecutable contra ese servidor.
 
+**Antes de prometer un despliegue, verificar que la llave exista en ESTA máquina** (no asumir por el skill que "está en `Downloads/Oracle/`" — eso describe la convención, no garantiza que se copió a la compu actual):
+
+```powershell
+Test-Path "$env:USERPROFILE\Downloads\Oracle\ssh-key-2026-07-25.key"
+```
+
+**Caso real (2026-09-04)**: se armó toda la Parte A de un despliegue (merge a `main`, tag, push) y recién ahí se descubrió que la llave no estaba en esa computadora — bloqueó la Parte B por completo. Chequear esto primero evita prometer un despliegue que no se puede completar desde la máquina actual. Si falta, el usuario tiene que traerla desde donde la tenga guardada (backup, la otra compu) antes de continuar — no hay forma de regenerarla sin acceso a la consola de Oracle Cloud.
+
 ### Despliegue en el VPS
 
 Una vez hecho el `git push`, conectarse por SSH y correr esto en `/var/www/alquileres-prod`:
@@ -210,6 +218,23 @@ No hay cola (`QUEUE_CONNECTION=database` pero sin jobs `ShouldQueue` en uso
 todavia) ni modo mantenimiento configurado — deploys rápidos (segundos de
 build) no lo han necesitado hasta ahora. Si algún cambio grande lo amerita,
 agregar `php artisan down`/`up` alrededor del bloque de arriba.
+
+**`migrate --force` NO corre seeders.** Si el rango de commits a publicar
+agrega un permiso nuevo a `RolePermissionSeeder::PERMISSIONS` (ej. un
+módulo nuevo), la migración que inserta la fila en `modules` aplica sola,
+pero el permiso Spatie no existe hasta que el seeder corre — sin esto, el
+módulo queda invisible en el sidebar para todos, aunque la migración haya
+sido exitosa. Revisar si el rango a desplegar tocó ese seeder:
+
+```bash
+git diff <ultimo-commit-desplegado>..HEAD --stat -- laravel/database/seeders/RolePermissionSeeder.php
+```
+
+Si aparece, correr en el servidor después de migrar (es idempotente, `firstOrCreate` + `syncPermissions`, seguro de re-ejecutar):
+
+```bash
+php artisan db:seed --class=RolePermissionSeeder --force
+```
 
 **Primera instalación únicamente** (ya hecha, no repetir):
 

@@ -1,7 +1,9 @@
 # Alquileres App
 
-Sistema de gestión de alquileres (9 unidades, 1 inmueble): inquilinos,
-ocupaciones, recibo de luz + prorrateo, cobros mensuales, pagos, avisos.
+Sistema de gestión de alquileres (1 inmueble, unidades variables — 14
+activas verificado 2026-09-04, no hardcodear el número en código):
+inquilinos, ocupaciones, recibo de luz + prorrateo, cobros mensuales,
+pagos, avisos.
 
 ## Arquitectura: dos apps, una sola base de datos
 
