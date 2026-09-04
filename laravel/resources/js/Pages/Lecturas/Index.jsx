@@ -2,13 +2,14 @@ import Badge from '@/Components/Badge';
 import IconButton from '@/Components/IconButton';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
+import KpiCard from '@/Components/KpiCard';
 import Modal from '@/Components/Modal';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, usePage } from '@inertiajs/react';
-import { CheckCircle2, HelpCircle, Plus, RefreshCcw, Zap } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, HelpCircle, Plus, RefreshCcw, Zap } from 'lucide-react';
 import { Fragment, useState } from 'react';
 
 const AUDITORIA_VARIANTS = { OK: 'info', REVISAR: 'warning', SIN_HISTORICO: 'gray' };
@@ -55,8 +56,8 @@ function RegistrarCorteModal({ unidad, periodo, onClose }) {
     return (
         <Modal show onClose={onClose} maxWidth="sm">
             <div className="p-5">
-                <h3 className="mb-1 text-base font-semibold text-gray-800">Registrar corte</h3>
-                <p className="mb-4 text-sm text-gray-500">{unidad.codigo_unidad} · {unidad.nombre_unidad} — lectura de control, sin cambio de inquilino</p>
+                <h3 className="mb-1 text-base font-bold text-ink">Registrar corte</h3>
+                <p className="mb-4 text-sm text-muted">{unidad.codigo_unidad} · {unidad.nombre_unidad} — lectura de control, sin cambio de inquilino</p>
 
                 <div className="mb-3">
                     <InputLabel htmlFor="fecha_corte_manual" value="Fecha *" />
@@ -140,7 +141,7 @@ function LecturasTabla({ periodo, periodos, lecturas }) {
             actions={editable && (
                 <div className="flex gap-2">
                     {puedeSincronizar && (
-                        <button type="button" onClick={sincronizar} className="flex items-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+                        <button type="button" onClick={sincronizar} className="flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:bg-surface-2">
                             <RefreshCcw className="h-3.5 w-3.5" /> Sincronizar unidades
                         </button>
                     )}
@@ -155,50 +156,35 @@ function LecturasTabla({ periodo, periodos, lecturas }) {
             <Head title="Lecturas" />
 
             {errors?.general && (
-                <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-danger">{errors.general}</div>
+                <div className="mb-4 rounded-lg bg-danger-tint px-4 py-3 text-sm text-danger">{errors.general}</div>
             )}
 
             {!editable && (
-                <div className="mb-4 rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-500">Este periodo está {periodo.estado.toLowerCase()} — solo lectura.</div>
+                <div className="mb-4 rounded-lg bg-surface-2 px-4 py-3 text-sm text-muted">Este periodo está {periodo.estado.toLowerCase()} — solo lectura.</div>
             )}
 
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-                <div className="rounded-lg border border-gray-200 bg-white p-3">
-                    <p className="text-xs text-gray-400">OK</p>
-                    <p className="mt-0.5 text-lg font-bold text-success">{conteo.OK ?? 0} <span className="text-xs font-normal text-gray-400">unidad{(conteo.OK ?? 0) === 1 ? '' : 'es'}</span></p>
-                </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-3">
-                    <p className="text-xs text-gray-400">A revisar</p>
-                    <p className="mt-0.5 text-lg font-bold text-warning">{conteo.REVISAR ?? 0} <span className="text-xs font-normal text-gray-400">unidad{(conteo.REVISAR ?? 0) === 1 ? '' : 'es'}</span></p>
-                </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-3">
-                    <p className="text-xs text-gray-400">Cortes pendientes</p>
-                    <p className="mt-0.5 text-lg font-bold text-warning">{cortesPendientes} <span className="text-xs font-normal text-gray-400">unidad{cortesPendientes === 1 ? '' : 'es'}</span></p>
-                </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-3">
-                    <p className="text-xs text-gray-400">Sin histórico</p>
-                    <p className="mt-0.5 text-lg font-bold text-gray-500">{conteo.SIN_HISTORICO ?? 0} <span className="text-xs font-normal text-gray-400">unidad{(conteo.SIN_HISTORICO ?? 0) === 1 ? '' : 'es'}</span></p>
-                </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-3">
-                    <p className="text-xs text-gray-400">Consumo total</p>
-                    <p className="mt-0.5 flex items-center gap-1 text-lg font-bold text-gray-800"><Zap className="h-4 w-4 text-primary" /> {consumoTotal.toFixed(1)} <span className="text-xs font-normal text-gray-400">kWh</span></p>
-                </div>
+                <KpiCard label="OK" value={`${conteo.OK ?? 0}`} icon={CheckCircle2} tone="success" />
+                <KpiCard label="A revisar" value={`${conteo.REVISAR ?? 0}`} icon={HelpCircle} tone="warning" />
+                <KpiCard label="Cortes pendientes" value={`${cortesPendientes}`} icon={AlertTriangle} tone="warning" />
+                <KpiCard label="Sin histórico" value={`${conteo.SIN_HISTORICO ?? 0}`} icon={HelpCircle} tone="muted" />
+                <KpiCard label="Consumo total" value={`${consumoTotal.toFixed(1)} kWh`} icon={Zap} tone="primary" />
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-[13px] border border-border bg-surface shadow-sm">
+                <table className="min-w-full divide-y divide-border text-sm">
+                    <thead className="bg-surface-2">
                         <tr>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Unidad</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Inquilino</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Anterior</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Auditoría</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Actual</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Consumo</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Alquiler</th>
+                            <th className="w-64 px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Unidad</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Inquilino</th>
+                            <th className="w-24 px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Anterior</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Auditoría</th>
+                            <th className="w-32 px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Actual</th>
+                            <th className="w-28 px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Consumo</th>
+                            <th className="w-28 px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Alquiler</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                         {lecturas.map((l) => {
                             // La auditoria es solo indicador visual (igual que el legacy) --
                             // no bloquea la edicion. Bloquear cuando auditoria=OK rompia el
@@ -213,78 +199,86 @@ function LecturasTabla({ periodo, periodos, lecturas }) {
 
                             return (
                                 <Fragment key={l.id_lectura}>
-                                    <tr className={necesitaAtencion ? 'bg-warning/5' : ''}>
-                                        <td className="px-4 py-2 font-medium text-gray-800">
+                                    <tr className={necesitaAtencion ? 'bg-warning-tint/40' : ''}>
+                                        <td className="px-4 py-2.5 font-semibold text-ink">
                                             <div className="flex items-center gap-1">
-                                                <span>{l.codigo_unidad} · {l.nombre_unidad}</span>
+                                                <span className="truncate">{l.codigo_unidad} · {l.nombre_unidad}</span>
                                                 {editable && puedeRegistrar && (
                                                     <IconButton icon={Plus} label="Registrar corte (lectura de control sin cambio de inquilino)" onClick={() => setCorteManualUnidad(l)} />
                                                 )}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-2 text-gray-500">{l.inquilino || '-'}</td>
-                                        <td className="px-4 py-2 text-right font-mono text-gray-500">{l.lectura_anterior.toFixed(2)}</td>
-                                        <td className="px-4 py-2">
-                                            <div className="flex flex-wrap items-center gap-1">
+                                        <td className="px-4 py-2.5 text-muted">{l.inquilino || '-'}</td>
+                                        <td className="whitespace-nowrap px-4 py-2.5 text-right font-mono text-muted">{l.lectura_anterior.toFixed(2)}</td>
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex flex-col items-start gap-1">
                                                 <AuditoriaBadge estado={l.auditoria_lectura_anterior} />
                                                 {l.tiene_corte_pendiente && <Badge variant="warning">Corte pendiente</Badge>}
                                             </div>
                                         </td>
-                                        <td className="px-4 py-2 text-right">
+                                        <td className="whitespace-nowrap px-4 py-2.5 text-right">
                                             {editable ? (
                                                 <input
                                                     type="number"
                                                     step="0.01"
                                                     value={valores[l.id_lectura]}
                                                     onChange={(e) => setValores((v) => ({ ...v, [l.id_lectura]: e.target.value }))}
-                                                    className={`w-28 rounded-md bg-white text-right font-mono text-sm focus:border-primary focus:ring-primary ${necesitaAtencion ? 'border-warning/40' : 'border-gray-300'}`}
+                                                    className={`w-28 rounded-md bg-surface text-right font-mono text-sm text-ink focus:border-primary focus:ring-primary ${necesitaAtencion ? 'border-warning/40' : 'border-border'}`}
                                                 />
                                             ) : (
-                                                <span className="font-mono text-gray-700">{l.lectura_actual.toFixed(2)}</span>
+                                                <span className="font-mono text-ink">{l.lectura_actual.toFixed(2)}</span>
                                             )}
                                         </td>
-                                        <td className="px-4 py-2 text-right font-mono font-semibold text-gray-700">{l.consumo.toFixed(2)} kWh</td>
-                                        <td className="px-4 py-2 text-right font-mono text-gray-500">{l.monto_alquiler != null ? `S/ ${Number(l.monto_alquiler).toFixed(2)}` : '-'}</td>
+                                        <td className="whitespace-nowrap px-4 py-2.5 text-right font-mono font-semibold text-ink">{l.consumo.toFixed(2)} kWh</td>
+                                        <td className="whitespace-nowrap px-4 py-2.5 text-right font-mono text-muted">{l.monto_alquiler != null ? `S/ ${Number(l.monto_alquiler).toFixed(2)}` : '-'}</td>
                                     </tr>
-                                    {tramosIntermedios.map((t) => (
-                                        <tr key={`corte-${t.id_corte_hasta ?? `${l.id_lectura}-${t.fecha_hasta}`}`} className="bg-gray-50/70 text-xs text-gray-500">
-                                            <td className="px-4 py-1.5 pl-8" colSpan={2}>
-                                                ↳ {fmtCorta(t.fecha_desde)}–{fmtCorta(t.fecha_hasta)} · {t.inquilino || 'Vacante'}
-                                            </td>
-                                            <td className="px-4 py-1.5 text-right font-mono">{Number(t.lectura_desde).toFixed(2)}</td>
-                                            <td className="px-4 py-1.5">
-                                                {t.estado === 'CORTE_PENDIENTE' ? (
-                                                    <Badge variant="warning">Corte pendiente</Badge>
-                                                ) : t.estado === 'INCONSISTENTE' ? (
-                                                    <Badge variant="danger">Inconsistente</Badge>
-                                                ) : (
-                                                    <Badge variant="gray">Corte registrado</Badge>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-1.5 text-right">
-                                                {editable && t.id_corte_hasta ? (
-                                                    <input
-                                                        type="number"
-                                                        step="0.01"
-                                                        value={cortes[t.id_corte_hasta] ?? ''}
-                                                        onChange={(e) => setCortes((v) => ({ ...v, [t.id_corte_hasta]: e.target.value }))}
-                                                        placeholder="lectura de corte"
-                                                        title="Lectura del medidor al momento de este cambio de ocupación"
-                                                        className="w-32 rounded-md border-warning/40 bg-white text-right font-mono text-xs focus:border-primary focus:ring-primary"
-                                                    />
-                                                ) : (
-                                                    <span className="font-mono">{t.lectura_hasta != null ? Number(t.lectura_hasta).toFixed(2) : '—'}</span>
-                                                )}
-                                            </td>
-                                            <td className="px-4 py-1.5 text-right font-mono">{t.consumo_kwh != null ? `${Number(t.consumo_kwh).toFixed(2)} kWh` : '—'}</td>
-                                            <td></td>
-                                        </tr>
-                                    ))}
+                                    {tramosIntermedios.map((t) => {
+                                        const pendiente = t.estado === 'CORTE_PENDIENTE';
+                                        const inconsistente = t.estado === 'INCONSISTENTE';
+                                        // Un tramo ya resuelto (corte cargado, sin inconsistencia) es
+                                        // historial, no una tarea pendiente -- se atenua para que el
+                                        // ojo vaya directo a los que si necesitan atencion.
+                                        const resuelto = !pendiente && !inconsistente;
+                                        return (
+                                            <tr key={`corte-${t.id_corte_hasta ?? `${l.id_lectura}-${t.fecha_hasta}`}`} className={`bg-surface-2/70 text-xs text-muted-2 ${resuelto ? 'opacity-60' : ''}`}>
+                                                <td className="px-4 py-1.5 pl-8" colSpan={2}>
+                                                    ↳ {fmtCorta(t.fecha_desde)}–{fmtCorta(t.fecha_hasta)} · {t.inquilino || 'Vacante'}
+                                                </td>
+                                                <td className="px-4 py-1.5 text-right font-mono">{Number(t.lectura_desde).toFixed(2)}</td>
+                                                <td className="px-4 py-1.5">
+                                                    {pendiente ? (
+                                                        <Badge variant="warning">Corte pendiente</Badge>
+                                                    ) : inconsistente ? (
+                                                        <Badge variant="danger">Inconsistente</Badge>
+                                                    ) : (
+                                                        <Badge variant="gray">Corte registrado</Badge>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-1.5 text-right">
+                                                    {editable && t.id_corte_hasta ? (
+                                                        <input
+                                                            type="number"
+                                                            step="0.01"
+                                                            value={cortes[t.id_corte_hasta] ?? ''}
+                                                            onChange={(e) => setCortes((v) => ({ ...v, [t.id_corte_hasta]: e.target.value }))}
+                                                            placeholder="lectura de corte"
+                                                            title="Lectura del medidor al momento de este cambio de ocupación"
+                                                            className={`w-28 rounded-md bg-surface text-right font-mono text-xs text-ink focus:border-primary focus:ring-primary ${pendiente ? 'border-warning/40' : 'border-border'}`}
+                                                        />
+                                                    ) : (
+                                                        <span className="font-mono">{t.lectura_hasta != null ? Number(t.lectura_hasta).toFixed(2) : '—'}</span>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-1.5 text-right font-mono">{t.consumo_kwh != null ? `${Number(t.consumo_kwh).toFixed(2)} kWh` : '—'}</td>
+                                                <td></td>
+                                            </tr>
+                                        );
+                                    })}
                                 </Fragment>
                             );
                         })}
                         {lecturas.length === 0 && (
-                            <tr><td colSpan={7} className="px-4 py-6 text-center text-gray-400">Sin lecturas para este periodo — usá "Sincronizar unidades".</td></tr>
+                            <tr><td colSpan={7} className="px-4 py-6 text-center text-muted-2">Sin lecturas para este periodo — usá "Sincronizar unidades".</td></tr>
                         )}
                     </tbody>
                 </table>

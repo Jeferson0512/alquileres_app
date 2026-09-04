@@ -51,8 +51,8 @@ function NuevoPeriodoModal({ show, onClose, ultimoPeriodo }) {
     return (
         <Modal show={show} onClose={onClose} maxWidth="md">
             <form onSubmit={submit} className="p-6">
-                <h2 className="text-lg font-medium text-gray-900">Nuevo periodo</h2>
-                <p className="mt-1 text-sm text-gray-500">
+                <h2 className="text-lg font-bold text-ink">Nuevo periodo</h2>
+                <p className="mt-1 text-sm text-muted">
                     {ultimoPeriodo
                         ? `Se crea a continuación de ${MESES[ultimoPeriodo.mes - 1]} ${ultimoPeriodo.anio}.`
                         : 'Este será el primer periodo registrado.'}
@@ -70,7 +70,7 @@ function NuevoPeriodoModal({ show, onClose, ultimoPeriodo }) {
                             id="mes"
                             value={data.mes}
                             onChange={(e) => setData('mes', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                            className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                         >
                             {MESES.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
                         </select>
@@ -92,7 +92,7 @@ function NuevoPeriodoModal({ show, onClose, ultimoPeriodo }) {
                 <div className="mt-4">
                     <InputLabel htmlFor="fecha_fin" value="Fin (opcional)" />
                     <TextInput id="fecha_fin" type="date" className="mt-1 block w-full" value={data.fecha_fin} onChange={(e) => setData('fecha_fin', e.target.value)} />
-                    <p className="mt-1 text-xs text-gray-400">Si la dejás vacía, se calcula como un mes exacto desde el inicio (ej. 15 a 14).</p>
+                    <p className="mt-1 text-xs text-muted-2">Si la dejás vacía, se calcula como un mes exacto desde el inicio (ej. 15 a 14).</p>
                     <InputError className="mt-1" message={errors.fecha_fin} />
                 </div>
 
@@ -103,15 +103,15 @@ function NuevoPeriodoModal({ show, onClose, ultimoPeriodo }) {
                         rows={2}
                         value={data.observacion}
                         onChange={(e) => setData('observacion', e.target.value)}
-                        className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                        className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                     />
                 </div>
 
                 {ultimoPeriodo && ultimoPeriodo.estado === 'ABIERTO' && (
-                    <div className="mt-4 flex gap-2.5 border-t border-gray-100 pt-4 text-xs text-gray-500">
+                    <div className="mt-4 flex gap-2.5 border-t border-border pt-4 text-xs text-muted">
                         <RefreshCcw className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <p>
-                            Al crear este periodo, <strong className="text-gray-700">{MESES[ultimoPeriodo.mes - 1]} {ultimoPeriodo.anio} se cierra automáticamente</strong> en
+                            Al crear este periodo, <strong className="text-ink">{MESES[ultimoPeriodo.mes - 1]} {ultimoPeriodo.anio} se cierra automáticamente</strong> en
                             la misma operación — no hace falta un paso aparte.
                         </p>
                     </div>
@@ -141,17 +141,17 @@ function EditarPeriodoModal({ periodo, onClose }) {
         <Modal show={periodo !== null} onClose={onClose} maxWidth="md">
             {periodo && (
                 <form onSubmit={submit} className="p-6">
-                    <h2 className="text-lg font-medium text-gray-900">Editar periodo · {MESES[periodo.mes - 1]} {periodo.anio}</h2>
-                    <p className="mt-1 text-sm text-gray-500">Solo se puede ajustar el fin y la observación.</p>
+                    <h2 className="text-lg font-bold text-ink">Editar periodo · {MESES[periodo.mes - 1]} {periodo.anio}</h2>
+                    <p className="mt-1 text-sm text-muted">Solo se puede ajustar el fin y la observación.</p>
 
                     <div className="mt-4 grid grid-cols-2 gap-4">
-                        <div className="rounded-lg bg-surface p-2.5">
-                            <p className="text-xs text-gray-400">Inicio</p>
-                            <p className="font-mono text-sm font-semibold text-gray-700">{fmt(periodo.fecha_inicio)}</p>
+                        <div className="rounded-lg bg-surface-2 p-2.5">
+                            <p className="text-xs text-muted-2">Inicio</p>
+                            <p className="font-mono text-sm font-semibold text-ink">{fmt(periodo.fecha_inicio)}</p>
                         </div>
-                        <div className="rounded-lg bg-surface p-2.5">
-                            <p className="text-xs text-gray-400">Estado</p>
-                            <p className="text-sm font-semibold text-gray-700">{periodo.estado}</p>
+                        <div className="rounded-lg bg-surface-2 p-2.5">
+                            <p className="text-xs text-muted-2">Estado</p>
+                            <p className="text-sm font-semibold text-ink">{periodo.estado}</p>
                         </div>
                     </div>
 
@@ -173,7 +173,7 @@ function EditarPeriodoModal({ periodo, onClose }) {
                             rows={2}
                             value={data.observacion}
                             onChange={(e) => setData('observacion', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                            className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                         />
                     </div>
 
@@ -223,20 +223,20 @@ export default function Index({ periodos }) {
                     const isAnulado = p.estado === 'ANULADO';
                     return (
                         <div key={p.id_periodo} className="relative pb-5 pl-9 last:pb-0">
-                            {!isLast && <span className="absolute left-[9px] top-6 bottom-0 w-0.5 bg-gray-200" />}
+                            {!isLast && <span className="absolute left-[9px] top-6 bottom-0 w-0.5 bg-border" />}
                             <span
-                                className={`absolute left-0 top-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 bg-white ${
-                                    isOpen ? 'border-primary' : isAnulado ? 'border-danger bg-danger-tint' : 'border-gray-300'
+                                className={`absolute left-0 top-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 bg-surface ${
+                                    isOpen ? 'border-primary bg-primary-light' : isAnulado ? 'border-danger bg-danger-tint' : 'border-border-strong'
                                 }`}
                             >
                                 {isOpen && <span className="h-2 w-2 rounded-full bg-primary" />}
                             </span>
 
-                            <div className={`rounded-lg border bg-white p-4 shadow-sm ${isOpen ? 'border-primary' : 'border-gray-200'} ${isAnulado ? 'opacity-70' : ''}`}>
+                            <div className={`rounded-xl border bg-surface p-4 shadow-sm ${isOpen ? 'border-primary' : 'border-border'} ${isAnulado ? 'opacity-70' : ''}`}>
                                 <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div>
-                                        <p className="text-sm font-bold text-gray-900">{MESES[p.mes - 1]} {p.anio}</p>
-                                        <p className="font-mono text-xs text-gray-400">{fmt(p.fecha_inicio)} → {fmt(p.fecha_fin)}</p>
+                                        <p className="text-sm font-bold text-ink">{MESES[p.mes - 1]} {p.anio}</p>
+                                        <p className="font-mono text-xs text-muted-2">{fmt(p.fecha_inicio)} → {fmt(p.fecha_fin)}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Badge variant={ESTADO_VARIANTS[p.estado] ?? 'gray'}>{p.estado}</Badge>
@@ -246,21 +246,21 @@ export default function Index({ periodos }) {
                                                 title="Editar fin y observación"
                                                 aria-label="Editar"
                                                 onClick={() => setEditando(p)}
-                                                className="inline-flex rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-primary"
+                                                className="inline-flex rounded-md p-1.5 text-muted-2 hover:bg-surface-2 hover:text-primary"
                                             >
                                                 <Pencil className="h-4 w-4" />
                                             </button>
                                         )}
                                     </div>
                                 </div>
-                                {p.observacion && <p className="mt-2 text-xs text-gray-500">{p.observacion}</p>}
+                                {p.observacion && <p className="mt-2 text-xs text-muted">{p.observacion}</p>}
                             </div>
                         </div>
                     );
                 })}
 
                 {periodos.length === 0 && (
-                    <p className="rounded-lg border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">Sin periodos registrados todavía.</p>
+                    <p className="rounded-lg border border-border bg-surface p-6 text-center text-sm text-muted-2">Sin periodos registrados todavía.</p>
                 )}
             </div>
 

@@ -70,8 +70,8 @@ function FinalizarModal({ ocupacion, onClose, onFinalizado }) {
     return (
         <Modal show onClose={onClose} maxWidth="sm">
             <div className="p-5">
-                <h3 className="mb-1 text-base font-semibold text-gray-800">Finalizar ocupación</h3>
-                <p className="mb-4 text-sm text-gray-500">{ocupacion.unidad?.codigo_unidad} — {ocupacion.persona?.nombres} {ocupacion.persona?.apellidos}</p>
+                <h3 className="mb-1 text-base font-bold text-ink">Finalizar ocupación</h3>
+                <p className="mb-4 text-sm text-muted">{ocupacion.unidad?.codigo_unidad} — {ocupacion.persona?.nombres} {ocupacion.persona?.apellidos}</p>
 
                 <div className="mb-3">
                     <InputLabel htmlFor="fecha_fin_finalizar" value="Fecha de fin" />
@@ -79,17 +79,17 @@ function FinalizarModal({ ocupacion, onClose, onFinalizado }) {
                 </div>
 
                 <div className="mb-1 space-y-2">
-                    <label className="block text-xs font-medium text-gray-500">Motivo</label>
+                    <label className="block text-xs font-medium text-muted">Motivo</label>
                     {[
                         { value: 'RENOVACION', label: 'Renovación de contrato', desc: 'El inquilino sigue viviendo ahí, solo cambian los términos — se abre una notificación para crear el nuevo contrato.' },
                         { value: 'MUDANZA', label: 'Mudanza / fin de contrato', desc: 'Este es el cierre real: el inquilino se retira de la unidad y no continúa.' },
                         { value: 'OTRO', label: 'Otro motivo', desc: 'Para casos que no son ni renovación ni mudanza (ej. desalojo). Debes especificar por qué.' },
                     ].map((opt) => (
-                        <label key={opt.value} className="flex cursor-pointer items-start gap-2 rounded-md border border-gray-200 p-2 has-[:checked]:border-primary has-[:checked]:bg-primary-light/30">
+                        <label key={opt.value} className="flex cursor-pointer items-start gap-2 rounded-md border border-border p-2 has-[:checked]:border-primary has-[:checked]:bg-primary-light/30">
                             <input type="radio" name="motivo_fin" value={opt.value} checked={motivo === opt.value} onChange={() => setMotivo(opt.value)} className="mt-0.5" />
                             <span>
-                                <span className="block text-sm font-medium text-gray-700">{opt.label}</span>
-                                {opt.desc && <span className="block text-xs text-gray-400">{opt.desc}</span>}
+                                <span className="block text-sm font-medium text-ink">{opt.label}</span>
+                                {opt.desc && <span className="block text-xs text-muted-2">{opt.desc}</span>}
                             </span>
                         </label>
                     ))}
@@ -104,7 +104,7 @@ function FinalizarModal({ ocupacion, onClose, onFinalizado }) {
                             onChange={(e) => setDetalle(e.target.value)}
                             rows={2}
                             placeholder="Ej. desalojo por incumplimiento de contrato"
-                            className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                            className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                         />
                     </div>
                 )}
@@ -122,7 +122,7 @@ function OcupacionModal({ show, onClose, editando, data, setData, errors, proces
     return (
         <Modal show={show} onClose={onClose} maxWidth="xl">
             <form onSubmit={submit} className="p-6">
-                <h2 className="text-lg font-medium text-gray-900">{editando === 'new' ? 'Nueva ocupación' : 'Editar ocupación'}</h2>
+                <h2 className="text-lg font-bold text-ink">{editando === 'new' ? 'Nueva ocupación' : 'Editar ocupación'}</h2>
 
                 {data.renovada_de_id && (
                     <div className="mt-3 rounded-lg bg-primary-light px-3 py-2 text-xs text-primary-dark">
@@ -133,7 +133,7 @@ function OcupacionModal({ show, onClose, editando, data, setData, errors, proces
                 <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <InputLabel htmlFor="id_unidad" value="Unidad *" />
-                        <select id="id_unidad" value={data.id_unidad} onChange={(e) => cambiarUnidad(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary">
+                        <select id="id_unidad" value={data.id_unidad} onChange={(e) => cambiarUnidad(e.target.value)} className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary">
                             <option value="">-- elegir --</option>
                             {unidades.map((u) => <option key={u.id_unidad} value={u.id_unidad}>{u.codigo_unidad} · {u.nombre_unidad}</option>)}
                         </select>
@@ -141,7 +141,7 @@ function OcupacionModal({ show, onClose, editando, data, setData, errors, proces
                     </div>
                     <div>
                         <InputLabel htmlFor="id_persona" value="Inquilino *" />
-                        <select id="id_persona" value={data.id_persona} onChange={(e) => setData('id_persona', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary">
+                        <select id="id_persona" value={data.id_persona} onChange={(e) => setData('id_persona', e.target.value)} className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary">
                             <option value="">-- elegir --</option>
                             {inquilinos.map((p) => <option key={p.id_persona} value={p.id_persona}>{p.nombres} {p.apellidos}</option>)}
                         </select>
@@ -172,7 +172,7 @@ function OcupacionModal({ show, onClose, editando, data, setData, errors, proces
                     {editando !== 'new' && (
                         <div>
                             <InputLabel htmlFor="estado" value="Estado" />
-                            <select id="estado" value={data.estado} onChange={(e) => setData('estado', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary">
+                            <select id="estado" value={data.estado} onChange={(e) => setData('estado', e.target.value)} className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary">
                                 <option value="ACTIVO">Activo</option>
                                 <option value="FINALIZADO">Finalizado</option>
                                 <option value="ANULADO">Anulado</option>
@@ -185,15 +185,15 @@ function OcupacionModal({ show, onClose, editando, data, setData, errors, proces
                 {data.id_persona && (
                     <div className="mt-4 rounded-lg border border-primary-light bg-primary-light/30 p-3">
                         {personaYaTieneUsuario ? (
-                            <p className="text-xs text-gray-600">Este inquilino ya tiene una cuenta de acceso al portal.</p>
+                            <p className="text-xs text-muted">Este inquilino ya tiene una cuenta de acceso al portal.</p>
                         ) : (
                             <>
-                                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                                <label className="flex items-center gap-2 text-sm font-medium text-ink">
                                     <input
                                         type="checkbox"
                                         checked={data.crear_usuario}
                                         onChange={(e) => setData('crear_usuario', e.target.checked)}
-                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                                     />
                                     Crear también su acceso al portal
                                 </label>
@@ -202,7 +202,7 @@ function OcupacionModal({ show, onClose, editando, data, setData, errors, proces
                                         <div>
                                             <InputLabel value="Email de acceso (de su ficha)" />
                                             {personaSeleccionada?.email ? (
-                                                <p className="mt-1 rounded-md bg-white px-3 py-1.5 text-sm text-gray-700">{personaSeleccionada.email}</p>
+                                                <p className="mt-1 rounded-md bg-surface px-3 py-1.5 text-sm text-ink">{personaSeleccionada.email}</p>
                                             ) : (
                                                 <p className="mt-1 text-xs text-danger">Sin email registrado — agrégaselo primero en Inquilinos.</p>
                                             )}
@@ -247,17 +247,17 @@ function TrasladoModal({ ocupacion, periodo, unidadesLibres, onClose }) {
     return (
         <Modal show onClose={onClose} maxWidth="sm">
             <form onSubmit={submit} className="p-5">
-                <h3 className="mb-1 text-base font-semibold text-gray-800">Trasladar a otra unidad</h3>
-                <p className="mb-4 text-sm text-gray-500">
+                <h3 className="mb-1 text-base font-bold text-ink">Trasladar a otra unidad</h3>
+                <p className="mb-4 text-sm text-muted">
                     Desde: {ocupacion.unidad?.codigo_unidad} · {ocupacion.persona?.nombres} {ocupacion.persona?.apellidos}
                 </p>
 
-                {errors.general && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-xs text-danger">{errors.general}</p>}
+                {errors.general && <p className="mb-3 rounded-md bg-danger-tint px-3 py-2 text-xs text-danger">{errors.general}</p>}
 
                 <div className="space-y-3">
                     <div>
                         <InputLabel htmlFor="id_unidad_destino" value="Hacia *" />
-                        <select id="id_unidad_destino" value={data.id_unidad_destino} onChange={(e) => setData('id_unidad_destino', e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary">
+                        <select id="id_unidad_destino" value={data.id_unidad_destino} onChange={(e) => setData('id_unidad_destino', e.target.value)} className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary">
                             <option value="">-- elegir unidad --</option>
                             {unidadesLibres.map((u) => <option key={u.id_unidad} value={u.id_unidad}>{u.codigo_unidad} · {u.nombre_unidad}</option>)}
                         </select>
@@ -271,7 +271,7 @@ function TrasladoModal({ ocupacion, periodo, unidadesLibres, onClose }) {
                         <InputError className="mt-1" message={errors.fecha_traslado} />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 rounded-lg border border-gray-100 p-3">
+                    <div className="grid grid-cols-2 gap-3 rounded-lg border border-border p-3">
                         <div>
                             <InputLabel htmlFor="lectura_corte_origen" value={`Lectura de ${ocupacion.unidad?.codigo_unidad ?? 'origen'} *`} />
                             <TextInput id="lectura_corte_origen" type="number" step="0.01" className="mt-1 block w-full" value={data.lectura_corte_origen} onChange={(e) => setData('lectura_corte_origen', e.target.value)} />
@@ -282,14 +282,14 @@ function TrasladoModal({ ocupacion, periodo, unidadesLibres, onClose }) {
                             <TextInput id="lectura_corte_destino" type="number" step="0.01" className="mt-1 block w-full" value={data.lectura_corte_destino} onChange={(e) => setData('lectura_corte_destino', e.target.value)} />
                             <InputError className="mt-1" message={errors.lectura_corte_destino} />
                         </div>
-                        <p className="col-span-2 text-xs text-gray-400">Lectura del medidor de cada unidad ese día — corte de salida y de entrada.</p>
+                        <p className="col-span-2 text-xs text-muted-2">Lectura del medidor de cada unidad ese día — corte de salida y de entrada.</p>
                     </div>
 
                     <div>
                         <InputLabel htmlFor="monto_alquiler_destino" value="Alquiler en la unidad nueva (S/) *" />
                         <TextInput id="monto_alquiler_destino" type="number" step="0.01" className="mt-1 block w-full" value={data.monto_alquiler_destino} onChange={(e) => setData('monto_alquiler_destino', e.target.value)} />
                         <InputError className="mt-1" message={errors.monto_alquiler_destino} />
-                        <p className="mt-1 text-xs text-gray-400">La garantía se traslada tal cual — no hace falta cargarla de nuevo.</p>
+                        <p className="mt-1 text-xs text-muted-2">La garantía se traslada tal cual — no hace falta cargarla de nuevo.</p>
                     </div>
 
                     <div>
@@ -297,7 +297,7 @@ function TrasladoModal({ ocupacion, periodo, unidadesLibres, onClose }) {
                         <TextInput id="observacion_traslado" className="mt-1 block w-full" value={data.observacion} onChange={(e) => setData('observacion', e.target.value)} />
                     </div>
 
-                    <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-warning">
+                    <div className="rounded-lg bg-warning-tint px-3 py-2 text-xs text-warning">
                         Este mes se generarán dos cobros (uno por cada unidad), cada uno prorrateado por los días que ocupó cada una.
                     </div>
                 </div>
@@ -435,17 +435,17 @@ export default function Index({ ocupaciones, unidades, inquilinos, estadoFiltro,
         >
             <Head title="Ocupaciones" />
 
-            <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                <span className="flex items-center gap-1.5"><i className="h-3 w-3 rounded border border-gray-200 bg-primary-light" />Ocupada</span>
-                <span className="flex items-center gap-1.5"><i className="h-3 w-3 rounded border border-dashed border-gray-300 bg-gray-50" />Disponible</span>
+            <div className="mb-4 flex flex-wrap items-center gap-4 rounded-lg border border-border bg-surface px-3.5 py-2.5 text-xs text-muted">
+                <span className="flex items-center gap-1.5"><i className="h-3 w-3 rounded border border-border bg-primary-light" />Ocupada</span>
+                <span className="flex items-center gap-1.5"><i className="h-3 w-3 rounded border border-dashed border-border-strong bg-surface-2" />Disponible</span>
                 <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-warning" />Contrato vence &lt; 30 días</span>
                 <span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-danger" />Vence ≤ 7 días — urgente</span>
             </div>
 
-            <div className="mb-6 space-y-4 rounded-lg border border-gray-200 bg-white p-4">
+            <div className="mb-6 space-y-4 rounded-[13px] border border-border bg-surface p-4 shadow-sm">
                 {pisos.map((piso) => (
                     <div key={piso}>
-                        <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-gray-500">
+                        <div className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-2">
                             <Layers className="h-3.5 w-3.5" /> Piso {piso}
                         </div>
                         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -461,27 +461,27 @@ export default function Index({ ocupaciones, unidades, inquilinos, estadoFiltro,
                                         onClick={() => ocup
                                             ? setFinalizando({ ...ocup, unidad: { codigo_unidad: u.codigo_unidad } })
                                             : (puede('ocupaciones.crear') && startNew(u.id_unidad))}
-                                        className={`rounded-lg border p-2.5 text-left transition-colors ${
+                                        className={`rounded-xl border p-2.5 text-left shadow-sm transition-colors ${
                                             ocup
-                                                ? `bg-primary-light/60 hover:bg-primary-light ${urgente ? 'border-danger ring-1 ring-danger' : proximaAVencer ? 'border-warning ring-1 ring-warning' : 'border-primary-light'}`
-                                                : 'border-dashed border-gray-300 bg-gray-50 hover:border-primary hover:bg-primary-light/20'
+                                                ? `bg-primary-light/60 hover:bg-primary-light ${urgente ? 'border-danger ring-1 ring-danger' : proximaAVencer ? 'border-warning ring-1 ring-warning' : 'border-transparent'}`
+                                                : 'border-dashed border-border-strong bg-surface-2 hover:border-primary hover:bg-primary-light/20'
                                         }`}
                                     >
                                         <div className="flex items-center gap-1">
-                                            <span className={`font-mono text-sm font-bold ${ocup ? 'text-gray-900' : 'text-gray-400'}`}>{u.codigo_unidad}</span>
+                                            <span className={`font-mono text-sm font-bold ${ocup ? 'text-ink' : 'text-muted-2'}`}>{u.codigo_unidad}</span>
                                             {urgente && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-danger" />}
                                             {proximaAVencer && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />}
                                         </div>
                                         {ocup ? (
                                             <>
-                                                <div className="mt-1 truncate text-xs font-medium text-gray-700">{ocup.persona?.nombres} {ocup.persona?.apellidos}</div>
-                                                <div className="text-[11px] text-gray-400">
+                                                <div className="mt-1 truncate text-xs font-medium text-ink">{ocup.persona?.nombres} {ocup.persona?.apellidos}</div>
+                                                <div className="text-[11px] text-muted-2">
                                                     {dias !== null ? (dias >= 0 ? `Vence en ${dias} días` : 'Vencido') : `Hasta ${formatDate(ocup.fecha_fin)}`}
                                                 </div>
                                             </>
                                         ) : (
                                             <>
-                                                <div className="mt-1 text-xs text-gray-400">Disponible</div>
+                                                <div className="mt-1 text-xs text-muted-2">Disponible</div>
                                                 {puede('ocupaciones.crear') && (
                                                     <div className="flex items-center gap-0.5 text-[11px] font-medium text-primary"><Plus className="h-2.5 w-2.5" /> Ocupar</div>
                                                 )}
@@ -494,44 +494,44 @@ export default function Index({ ocupaciones, unidades, inquilinos, estadoFiltro,
                     </div>
                 ))}
                 {unidadesMapa.length === 0 && (
-                    <p className="py-6 text-center text-sm text-gray-400">Sin unidades activas todavía.</p>
+                    <p className="py-6 text-center text-sm text-muted-2">Sin unidades activas todavía.</p>
                 )}
             </div>
 
             <div className="mb-3">
-                <h2 className="text-base font-semibold text-gray-900">Detalle e historial</h2>
-                <p className="text-sm text-gray-500">La tabla real, sin cambios de comportamiento.</p>
+                <h2 className="text-base font-bold text-ink">Detalle e historial</h2>
+                <p className="text-sm text-muted">La tabla real, sin cambios de comportamiento.</p>
             </div>
 
             <div className="mb-4">
                 <StatusTabs value={estadoFiltro} options={ESTADO_TABS} onChange={cambiarEstado} />
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-[13px] border border-border bg-surface shadow-sm">
+                <table className="min-w-full divide-y divide-border text-sm">
+                    <thead className="bg-surface-2">
                         <tr>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Unidad</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Inquilino</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Inicio</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Fin</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Alquiler</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Estado</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Acciones</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Unidad</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Inquilino</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Inicio</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Fin</th>
+                            <th className="px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Alquiler</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Estado</th>
+                            <th className="px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                         {ocupaciones.data.map((o) => (
                             <tr key={o.id_ocupacion}>
-                                <td className="px-4 py-2 font-medium text-gray-800">{o.unidad?.codigo_unidad}</td>
-                                <td className="px-4 py-2 text-gray-500">{o.persona?.nombres} {o.persona?.apellidos}</td>
-                                <td className="px-4 py-2 text-gray-500">{formatDate(o.fecha_inicio)}</td>
-                                <td className="px-4 py-2 text-gray-500">{formatDate(o.fecha_fin)}</td>
-                                <td className="px-4 py-2 text-right text-gray-500">S/ {Number(o.monto_alquiler).toFixed(2)}</td>
-                                <td className="px-4 py-2" title={o.motivo_fin === 'OTRO' ? o.motivo_fin_detalle : undefined}>
+                                <td className="px-4 py-2.5 font-semibold text-ink">{o.unidad?.codigo_unidad}</td>
+                                <td className="px-4 py-2.5 text-muted">{o.persona?.nombres} {o.persona?.apellidos}</td>
+                                <td className="px-4 py-2.5 text-muted">{formatDate(o.fecha_inicio)}</td>
+                                <td className="px-4 py-2.5 text-muted">{formatDate(o.fecha_fin)}</td>
+                                <td className="px-4 py-2.5 text-right font-mono text-muted">S/ {Number(o.monto_alquiler).toFixed(2)}</td>
+                                <td className="px-4 py-2.5" title={o.motivo_fin === 'OTRO' ? o.motivo_fin_detalle : undefined}>
                                     <EstadoOcupacionBadge ocupacion={o} />
                                 </td>
-                                <td className="px-4 py-2 text-right">
+                                <td className="px-4 py-2.5 text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         {puede('ocupaciones.crear') && (
                                             <IconButton icon={Pencil} label="Editar" variant="primary" onClick={() => startEdit(o)} />
@@ -551,7 +551,7 @@ export default function Index({ ocupaciones, unidades, inquilinos, estadoFiltro,
                         ))}
                         {ocupaciones.data.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">
+                                <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-2">
                                     Sin ocupaciones en este filtro.
                                 </td>
                             </tr>

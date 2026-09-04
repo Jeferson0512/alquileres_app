@@ -75,10 +75,10 @@ function InquilinoModal({ show, onClose, inquilino }) {
     return (
         <Modal show={show} onClose={onClose} maxWidth="lg">
             <form onSubmit={submit} className="p-6">
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 className="text-lg font-bold text-ink">
                     {editando ? `Editar inquilino · ${editando.nombres} ${editando.apellidos}` : 'Nuevo inquilino'}
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted">
                     {editando ? 'El estado de baja/reactivación se cambia desde la tabla, no acá.' : 'Datos básicos de contacto y documento de identidad.'}
                 </p>
 
@@ -100,7 +100,7 @@ function InquilinoModal({ show, onClose, inquilino }) {
                             id="tipo_documento"
                             value={data.tipo_documento}
                             onChange={(e) => cambiarTipoDocumento(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                            className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                         >
                             {TIPOS_DOCUMENTO.map((t) => <option key={t} value={t}>{t}</option>)}
                         </select>
@@ -117,7 +117,7 @@ function InquilinoModal({ show, onClose, inquilino }) {
                             value={data.numero_documento}
                             onChange={(e) => cambiarNumeroDocumento(e.target.value)}
                         />
-                        {!errors.numero_documento && <p className="mt-1 text-xs text-gray-400">{formatoDoc.ayuda}</p>}
+                        {!errors.numero_documento && <p className="mt-1 text-xs text-muted-2">{formatoDoc.ayuda}</p>}
                         <InputError className="mt-1" message={errors.numero_documento} />
                     </div>
 
@@ -152,7 +152,7 @@ function InquilinoModal({ show, onClose, inquilino }) {
                             rows={2}
                             value={data.observacion ?? ''}
                             onChange={(e) => setData('observacion', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                            className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                         />
                     </div>
                 </div>
@@ -232,30 +232,30 @@ export default function Index({ inquilinos, filtro, estadoFiltro, totalActivos, 
             <div className="mb-4 flex flex-wrap items-center gap-3">
                 <StatusTabs value={estadoFiltro} options={ESTADO_TABS} onChange={cambiarEstado} />
                 <div className="relative">
-                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-2" />
                     <input
                         type="search"
                         placeholder="Buscar por nombre, apellido o documento..."
                         value={q}
                         onChange={(e) => buscar(e.target.value)}
-                        className="w-72 rounded-lg border-gray-300 py-2 pl-8 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                        className="w-72 rounded-lg border-border bg-surface py-2 pl-8 text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                     />
                 </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-[13px] border border-border bg-surface shadow-sm">
+                <table className="min-w-full divide-y divide-border text-sm">
+                    <thead className="bg-surface-2">
                         <tr>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Inquilino</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Documento</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Celular</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Portal</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Estado</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Acciones</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Inquilino</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Documento</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Celular</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Portal</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Estado</th>
+                            <th className="px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                         {inquilinos.data.map((i) => (
                             <tr key={i.id_persona}>
                                 <td className="px-4 py-2.5">
@@ -264,8 +264,8 @@ export default function Index({ inquilinos, filtro, estadoFiltro, totalActivos, 
                                             {iniciales(`${i.nombres} ${i.apellidos}`)}
                                         </span>
                                         <div>
-                                            <div className="font-medium text-gray-800">{i.nombres} {i.apellidos}</div>
-                                            <div className="text-xs text-gray-400">
+                                            <div className="font-medium text-ink">{i.nombres} {i.apellidos}</div>
+                                            <div className="text-xs text-muted-2">
                                                 {i.ocupacion_activa?.unidad
                                                     ? `Unidad ${i.ocupacion_activa.unidad.codigo_unidad}`
                                                     : 'Sin unidad asignada'}
@@ -273,11 +273,11 @@ export default function Index({ inquilinos, filtro, estadoFiltro, totalActivos, 
                                         </div>
                                     </div>
                                 </td>
-                                <td className="px-4 py-2 font-mono text-xs text-gray-500">{i.tipo_documento} {i.numero_documento}</td>
-                                <td className="px-4 py-2 text-gray-500">{i.celular ?? '-'}</td>
-                                <td className="px-4 py-2"><PortalBadge conAcceso={i.user_exists} /></td>
-                                <td className="px-4 py-2"><StatusBadge estado={i.estado} /></td>
-                                <td className="px-4 py-2 text-right">
+                                <td className="px-4 py-2.5 font-mono text-xs text-muted">{i.tipo_documento} {i.numero_documento}</td>
+                                <td className="px-4 py-2.5 text-muted">{i.celular ?? '-'}</td>
+                                <td className="px-4 py-2.5"><PortalBadge conAcceso={i.user_exists} /></td>
+                                <td className="px-4 py-2.5"><StatusBadge estado={i.estado} /></td>
+                                <td className="px-4 py-2.5 text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         {puede('inquilinos.editar') && (
                                             <IconButton icon={Pencil} label="Editar" variant="primary" onClick={() => abrirEditar(i)} />
@@ -296,7 +296,7 @@ export default function Index({ inquilinos, filtro, estadoFiltro, totalActivos, 
                         ))}
                         {inquilinos.data.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">
+                                <td colSpan={6} className="px-4 py-8 text-center text-sm text-muted-2">
                                     Sin inquilinos que coincidan con la búsqueda.
                                 </td>
                             </tr>

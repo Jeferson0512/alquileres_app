@@ -94,10 +94,10 @@ function UnidadModal({ show, onClose, unidad, tipos, todosCodigos }) {
     return (
         <Modal show={show} onClose={onClose} maxWidth="lg">
             <form onSubmit={submit} className="p-6">
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 className="text-lg font-bold text-ink">
                     {editando ? `Editar unidad · ${editando.codigo_unidad}` : 'Nueva unidad'}
                 </h2>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted">
                     {editando ? 'El estado de baja/reactivación se cambia desde la tabla, no acá.' : 'Datos de la unidad dentro del inmueble.'}
                 </p>
 
@@ -105,13 +105,13 @@ function UnidadModal({ show, onClose, unidad, tipos, todosCodigos }) {
                     <div>
                         <InputLabel htmlFor="codigo_unidad" value="Código *" />
                         <TextInput id="codigo_unidad" className="mt-1 block w-full" maxLength={20} value={data.codigo_unidad} onChange={(e) => setData('codigo_unidad', e.target.value)} isFocused />
-                        {!editando && !errors.codigo_unidad && <p className="mt-1 text-xs text-gray-400">Sugerido según el piso — lo podés cambiar.</p>}
+                        {!editando && !errors.codigo_unidad && <p className="mt-1 text-xs text-muted-2">Sugerido según el piso — lo podés cambiar.</p>}
                         <InputError className="mt-1" message={errors.codigo_unidad} />
                     </div>
                     <div>
                         <InputLabel htmlFor="nombre_unidad" value="Nombre *" />
                         <TextInput id="nombre_unidad" className="mt-1 block w-full" maxLength={100} value={data.nombre_unidad} onChange={(e) => setData('nombre_unidad', e.target.value)} />
-                        {!editando && !errors.nombre_unidad && <p className="mt-1 text-xs text-gray-400">Sugerido — completalo (ej. "{data.nombre_unidad} 3C").</p>}
+                        {!editando && !errors.nombre_unidad && <p className="mt-1 text-xs text-muted-2">Sugerido — completalo (ej. "{data.nombre_unidad} 3C").</p>}
                         <InputError className="mt-1" message={errors.nombre_unidad} />
                     </div>
 
@@ -126,7 +126,7 @@ function UnidadModal({ show, onClose, unidad, tipos, todosCodigos }) {
                             id="tipo_unidad"
                             value={data.tipo_unidad}
                             onChange={(e) => setData('tipo_unidad', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                            className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                         >
                             {tipos.map((t) => <option key={t} value={t}>{TIPO_INFO[t]?.label ?? t}</option>)}
                         </select>
@@ -139,7 +139,7 @@ function UnidadModal({ show, onClose, unidad, tipos, todosCodigos }) {
                             id="tiene_medidor"
                             value={data.tiene_medidor}
                             onChange={(e) => setData('tiene_medidor', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                            className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                         >
                             <option value="SI">Sí</option>
                             <option value="NO">No</option>
@@ -162,7 +162,7 @@ function UnidadModal({ show, onClose, unidad, tipos, todosCodigos }) {
                     <div className="sm:col-span-2">
                         <InputLabel htmlFor="tarifa_alquiler_base" value="Alquiler base (S/)" />
                         <div className="relative mt-1">
-                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">S/</span>
+                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-2">S/</span>
                             <TextInput
                                 id="tarifa_alquiler_base"
                                 type="number"
@@ -184,7 +184,7 @@ function UnidadModal({ show, onClose, unidad, tipos, todosCodigos }) {
                             rows={2}
                             value={data.observacion ?? ''}
                             onChange={(e) => setData('observacion', e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-primary focus:ring-primary"
+                            className="mt-1 block w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary"
                         />
                     </div>
                 </div>
@@ -251,7 +251,7 @@ export default function Index({ unidades, tipos, estadoFiltro, todosCodigos }) {
                         const info = TIPO_INFO[u.tipo_unidad] ?? TIPO_INFO.OTRO;
                         const Icon = info.icon;
                         return (
-                            <div key={u.id_unidad} className="relative rounded-lg border border-gray-200 bg-white p-3">
+                            <div key={u.id_unidad} className="relative rounded-xl border border-border bg-surface p-3 shadow-sm">
                                 {(puede('unidades.editar')) && (
                                     <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
                                         <IconButton icon={Pencil} label="Editar" variant="primary" onClick={() => abrirEditar(u)} />
@@ -263,13 +263,13 @@ export default function Index({ unidades, tipos, estadoFiltro, todosCodigos }) {
                                         <Icon className="h-4 w-4" />
                                     </span>
                                     <div className="min-w-0">
-                                        <div className="truncate font-mono text-sm font-bold text-gray-900">{u.codigo_unidad}</div>
-                                        <div className="truncate text-xs text-gray-400">{info.label}</div>
+                                        <div className="truncate font-mono text-sm font-bold text-ink">{u.codigo_unidad}</div>
+                                        <div className="truncate text-xs text-muted-2">{info.label}</div>
                                     </div>
                                 </div>
-                                <div className="mt-2.5 space-y-0.5 border-t border-gray-100 pt-2 text-xs text-gray-500">
+                                <div className="mt-2.5 space-y-0.5 border-t border-border pt-2 text-xs text-muted">
                                     <div>Piso {u.piso} · {u.tiene_medidor === 'SI' ? 'con medidor' : 'sin medidor'}</div>
-                                    <div>Alquiler base <strong className="font-semibold text-gray-700">S/ {Number(u.tarifa_alquiler_base).toFixed(2)}</strong></div>
+                                    <div>Alquiler base <strong className="font-mono font-semibold text-ink">S/ {Number(u.tarifa_alquiler_base).toFixed(2)}</strong></div>
                                 </div>
                             </div>
                         );
@@ -278,7 +278,7 @@ export default function Index({ unidades, tipos, estadoFiltro, todosCodigos }) {
             )}
 
             {estadoFiltro === 'ACTIVO' && activas.length === 0 && (
-                <p className="mb-6 rounded-lg border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">
+                <p className="mb-6 rounded-lg border border-border bg-surface p-6 text-center text-sm text-muted-2">
                     Sin unidades activas todavía.
                 </p>
             )}
@@ -291,31 +291,31 @@ export default function Index({ unidades, tipos, estadoFiltro, todosCodigos }) {
                 acciones (editar/dar de baja) -- la tabla solo aporta algo real
                 en "De baja"/"Todas", que las cards no muestran. */}
             {estadoFiltro !== 'ACTIVO' && (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-[13px] border border-border bg-surface shadow-sm">
+                <table className="min-w-full divide-y divide-border text-sm">
+                    <thead className="bg-surface-2">
                         <tr>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Código</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Nombre</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Piso</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Tipo</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Alquiler base</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Estado</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Acciones</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Código</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Nombre</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Piso</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Tipo</th>
+                            <th className="px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Alquiler base</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Estado</th>
+                            <th className="px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                         {unidades.data.map((u) => (
                             <tr key={u.id_unidad}>
-                                <td className="px-4 py-2 font-mono font-medium text-gray-800">{u.codigo_unidad}</td>
-                                <td className="px-4 py-2 text-gray-500">{u.nombre_unidad}</td>
-                                <td className="px-4 py-2 text-gray-500">{u.piso}</td>
-                                <td className="px-4 py-2 text-gray-500">{TIPO_INFO[u.tipo_unidad]?.label ?? u.tipo_unidad}</td>
-                                <td className="px-4 py-2 text-right text-gray-500">S/ {Number(u.tarifa_alquiler_base).toFixed(2)}</td>
-                                <td className="px-4 py-2">
+                                <td className="px-4 py-2.5 font-mono font-semibold text-ink">{u.codigo_unidad}</td>
+                                <td className="px-4 py-2.5 text-muted">{u.nombre_unidad}</td>
+                                <td className="px-4 py-2.5 text-muted">{u.piso}</td>
+                                <td className="px-4 py-2.5 text-muted">{TIPO_INFO[u.tipo_unidad]?.label ?? u.tipo_unidad}</td>
+                                <td className="px-4 py-2.5 text-right font-mono text-muted">S/ {Number(u.tarifa_alquiler_base).toFixed(2)}</td>
+                                <td className="px-4 py-2.5">
                                     <StatusBadge estado={u.estado} />
                                 </td>
-                                <td className="px-4 py-2 text-right">
+                                <td className="px-4 py-2.5 text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         {puede('unidades.editar') && (
                                             <IconButton icon={Pencil} label="Editar" variant="primary" onClick={() => abrirEditar(u)} />
@@ -334,7 +334,7 @@ export default function Index({ unidades, tipos, estadoFiltro, todosCodigos }) {
                         ))}
                         {unidades.data.length === 0 && (
                             <tr>
-                                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">
+                                <td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-2">
                                     Sin unidades en este filtro.
                                 </td>
                             </tr>

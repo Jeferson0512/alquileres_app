@@ -1,7 +1,11 @@
+import IconButton from '@/Components/IconButton';
+import Modal from '@/Components/Modal';
 import AdminLayout from '@/Layouts/AdminLayout';
 import formatDate from '@/lib/date';
+import { iniciales } from '@/lib/iniciales';
 import { Head, Link, router } from '@inertiajs/react';
-import { useMemo, useRef, useState } from 'react';
+import { Download, Eye, MessageCircle } from 'lucide-react';
+import { useRef, useState } from 'react';
 
 const DEBT_IGNORE_STORAGE_KEY = 'avisos.ignore.deudaAnterior.v1';
 
@@ -342,9 +346,10 @@ async function generateAvisoPng(row, config, periodo, saldoTotal, deudaAnterior,
 }
 
 export default function Index({ periodo, periodos, cobros, config, vencimientosContrato }) {
-    const [selectedCobroId, setSelectedCobroId] = useState(cobros[0]?.id_cobro ?? null);
     const [ignoredDebt, setIgnoredDebt] = useState(() => loadIgnoredDebtMap());
     const [toast, setToastMsg] = useState(null);
+    const [previewRow, setPreviewRow] = useState(null);
+    const [mostrarVencimientos, setMostrarVencimientos] = useState(false);
     const toastTimer = useRef(null);
 
     const showToast = (msg) => {
@@ -352,11 +357,6 @@ export default function Index({ periodo, periodos, cobros, config, vencimientosC
         clearTimeout(toastTimer.current);
         toastTimer.current = setTimeout(() => setToastMsg(null), 3000);
     };
-
-    const selected = useMemo(
-        () => cobros.find((r) => r.id_cobro === selectedCobroId) || cobros[0] || null,
-        [cobros, selectedCobroId],
-    );
 
     const cambiarPeriodo = (id) => router.get(route('avisos.index'), { periodo_id: id }, { preserveState: true });
 
@@ -407,9 +407,8 @@ export default function Index({ periodo, periodos, cobros, config, vencimientosC
         ].filter(Boolean).join('\n');
     };
 
-    const handleCopiar = async () => {
-        if (!selected) return;
-        const text = buildSummaryText(selected);
+    const handleCopiar = async (row) => {
+        const text = buildSummaryText(row);
         try {
             await navigator.clipboard.writeText(text);
             showToast('Resumen copiado al portapapeles');
@@ -418,14 +417,13 @@ export default function Index({ periodo, periodos, cobros, config, vencimientosC
         }
     };
 
-    const handleDescargar = async () => {
-        if (!selected) return;
+    const handleDescargar = async (row) => {
         try {
-            const blob = await generateAvisoPng(selected, config, periodo, saldoTotalPendiente(selected), deudaAnterior(selected), isPagadoCompleto(selected));
+            const blob = await generateAvisoPng(row, config, periodo, saldoTotalPendiente(row), deudaAnterior(row), isPagadoCompleto(row));
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = buildAvisoFilename(selected, periodo);
+            link.download = buildAvisoFilename(row, periodo);
             link.click();
             URL.revokeObjectURL(url);
         } catch (error) {
@@ -433,22 +431,21 @@ export default function Index({ periodo, periodos, cobros, config, vencimientosC
         }
     };
 
-    const handleCompartir = async () => {
-        if (!selected) return;
-        const text = buildSummaryText(selected);
-        const consumoPeriodoUnidad = Number(selected?.consumo_periodo_unidad ?? selected?.consumo_kwh ?? 0);
+    const handleCompartir = async (row) => {
+        const text = buildSummaryText(row);
+        const consumoPeriodoUnidad = Number(row?.consumo_periodo_unidad ?? row?.consumo_kwh ?? 0);
         const isLowConsumo = consumoPeriodoUnidad < getAvisoMinimoKwh(config);
         try {
             if (!isLowConsumo) {
-                const blob = await generateAvisoPng(selected, config, periodo, saldoTotalPendiente(selected), deudaAnterior(selected), isPagadoCompleto(selected));
-                const file = new File([blob], buildAvisoFilename(selected, periodo), { type: 'image/png' });
+                const blob = await generateAvisoPng(row, config, periodo, saldoTotalPendiente(row), deudaAnterior(row), isPagadoCompleto(row));
+                const file = new File([blob], buildAvisoFilename(row, periodo), { type: 'image/png' });
                 if (navigator.canShare?.({ files: [file] })) {
-                    await navigator.share({ title: `Cobro ${selected.codigo_unidad}`, text, files: [file] });
+                    await navigator.share({ title: `Cobro ${row.codigo_unidad}`, text, files: [file] });
                     return;
                 }
             }
             if (navigator.share) {
-                await navigator.share({ title: `Cobro ${selected.codigo_unidad}`, text });
+                await navigator.share({ title: `Cobro ${row.codigo_unidad}`, text });
                 return;
             }
             await navigator.clipboard.writeText(text);
@@ -458,92 +455,215 @@ export default function Index({ periodo, periodos, cobros, config, vencimientosC
         }
     };
 
+    const handleWhatsapp = (row) => {
+        if (!row.celular) return;
+        const text = buildSummaryText(row);
+        window.open(`https://wa.me/51${row.celular}?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+    };
+
     const avisoMinimoKwh = getAvisoMinimoKwh(config);
 
+    // 2 secciones por motivo real -- se descartó "consumo bajo el mínimo"
+    // como sección propia: es una nota contable interna (ya afecta el PNG
+    // vía isLowConsumo), no algo que amerite mandarle un WhatsApp aparte al
+    // inquilino. deuda_anterior y vencimientosContrato sí son motivos reales
+    // de contacto -- el segundo, aunque recae en visitar la unidad en
+    // persona más que en cobrar, se mantiene igual como recordatorio.
+    const grupoDeuda = cobros.filter((row) => deudaAnterior(row) > 0);
+    const grupoVencimiento = vencimientosContrato
+        .map((aviso) => ({ aviso, row: cobros.find((c) => c.id_unidad === aviso.id_unidad) }))
+        .filter((x) => x.row);
+
+    const detalleDeuda = (row) => {
+        const deuda = deudaAnterior(row);
+        const saldoPeriodo = getSaldoPendiente(row);
+        if (saldoPeriodo <= 0.009) {
+            return `Este período está pagado, pero arrastra ${money(deuda)} de períodos anteriores sin cancelar.`;
+        }
+        return `Arrastra ${money(deuda)} de períodos anteriores y suma ${money(saldoPeriodo)} de este período — total pendiente ${money(deuda + saldoPeriodo)}.`;
+    };
+    const detalleVencimiento = (aviso) => (
+        aviso.dias_restantes < 0
+            ? `Contrato venció hace ${Math.abs(aviso.dias_restantes)} día(s) — sin renovación registrada todavía.`
+            : `Contrato vence en ${aviso.dias_restantes} día(s) (${formatDate(aviso.fecha_vencimiento)}) — sin renovación registrada todavía.`
+    );
+    // Card genérica para "Todos los cobros" -- sin motivo puntual, solo
+    // el estado real de la plata de este período para poder ubicarlo.
+    const detalleGeneral = (row) => {
+        if (isPagadoCompleto(row)) {
+            return `Período pagado. Total: ${money(Math.max(getPagadoTotal(row), Number(row.total_cobrar || 0)))}.`;
+        }
+        return `Pendiente del período: ${money(saldoTotalPendiente(row))}${row.fecha_vencimiento ? ` · vence ${formatDate(row.fecha_vencimiento)}` : ''}.`;
+    };
+
+    const totalAvisos = grupoDeuda.length + grupoVencimiento.length;
+
     return (
-        <AdminLayout title="Avisos de cobro">
+        <AdminLayout
+            title="Avisos de cobro"
+            description={`${totalAvisos} aviso${totalAvisos === 1 ? '' : 's'} que necesitan tu atención, agrupados por motivo`}
+            periodo={periodo}
+            periodos={periodos}
+            onPeriodoChange={cambiarPeriodo}
+            actions={(
+                <div className="flex items-center gap-3">
+                    {grupoVencimiento.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setMostrarVencimientos((v) => !v)}
+                            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted hover:bg-surface-2"
+                        >
+                            {mostrarVencimientos ? 'Ocultar' : 'Ver'} contratos por vencer ({grupoVencimiento.length})
+                        </button>
+                    )}
+                    <Link href={route('config-cobranza.index')} className="text-sm font-medium text-primary hover:text-primary-dark">
+                        Configuración de cobranza
+                    </Link>
+                </div>
+            )}
+        >
             <Head title="Avisos" />
 
             {toast && (
-                <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-gray-900 px-4 py-2 text-sm text-white shadow-lg">{toast}</div>
+                <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-ink px-4 py-2 text-sm text-white shadow-lg">{toast}</div>
             )}
 
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <select value={periodo.id_periodo} onChange={(e) => cambiarPeriodo(e.target.value)} className="rounded-lg border-gray-300 text-sm">
-                    {periodos.map((p) => <option key={p.id_periodo} value={p.id_periodo}>{p.mes}/{p.anio} ({p.estado})</option>)}
-                </select>
-                <Link href={route('config-cobranza.index')} className="text-sm font-medium text-primary hover:text-primary-dark">
-                    Configuración de cobranza
-                </Link>
-            </div>
-
-            {vencimientosContrato.length > 0 && (
-                <div className="mb-4 space-y-2">
-                    {vencimientosContrato.map((aviso) => (
-                        <div key={aviso.id_referencia} className={`rounded-lg px-4 py-2 text-sm ${aviso.nivel !== 'PROXIMO' ? 'bg-red-50 text-danger' : 'bg-amber-50 text-warning'}`}>
-                            <strong>{aviso.nivel === 'VENCIDO' ? 'Vencido' : aviso.nivel === 'URGENTE' ? 'Urgente' : 'Próximo a vencer'}:</strong> {aviso.mensaje}
-                        </div>
-                    ))}
+            {cobros.length === 0 ? (
+                <div className="mb-5 rounded-[13px] border border-border bg-surface p-6 text-center text-sm text-muted-2 shadow-sm">
+                    No hay cobros generados para este periodo.
                 </div>
-            )}
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[380px_1fr]">
-                <div className="rounded-lg border border-gray-200 bg-white">
-                    <div className="border-b border-gray-100 px-4 py-3">
-                        <h4 className="text-sm font-semibold text-gray-800">Cobros del periodo</h4>
-                        <p className="text-xs text-gray-500">Selecciona uno para generar el aviso</p>
-                    </div>
-                    {cobros.length === 0 ? (
-                        <div className="p-4 text-sm text-gray-400">No hay cobros generados para este periodo.</div>
-                    ) : (
-                        <div className="max-h-[70vh] divide-y divide-gray-100 overflow-y-auto">
-                            {cobros.map((row) => {
-                                const isPaid = isPagadoCompleto(row);
-                                const active = row.id_cobro === selected?.id_cobro;
-                                return (
-                                    <button
-                                        key={row.id_cobro}
-                                        onClick={() => setSelectedCobroId(row.id_cobro)}
-                                        className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-gray-50 ${active ? 'bg-primary-light/40' : ''} ${isPaid ? 'opacity-60' : ''}`}
-                                    >
-                                        <div>
-                                            <strong className="block text-gray-800">{row.codigo_unidad}</strong>
-                                            <span className="text-xs text-gray-500">{formatTenantDisplayName(row)}</span>
-                                        </div>
-                                        <div className="text-right">
-                                            <small className="block text-xs text-gray-400">{row.fecha_vencimiento ? formatDate(row.fecha_vencimiento) : 'Sin vencimiento'}</small>
-                                            <strong className="text-primary">{money(saldoTotalPendiente(row))}</strong>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-
-                <div>
-                    {!selected ? (
-                        <div className="rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-400">No hay cobros generados para este periodo.</div>
-                    ) : (
-                        <AvisoPreview
-                            row={selected}
-                            config={config}
-                            periodo={periodo}
-                            avisoMinimoKwh={avisoMinimoKwh}
-                            deudaAnteriorReal={deudaAnteriorReal(selected)}
-                            deudaAnterior={deudaAnterior(selected)}
-                            saldoTotal={saldoTotalPendiente(selected)}
-                            isPaid={isPagadoCompleto(selected)}
-                            isDebtIgnored={isDebtIgnored(selected)}
-                            onToggleDebt={() => toggleDebtIgnored(selected)}
-                            onCopiar={handleCopiar}
-                            onDescargar={handleDescargar}
-                            onCompartir={handleCompartir}
+            ) : (
+                <AvisoSection titulo="Todos los cobros del periodo" tono="muted" count={cobros.length}>
+                    {cobros.map((row) => (
+                        <AvisoCard
+                            key={`general-${row.id_cobro}`}
+                            row={row}
+                            detail={detalleGeneral(row)}
+                            tono="muted"
+                            onOpenPreview={() => setPreviewRow(row)}
+                            onWhatsapp={() => handleWhatsapp(row)}
+                            onDescargar={() => handleDescargar(row)}
                         />
-                    )}
-                </div>
-            </div>
+                    ))}
+                </AvisoSection>
+            )}
+
+            <AvisoSection titulo="Deuda anterior" tono="danger" count={grupoDeuda.length}>
+                {grupoDeuda.map((row) => (
+                    <AvisoCard
+                        key={`deuda-${row.id_cobro}`}
+                        row={row}
+                        detail={detalleDeuda(row)}
+                        tono="danger"
+                        onOpenPreview={() => setPreviewRow(row)}
+                        onWhatsapp={() => handleWhatsapp(row)}
+                        onDescargar={() => handleDescargar(row)}
+                    />
+                ))}
+            </AvisoSection>
+
+            {mostrarVencimientos && (
+                <AvisoSection titulo="Contratos por vencer" tono="warning" count={grupoVencimiento.length}>
+                    {grupoVencimiento.map(({ aviso, row }) => (
+                        <AvisoCard
+                            key={`vencimiento-${aviso.id_referencia}`}
+                            row={row}
+                            detail={detalleVencimiento(aviso)}
+                            tono={aviso.nivel === 'VENCIDO' || aviso.nivel === 'URGENTE' ? 'danger' : 'warning'}
+                            onOpenPreview={() => setPreviewRow(row)}
+                            onWhatsapp={() => handleWhatsapp(row)}
+                            onDescargar={() => handleDescargar(row)}
+                        />
+                    ))}
+                </AvisoSection>
+            )}
+
+            <Modal show={previewRow !== null} onClose={() => setPreviewRow(null)} maxWidth="lg">
+                {previewRow && (
+                    <AvisoPreview
+                        row={previewRow}
+                        config={config}
+                        periodo={periodo}
+                        avisoMinimoKwh={avisoMinimoKwh}
+                        deudaAnteriorReal={deudaAnteriorReal(previewRow)}
+                        deudaAnterior={deudaAnterior(previewRow)}
+                        saldoTotal={saldoTotalPendiente(previewRow)}
+                        isPaid={isPagadoCompleto(previewRow)}
+                        isDebtIgnored={isDebtIgnored(previewRow)}
+                        onToggleDebt={() => toggleDebtIgnored(previewRow)}
+                        onCopiar={() => handleCopiar(previewRow)}
+                        onDescargar={() => handleDescargar(previewRow)}
+                        onCompartir={() => handleCompartir(previewRow)}
+                    />
+                )}
+            </Modal>
         </AdminLayout>
+    );
+}
+
+const PILL_TONOS = {
+    danger: 'bg-danger-tint text-danger',
+    warning: 'bg-warning-tint text-warning',
+    muted: 'bg-surface-3 text-muted',
+};
+
+function AvisoSection({ titulo, tono, count, children }) {
+    if (count === 0) return null;
+    const pillClasses = PILL_TONOS[tono] ?? PILL_TONOS.muted;
+
+    return (
+        <div className="mb-5">
+            <div className="mb-2.5 flex items-center gap-2">
+                <h3 className="text-[0.86rem] font-extrabold text-ink">{titulo}</h3>
+                <span className={`rounded-full px-2.5 py-0.5 text-[0.7rem] font-extrabold ${pillClasses}`}>{count}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+                {children}
+            </div>
+        </div>
+    );
+}
+
+const ACCENT_TONOS = {
+    danger: 'border-t-danger',
+    warning: 'border-t-warning',
+    muted: 'border-t-border',
+};
+
+function AvisoCard({ row, detail, tono = 'warning', onOpenPreview, onWhatsapp, onDescargar }) {
+    const tenantName = formatTenantDisplayName(row);
+    const accentClass = ACCENT_TONOS[tono] ?? ACCENT_TONOS.warning;
+
+    return (
+        <div className={`flex flex-col gap-2.5 rounded-[13px] border border-t-[3px] border-border bg-surface p-4 shadow-sm ${accentClass}`}>
+            <button type="button" onClick={onOpenPreview} className="flex items-start gap-2.5 text-left">
+                <span className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] bg-surface-3 text-[0.74rem] font-extrabold text-muted">
+                    {iniciales(tenantName)}
+                </span>
+                <span className="min-w-0">
+                    <span className="block truncate text-[0.82rem] font-bold text-ink">{tenantName}</span>
+                    <span className="block text-[0.7rem] text-muted-2">Unidad {row.codigo_unidad}</span>
+                </span>
+            </button>
+
+            <p className="flex-1 text-[0.76rem] leading-relaxed text-muted">{detail}</p>
+
+            <div className="flex items-center gap-1.5">
+                {row.celular ? (
+                    <button
+                        type="button"
+                        onClick={onWhatsapp}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#22C35E] px-2 py-2 text-xs font-semibold text-white hover:opacity-90"
+                    >
+                        <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                    </button>
+                ) : (
+                    <span className="flex flex-1 items-center justify-center rounded-lg bg-surface-2 px-2 py-2 text-xs text-muted-2">Sin celular</span>
+                )}
+                <IconButton icon={Eye} label="Ver vista previa" onClick={onOpenPreview} />
+                <IconButton icon={Download} label="Descargar PNG" onClick={onDescargar} />
+            </div>
+        </div>
     );
 }
 
@@ -561,28 +681,28 @@ function AvisoPreview({ row, config, periodo, avisoMinimoKwh, deudaAnteriorReal,
     const totalPrincipal = isPaid ? Math.max(pagado, Number(row.total_cobrar || 0)) : (hasDeudaAnterior ? saldoTotal : saldoPeriodo);
 
     return (
-        <section className={`rounded-lg border border-gray-200 bg-white p-4 ${isPaid ? 'ring-1 ring-success' : ''}`}>
+        <section className={`rounded-[13px] border border-border bg-surface p-4 shadow-sm ${isPaid ? 'ring-1 ring-success' : ''}`}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h4 className="text-sm font-semibold text-gray-800">Vista previa</h4>
+                <h4 className="text-sm font-bold text-ink">Vista previa</h4>
                 <div className="flex flex-wrap gap-2">
                     {(deudaAnteriorReal > 0) && (
-                        <button onClick={onToggleDebt} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">
+                        <button onClick={onToggleDebt} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface-2">
                             {isDebtIgnored ? 'Reactivar deuda anterior' : 'Cancelar deuda anterior'}
                         </button>
                     )}
-                    <button onClick={onCopiar} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">Copiar resumen</button>
-                    <button onClick={onDescargar} className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50">Descargar PNG</button>
+                    <button onClick={onCopiar} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface-2">Copiar resumen</button>
+                    <button onClick={onDescargar} className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface-2">Descargar PNG</button>
                     <button onClick={onCompartir} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-dark">Compartir</button>
                 </div>
             </div>
 
             {isLowConsumo && (
-                <div className="mb-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-warning">
+                <div className="mb-3 rounded-lg bg-warning-tint px-3 py-2 text-xs text-warning">
                     En el PNG este consumo se mostrará como 0 kWh (menor a {avisoMinimoKwh} kWh).
                 </div>
             )}
 
-            <div className={`rounded-xl p-5 text-white ${isPaid ? 'bg-gradient-to-br from-green-800 to-success' : 'bg-gradient-to-br from-surface-dark to-primary-dark'}`}>
+            <div className={`rounded-[13px] p-5 text-white ${isPaid ? 'bg-gradient-to-br from-green-800 to-success' : 'bg-gradient-to-br from-ink to-primary-dark'}`}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <p className="text-xs uppercase tracking-wide text-white/70">Resumen de pago</p>
@@ -603,42 +723,42 @@ function AvisoPreview({ row, config, periodo, avisoMinimoKwh, deudaAnteriorReal,
                     </div>
                 )}
 
-                <div className="mt-4 grid grid-cols-1 gap-4 rounded-lg bg-white p-4 text-gray-800 sm:grid-cols-2">
+                <div className="mt-4 grid grid-cols-1 gap-4 rounded-lg bg-surface p-4 text-ink sm:grid-cols-2">
                     <div className="space-y-1.5 text-sm">
-                        <h5 className="mb-1 text-xs font-semibold uppercase text-gray-500">Detalle</h5>
-                        <div className="flex justify-between"><span className="text-gray-500">Alquiler</span><strong>{money(row.monto_alquiler)}</strong></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Luz</span><strong>{money(montoLuzFinal)}</strong></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Agua</span><strong>{money(row.monto_agua)}</strong></div>
-                        {Number(row.monto_gas || 0) > 0 && <div className="flex justify-between"><span className="text-gray-500">Gas</span><strong>{money(row.monto_gas)}</strong></div>}
-                        {otros > 0 && <div className="flex justify-between"><span className="text-gray-500">Otros conceptos</span><strong>{money(otros)}</strong></div>}
-                        {pagado > 0 && <div className="flex justify-between font-medium"><span className="text-gray-500">Pagado acumulado</span><strong>{money(pagado)}</strong></div>}
-                        <div className="flex justify-between border-t border-gray-100 pt-1.5 font-semibold"><span>{isPaid ? 'Estado del periodo' : 'Saldo del periodo'}</span><strong>{isPaid ? 'Cancelado' : money(saldoPeriodo)}</strong></div>
+                        <h5 className="mb-1 text-xs font-bold uppercase tracking-wide text-muted-2">Detalle</h5>
+                        <div className="flex justify-between"><span className="text-muted">Alquiler</span><strong className="font-mono">{money(row.monto_alquiler)}</strong></div>
+                        <div className="flex justify-between"><span className="text-muted">Luz</span><strong className="font-mono">{money(montoLuzFinal)}</strong></div>
+                        <div className="flex justify-between"><span className="text-muted">Agua</span><strong className="font-mono">{money(row.monto_agua)}</strong></div>
+                        {Number(row.monto_gas || 0) > 0 && <div className="flex justify-between"><span className="text-muted">Gas</span><strong className="font-mono">{money(row.monto_gas)}</strong></div>}
+                        {otros > 0 && <div className="flex justify-between"><span className="text-muted">Otros conceptos</span><strong className="font-mono">{money(otros)}</strong></div>}
+                        {pagado > 0 && <div className="flex justify-between font-medium"><span className="text-muted">Pagado acumulado</span><strong className="font-mono">{money(pagado)}</strong></div>}
+                        <div className="flex justify-between border-t border-border pt-1.5 font-semibold"><span>{isPaid ? 'Estado del periodo' : 'Saldo del periodo'}</span><strong className="font-mono">{isPaid ? 'Cancelado' : money(saldoPeriodo)}</strong></div>
                     </div>
-                    <div className="flex flex-col items-center justify-center gap-1 rounded-lg bg-surface p-4 text-center">
-                        <strong className="text-3xl text-gray-800">{number(row.consumo_kwh ?? 0, 2)}</strong>
-                        <span className="text-xs text-gray-500">kWh del periodo</span>
+                    <div className="flex flex-col items-center justify-center gap-1 rounded-lg bg-surface-2 p-4 text-center">
+                        <strong className="font-mono text-3xl text-ink">{number(row.consumo_kwh ?? 0, 2)}</strong>
+                        <span className="text-xs text-muted">kWh del periodo</span>
                     </div>
                 </div>
 
                 {!isPaid ? (
                     <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div className="rounded-lg bg-white p-3 text-gray-800">
+                        <div className="rounded-lg bg-surface p-3 text-ink">
                             <p className="text-xs font-semibold text-success">Yape</p>
                             <strong>{config.yape_titular || 'Pendiente configurar'}</strong>
-                            <p className="text-sm text-gray-500">{config.yape_numero || 'Sin numero configurado'}</p>
+                            <p className="text-sm text-muted">{config.yape_numero || 'Sin numero configurado'}</p>
                         </div>
-                        <div className="rounded-lg bg-white p-3 text-gray-800">
-                            <p className="text-xs font-semibold text-gray-600">Transferencia</p>
+                        <div className="rounded-lg bg-surface p-3 text-ink">
+                            <p className="text-xs font-semibold text-muted">Transferencia</p>
                             <strong>{config.banco_nombre || 'Banco pendiente'}</strong>
-                            <p className="text-sm text-gray-500">Titular: {config.banco_titular || 'Sin titular'}</p>
-                            <p className="text-sm text-gray-500">Cuenta: {config.banco_cuenta || 'Sin cuenta'}</p>
-                            <p className="text-sm text-gray-500">CCI: {config.banco_cci || 'Sin CCI'}</p>
+                            <p className="text-sm text-muted">Titular: {config.banco_titular || 'Sin titular'}</p>
+                            <p className="text-sm text-muted">Cuenta: {config.banco_cuenta || 'Sin cuenta'}</p>
+                            <p className="text-sm text-muted">CCI: {config.banco_cci || 'Sin CCI'}</p>
                         </div>
                     </div>
                 ) : (
-                    <div className="mt-4 rounded-lg bg-white p-3 text-gray-800">
+                    <div className="mt-4 rounded-lg bg-surface p-3 text-ink">
                         <strong className="text-success">Pago confirmado</strong>
-                        <p className="text-sm text-gray-500">Este cobro ya fue cancelado. No se muestran medios de pago porque ya no existe deuda activa.</p>
+                        <p className="text-sm text-muted">Este cobro ya fue cancelado. No se muestran medios de pago porque ya no existe deuda activa.</p>
                     </div>
                 )}
 

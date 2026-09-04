@@ -392,7 +392,7 @@ class CobroService
             ->orderBy('u.codigo_unidad')
             ->get([
                 'c.id_cobro', 'c.id_persona', 'c.id_unidad', 'c.id_ocupacion', 'u.codigo_unidad', 'u.nombre_unidad',
-                'p.nombres', 'p.apellidos',
+                'p.nombres', 'p.apellidos', 'p.celular',
                 DB::raw("CONCAT(p.nombres, ' ', p.apellidos) as inquilino"),
                 // Snapshot propio del cobro, no un join a la liquidacion --
                 // con mas de un tramo por unidad, matchear liquidacion por

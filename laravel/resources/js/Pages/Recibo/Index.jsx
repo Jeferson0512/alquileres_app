@@ -80,7 +80,7 @@ function ReciboForm({ periodo, periodos, recibo, tieneAnterior }) {
                 value={data[key]}
                 disabled={!editable}
                 onChange={(e) => setData(key, parseFloat(e.target.value) || 0)}
-                className="mt-1 block w-full disabled:bg-gray-50"
+                className="mt-1 block w-full disabled:bg-surface-2"
             />
             <InputError className="mt-1" message={errors[key]} />
         </div>
@@ -110,41 +110,41 @@ function ReciboForm({ periodo, periodos, recibo, tieneAnterior }) {
             <Head title="Recibo de luz" />
 
             {errors?.general && (
-                <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-danger">{errors.general}</div>
+                <div className="mb-4 rounded-lg bg-danger-tint px-4 py-3 text-sm text-danger">{errors.general}</div>
             )}
 
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary-dark bg-gradient-to-br from-primary-dark to-primary p-5 text-white">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-[13px] border border-primary-dark bg-gradient-to-br from-primary-dark to-primary p-5 text-white shadow-sm">
                 <div>
                     <p className="text-xs uppercase tracking-wide text-white/70">Total del recibo</p>
-                    <p className="mt-1 text-3xl font-bold">{money(data.total_recibo)}</p>
+                    <p className="mt-1 font-mono text-3xl font-bold">{money(data.total_recibo)}</p>
                 </div>
                 <span className="rounded-full bg-white/15 px-3 py-1 font-mono text-xs font-semibold">{recibo.numero_recibo}</span>
             </div>
 
-            <div className="mb-6 flex flex-wrap items-center gap-2 overflow-x-auto rounded-lg border border-gray-200 bg-white p-3 text-xs">
-                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">Lect. anterior {Number(data.lectura_anterior_general).toFixed(1)}</span>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
-                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">Lect. actual {Number(data.lectura_actual_general).toFixed(1)}</span>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
-                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">{consumoKwh.toFixed(1)} kWh × S/ {Number(data.precio_kwh).toFixed(4)}</span>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
-                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">+ cargos fijos</span>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
-                <span className="shrink-0 rounded-md bg-surface px-2.5 py-1.5 font-medium text-gray-600">+ IGV 18%</span>
-                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-gray-300" />
-                <span className="shrink-0 rounded-md bg-primary-light px-2.5 py-1.5 font-bold text-primary-dark">{money(data.total_recibo)}</span>
+            <div className="mb-6 flex flex-wrap items-center gap-2 overflow-x-auto rounded-[13px] border border-border bg-surface p-3 text-xs shadow-sm">
+                <span className="shrink-0 rounded-md bg-surface-2 px-2.5 py-1.5 font-mono font-medium text-muted">Lect. anterior {Number(data.lectura_anterior_general).toFixed(1)}</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-2" />
+                <span className="shrink-0 rounded-md bg-surface-2 px-2.5 py-1.5 font-mono font-medium text-muted">Lect. actual {Number(data.lectura_actual_general).toFixed(1)}</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-2" />
+                <span className="shrink-0 rounded-md bg-surface-2 px-2.5 py-1.5 font-mono font-medium text-muted">{consumoKwh.toFixed(1)} kWh × S/ {Number(data.precio_kwh).toFixed(4)}</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-2" />
+                <span className="shrink-0 rounded-md bg-surface-2 px-2.5 py-1.5 font-medium text-muted">+ cargos fijos</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-2" />
+                <span className="shrink-0 rounded-md bg-surface-2 px-2.5 py-1.5 font-medium text-muted">+ IGV 18%</span>
+                <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-2" />
+                <span className="shrink-0 rounded-md bg-primary-light px-2.5 py-1.5 font-mono font-bold text-primary-dark">{money(data.total_recibo)}</span>
             </div>
 
             <form id="recibo-form" onSubmit={submit} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <div className="rounded-lg border border-gray-200 bg-white p-5">
+                <div className="rounded-[13px] border border-border bg-surface p-5 shadow-sm">
                     <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-gray-800">Datos del recibo</h3>
-                        <span className="text-xs text-gray-400">se recalcula al tipear</span>
+                        <h3 className="text-sm font-bold text-ink">Datos del recibo</h3>
+                        <span className="text-xs text-muted-2">se recalcula al tipear</span>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="col-span-2">
                             <InputLabel htmlFor="numero_suministro" value="Nº suministro" />
-                            <TextInput id="numero_suministro" value={data.numero_suministro} disabled={!editable} onChange={(e) => setData('numero_suministro', e.target.value)} className="mt-1 block w-full disabled:bg-gray-50" />
+                            <TextInput id="numero_suministro" value={data.numero_suministro} disabled={!editable} onChange={(e) => setData('numero_suministro', e.target.value)} className="mt-1 block w-full disabled:bg-surface-2" />
                             <InputError className="mt-1" message={errors.numero_suministro} />
                         </div>
                         {campo('precio_kwh', 'Precio kWh', '0.0001')}
@@ -158,37 +158,37 @@ function ReciboForm({ periodo, periodos, recibo, tieneAnterior }) {
                         {campo('ajuste_redondeo_actual', 'Ajuste redondeo actual')}
                         <div>
                             <InputLabel htmlFor="fecha_emision" value="Fecha emisión" />
-                            <TextInput id="fecha_emision" type="date" value={data.fecha_emision ?? ''} disabled={!editable} onChange={(e) => setData('fecha_emision', e.target.value)} className="mt-1 block w-full disabled:bg-gray-50" />
+                            <TextInput id="fecha_emision" type="date" value={data.fecha_emision ?? ''} disabled={!editable} onChange={(e) => setData('fecha_emision', e.target.value)} className="mt-1 block w-full disabled:bg-surface-2" />
                         </div>
                         <div>
                             <InputLabel htmlFor="fecha_vencimiento" value="Fecha vencimiento" />
-                            <TextInput id="fecha_vencimiento" type="date" value={data.fecha_vencimiento ?? ''} disabled={!editable} onChange={(e) => setData('fecha_vencimiento', e.target.value)} className="mt-1 block w-full disabled:bg-gray-50" />
+                            <TextInput id="fecha_vencimiento" type="date" value={data.fecha_vencimiento ?? ''} disabled={!editable} onChange={(e) => setData('fecha_vencimiento', e.target.value)} className="mt-1 block w-full disabled:bg-surface-2" />
                         </div>
                         <div className="col-span-2">
                             <InputLabel htmlFor="observacion" value="Observación" />
-                            <TextInput id="observacion" value={data.observacion ?? ''} disabled={!editable} onChange={(e) => setData('observacion', e.target.value)} className="mt-1 block w-full disabled:bg-gray-50" />
+                            <TextInput id="observacion" value={data.observacion ?? ''} disabled={!editable} onChange={(e) => setData('observacion', e.target.value)} className="mt-1 block w-full disabled:bg-surface-2" />
                         </div>
                     </div>
                 </div>
 
-                <div className="rounded-lg border border-gray-200 bg-white p-5">
-                    <h3 className="mb-4 text-sm font-semibold text-gray-800">Desglose calculado</h3>
+                <div className="rounded-[13px] border border-border bg-surface p-5 shadow-sm">
+                    <h3 className="mb-4 text-sm font-bold text-ink">Desglose calculado</h3>
                     <div className="space-y-2 text-sm">
-                        <div className="flex justify-between"><span className="text-gray-500">Consumo ({consumoKwh.toFixed(1)} kWh)</span><span className="font-medium text-gray-700">{money(data.consumo_energia)}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Cargo fijo</span><span className="font-medium text-gray-700">{money(data.cargo_fijo)}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Mant. y reposición</span><span className="font-medium text-gray-700">{money(data.mant_reposicion)}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Alumbrado público</span><span className="font-medium text-gray-700">{money(data.alumbrado_publico)}</span></div>
-                        <div className="flex justify-between border-t border-gray-100 pt-2"><span className="text-gray-500">Subtotal</span><span className="font-medium text-gray-700">{money(data.subtotal)}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">IGV (18%)</span><span className="font-medium text-gray-700">{money(data.igv)}</span></div>
-                        <div className="flex justify-between"><span className="text-gray-500">Electrificación rural</span><span className="font-medium text-gray-700">{money(data.electrificacion_rural)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted">Consumo ({consumoKwh.toFixed(1)} kWh)</span><span className="font-mono font-medium text-ink">{money(data.consumo_energia)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted">Cargo fijo</span><span className="font-mono font-medium text-ink">{money(data.cargo_fijo)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted">Mant. y reposición</span><span className="font-mono font-medium text-ink">{money(data.mant_reposicion)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted">Alumbrado público</span><span className="font-mono font-medium text-ink">{money(data.alumbrado_publico)}</span></div>
+                        <div className="flex justify-between border-t border-border pt-2"><span className="text-muted">Subtotal</span><span className="font-mono font-medium text-ink">{money(data.subtotal)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted">IGV (18%)</span><span className="font-mono font-medium text-ink">{money(data.igv)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted">Electrificación rural</span><span className="font-mono font-medium text-ink">{money(data.electrificacion_rural)}</span></div>
                         {(Number(data.ajuste_redondeo_anterior) !== 0 || Number(data.ajuste_redondeo_actual) !== 0) && (
-                            <div className="flex justify-between"><span className="text-gray-500">Ajustes de redondeo</span><span className="font-medium text-gray-700">{money(Number(data.ajuste_redondeo_anterior) + Number(data.ajuste_redondeo_actual))}</span></div>
+                            <div className="flex justify-between"><span className="text-muted">Ajustes de redondeo</span><span className="font-mono font-medium text-ink">{money(Number(data.ajuste_redondeo_anterior) + Number(data.ajuste_redondeo_actual))}</span></div>
                         )}
-                        <div className="flex justify-between border-t border-gray-200 pt-2 text-base font-bold text-gray-900"><span>Total del recibo</span><span>{money(data.total_recibo)}</span></div>
+                        <div className="flex justify-between border-t border-border pt-2 text-base font-bold text-ink"><span>Total del recibo</span><span className="font-mono">{money(data.total_recibo)}</span></div>
                     </div>
 
-                    <div className="mt-5 rounded-lg bg-surface p-3 text-xs text-gray-500">
-                        Este total se reparte entre las unidades según su consumo en <strong className="text-gray-700">Liquidación</strong> — acá solo se registra el recibo real de la eléctrica.
+                    <div className="mt-5 rounded-lg bg-surface-2 p-3 text-xs text-muted">
+                        Este total se reparte entre las unidades según su consumo en <strong className="text-ink">Liquidación</strong> — acá solo se registra el recibo real de la eléctrica.
                     </div>
                 </div>
             </form>

@@ -81,11 +81,11 @@ function PagoModal({ cobro, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-5 shadow-xl">
-                <h3 className="mb-3 text-base font-semibold text-gray-800">Registrar pago · {cobro.codigo_unidad}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
+            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-[13px] bg-surface p-5 shadow-xl">
+                <h3 className="mb-3 text-base font-bold text-ink">Registrar pago · {cobro.codigo_unidad}</h3>
 
-                <div className="mb-4 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
+                <div className="mb-4 rounded-lg bg-surface-2 p-3 text-xs text-muted">
                     <p><strong>Inquilino:</strong> {cobro.inquilino}</p>
                     <p><strong>Total cobro:</strong> S/ {Number(cobro.total_cobrar).toFixed(2)}</p>
                     <p><strong>Pendiente:</strong> S/ {Number(cobro.saldo_pendiente).toFixed(2)}</p>
@@ -94,16 +94,16 @@ function PagoModal({ cobro, onClose }) {
                 <form onSubmit={submit} className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500">Fecha de pago</label>
-                            <input type="date" value={data.fecha_pago} onChange={(e) => setData('fecha_pago', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                            <label className="block text-xs font-medium text-muted">Fecha de pago</label>
+                            <input type="date" value={data.fecha_pago} onChange={(e) => setData('fecha_pago', e.target.value)} className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink" />
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500">Monto pagado</label>
+                            <label className="block text-xs font-medium text-muted">Monto pagado</label>
                             <input
                                 type="number" step="0.01" value={data.monto_pagado}
                                 disabled={data.modo_aplicacion === 'MANUAL'}
                                 onChange={(e) => setData('monto_pagado', e.target.value)}
-                                className="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-100"
+                                className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink disabled:bg-surface-2"
                             />
                             {errors.monto_pagado && <p className="mt-1 text-xs text-danger">{errors.monto_pagado}</p>}
                         </div>
@@ -111,8 +111,8 @@ function PagoModal({ cobro, onClose }) {
 
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500">Método de pago</label>
-                            <select value={data.metodo_pago} onChange={(e) => setData('metodo_pago', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm">
+                            <label className="block text-xs font-medium text-muted">Método de pago</label>
+                            <select value={data.metodo_pago} onChange={(e) => setData('metodo_pago', e.target.value)} className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink">
                                 <option value="EFECTIVO">Efectivo</option>
                                 <option value="YAPE">Yape</option>
                                 <option value="PLIN">Plin</option>
@@ -122,41 +122,41 @@ function PagoModal({ cobro, onClose }) {
                         </div>
                         {data.metodo_pago !== 'EFECTIVO' && (
                             <div>
-                                <label className="block text-xs font-medium text-gray-500">Nº de operación</label>
-                                <input value={data.numero_operacion} onChange={(e) => setData('numero_operacion', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                                <label className="block text-xs font-medium text-muted">Nº de operación</label>
+                                <input value={data.numero_operacion} onChange={(e) => setData('numero_operacion', e.target.value)} className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink" />
                             </div>
                         )}
                     </div>
 
-                    <div className="space-y-2 rounded-lg border border-gray-100 p-3">
-                        <label className="block text-xs font-medium text-gray-500">Modo de pago</label>
-                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <div className="space-y-2 rounded-lg border border-border p-3">
+                        <label className="block text-xs font-medium text-muted">Modo de pago</label>
+                        <label className="flex items-center gap-2 text-sm text-ink">
                             <input type="radio" checked={data.modo_aplicacion === 'AUTOMATICA'} onChange={() => cambiarModo('AUTOMATICA')} />
                             Pagar completo / aplicar automático
                         </label>
-                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                        <label className="flex items-center gap-2 text-sm text-ink">
                             <input type="radio" checked={data.modo_aplicacion === 'MANUAL'} onChange={() => cambiarModo('MANUAL')} />
                             Pagar solo ciertos servicios
                         </label>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-muted-2">
                             El pago manual registra exactamente qué conceptos pagó el inquilino, guardando el detalle por concepto.
                         </p>
                     </div>
 
                     {data.modo_aplicacion === 'MANUAL' && (
                         <div className="space-y-2">
-                            <p className="text-xs font-medium text-gray-500">Selecciona conceptos a pagar</p>
-                            {conceptos === null && <p className="text-xs text-gray-400">Cargando conceptos...</p>}
-                            {conceptos?.length === 0 && <p className="text-xs text-gray-400">No hay conceptos con saldo pendiente que admitan pago directo.</p>}
+                            <p className="text-xs font-medium text-muted">Selecciona conceptos a pagar</p>
+                            {conceptos === null && <p className="text-xs text-muted-2">Cargando conceptos...</p>}
+                            {conceptos?.length === 0 && <p className="text-xs text-muted-2">No hay conceptos con saldo pendiente que admitan pago directo.</p>}
                             {conceptos?.map((c) => {
                                 const marcado = c.id_cobro_detalle in seleccion;
                                 return (
-                                    <div key={c.id_cobro_detalle} className="flex items-center justify-between gap-2 rounded-md border border-gray-100 p-2">
+                                    <div key={c.id_cobro_detalle} className="flex items-center justify-between gap-2 rounded-md border border-border p-2">
                                         <label className="flex flex-1 items-center gap-2 text-sm">
                                             <input type="checkbox" checked={marcado} onChange={(e) => toggleConcepto(c, e.target.checked)} />
                                             <span>
-                                                <span className="block font-medium text-gray-700">{c.nombre}</span>
-                                                <span className="block text-xs text-gray-400">Saldo: S/ {Number(c.saldo_pendiente).toFixed(2)}</span>
+                                                <span className="block font-medium text-ink">{c.nombre}</span>
+                                                <span className="block text-xs text-muted-2">Saldo: S/ {Number(c.saldo_pendiente).toFixed(2)}</span>
                                             </span>
                                         </label>
                                         <input
@@ -165,7 +165,7 @@ function PagoModal({ cobro, onClose }) {
                                             max={c.saldo_pendiente}
                                             value={marcado ? seleccion[c.id_cobro_detalle] : ''}
                                             onChange={(e) => cambiarMontoConcepto(c.id_cobro_detalle, e.target.value)}
-                                            className="w-24 rounded-md border-gray-300 text-sm disabled:bg-gray-100"
+                                            className="w-24 rounded-md border-border bg-surface text-sm text-ink disabled:bg-surface-2"
                                         />
                                     </div>
                                 );
@@ -178,13 +178,13 @@ function PagoModal({ cobro, onClose }) {
                     )}
 
                     <div>
-                        <label className="block text-xs font-medium text-gray-500">Observación</label>
-                        <textarea value={data.observacion} onChange={(e) => setData('observacion', e.target.value)} rows={2} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                        <label className="block text-xs font-medium text-muted">Observación</label>
+                        <textarea value={data.observacion} onChange={(e) => setData('observacion', e.target.value)} rows={2} className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink" />
                     </div>
                     {errors.general && <p className="text-xs text-danger">{errors.general}</p>}
                     <div className="flex gap-2 pt-2">
                         <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
-                        <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
+                        <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:bg-surface-2">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -208,36 +208,36 @@ function ServiciosModal({ cobro, periodoId, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl">
-                <h3 className="mb-3 text-base font-semibold text-gray-800">Ajustar servicios · {cobro.codigo_unidad}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
+            <div className="w-full max-w-sm rounded-[13px] bg-surface p-5 shadow-xl">
+                <h3 className="mb-3 text-base font-bold text-ink">Ajustar servicios · {cobro.codigo_unidad}</h3>
 
-                <p className="mb-4 rounded-lg bg-blue-50 px-3 py-2 text-xs text-primary">
+                <p className="mb-4 rounded-lg bg-primary-light px-3 py-2 text-xs text-primary-dark">
                     Estos montos se aplican por inquilino y reemplazan la tarifa general solo para este periodo. Después de guardar, usa "Forzar actualización" para que el cambio se refleje en la tabla de Cobros.
                 </p>
 
                 <form onSubmit={submit} className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs font-medium text-gray-500">Agua (S/)</label>
-                            <input type="number" step="0.01" value={data.agua} onChange={(e) => setData('agua', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                            <label className="block text-xs font-medium text-muted">Agua (S/)</label>
+                            <input type="number" step="0.01" value={data.agua} onChange={(e) => setData('agua', e.target.value)} className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink" />
                             {errors.agua && <p className="mt-1 text-xs text-danger">{errors.agua}</p>}
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-500">Gas (S/)</label>
-                            <input type="number" step="0.01" value={data.gas} onChange={(e) => setData('gas', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                            <label className="block text-xs font-medium text-muted">Gas (S/)</label>
+                            <input type="number" step="0.01" value={data.gas} onChange={(e) => setData('gas', e.target.value)} className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink" />
                             {errors.gas && <p className="mt-1 text-xs text-danger">{errors.gas}</p>}
                         </div>
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-500">Mantenimiento (S/)</label>
-                        <input type="number" step="0.01" value={data.mantenimiento} onChange={(e) => setData('mantenimiento', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
+                        <label className="block text-xs font-medium text-muted">Mantenimiento (S/)</label>
+                        <input type="number" step="0.01" value={data.mantenimiento} onChange={(e) => setData('mantenimiento', e.target.value)} className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink" />
                         {errors.mantenimiento && <p className="mt-1 text-xs text-danger">{errors.mantenimiento}</p>}
                     </div>
                     {errors.general && <p className="text-xs text-danger">{errors.general}</p>}
                     <div className="flex gap-2 pt-2">
                         <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
-                        <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
+                        <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:bg-surface-2">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -265,37 +265,37 @@ function DetalleModal({ cobro, onClose, puedeAnular }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-lg rounded-lg bg-white p-5 shadow-xl">
-                <h3 className="mb-4 text-base font-semibold text-gray-800">Detalle · {cobro.codigo_unidad} — {cobro.inquilino}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
+            <div className="w-full max-w-lg rounded-[13px] bg-surface p-5 shadow-xl">
+                <h3 className="mb-4 text-base font-bold text-ink">Detalle · {cobro.codigo_unidad} — {cobro.inquilino}</h3>
 
                 {detalle && (
                     <table className="mb-4 w-full text-sm">
-                        <thead><tr className="text-left text-xs text-gray-500"><th>Concepto</th><th className="text-right">Programado</th><th className="text-right">Pagado</th><th className="text-right">Saldo</th></tr></thead>
+                        <thead><tr className="text-left text-xs text-muted-2"><th>Concepto</th><th className="text-right">Programado</th><th className="text-right">Pagado</th><th className="text-right">Saldo</th></tr></thead>
                         <tbody>
                             {detalle.conceptos.map((c) => (
-                                <tr key={c.id_cobro_detalle} className="border-t border-gray-100">
-                                    <td className="py-1">{c.nombre}</td>
-                                    <td className="py-1 text-right">{Number(c.monto_programado).toFixed(2)}</td>
-                                    <td className="py-1 text-right">{Number(c.monto_pagado).toFixed(2)}</td>
-                                    <td className="py-1 text-right font-medium">{Number(c.saldo_pendiente).toFixed(2)}</td>
+                                <tr key={c.id_cobro_detalle} className="border-t border-border">
+                                    <td className="py-1 text-ink">{c.nombre}</td>
+                                    <td className="py-1 text-right font-mono text-muted">{Number(c.monto_programado).toFixed(2)}</td>
+                                    <td className="py-1 text-right font-mono text-muted">{Number(c.monto_pagado).toFixed(2)}</td>
+                                    <td className="py-1 text-right font-mono font-medium text-ink">{Number(c.saldo_pendiente).toFixed(2)}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 )}
 
-                <h4 className="mb-2 text-xs font-semibold uppercase text-gray-500">Pagos registrados</h4>
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-2">Pagos registrados</h4>
                 <div className="max-h-48 space-y-2 overflow-y-auto">
-                    {detalle && detalle.pagos.length === 0 && <p className="text-sm text-gray-400">Sin pagos registrados.</p>}
+                    {detalle && detalle.pagos.length === 0 && <p className="text-sm text-muted-2">Sin pagos registrados.</p>}
                     {detalle && detalle.pagos.map((p) => (
-                        <div key={p.id_pago} className="flex items-center justify-between rounded-md border border-gray-100 px-3 py-2 text-sm">
-                            <span>
-                                {p.numero_comprobante && <span className="font-mono text-xs text-gray-400">{p.numero_comprobante} · </span>}
+                        <div key={p.id_pago} className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm">
+                            <span className="text-ink">
+                                {p.numero_comprobante && <span className="font-mono text-xs text-muted-2">{p.numero_comprobante} · </span>}
                                 {formatDate(p.fecha_pago)} · S/ {Number(p.monto_pagado).toFixed(2)} · {p.metodo_pago}
                             </span>
                             <span className="flex items-center gap-2">
-                                <span className={`text-xs ${p.estado === 'REGISTRADO' ? 'text-success' : 'text-gray-400'}`}>{p.estado}</span>
+                                <span className={`text-xs ${p.estado === 'REGISTRADO' ? 'text-success' : 'text-muted-2'}`}>{p.estado}</span>
                                 {puedeAnular && p.estado === 'REGISTRADO' && (
                                     <IconButton icon={Ban} label="Anular pago" variant="danger" onClick={() => anular(p.id_pago)} />
                                 )}
@@ -305,7 +305,7 @@ function DetalleModal({ cobro, onClose, puedeAnular }) {
                 </div>
 
                 <div className="mt-4 flex justify-end">
-                    <button onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cerrar</button>
+                    <button onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:bg-surface-2">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -337,46 +337,48 @@ export default function Index({ periodo, periodos, cobros, carteraVencida }) {
     const totalCarteraVencida = carteraVencida.reduce((acc, c) => acc + Number(c.saldo_pendiente), 0);
 
     return (
-        <AdminLayout title="Cobros generados">
-            <Head title="Cobros" />
-
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex gap-2">
-                    <select value={periodo.id_periodo} onChange={(e) => cambiarPeriodo(e.target.value)} className="rounded-lg border-gray-300 text-sm">
-                        {periodos.map((p) => <option key={p.id_periodo} value={p.id_periodo}>{p.mes}/{p.anio} ({p.estado})</option>)}
-                    </select>
-                    <input type="search" placeholder="Buscar..." value={buscar} onChange={(e) => setBuscar(e.target.value)} className="rounded-lg border-gray-300 text-sm" />
-                </div>
+        <AdminLayout
+            title="Cobros generados"
+            periodo={periodo}
+            periodos={periodos}
+            onPeriodoChange={cambiarPeriodo}
+            actions={(
                 <div className="flex gap-2">
                     {puede('cobros.generar') && periodo.estado === 'ABIERTO' && (
-                        <button onClick={generar} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Generar cobros</button>
+                        <button onClick={generar} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:bg-surface-2">Generar cobros</button>
                     )}
                     {puede('cobros.forzar_actualizacion') && periodo.estado === 'ABIERTO' && (
-                        <button onClick={forzar} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Forzar actualización</button>
+                        <button onClick={forzar} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:bg-surface-2">Forzar actualización</button>
                     )}
                 </div>
+            )}
+        >
+            <Head title="Cobros" />
+
+            <div className="mb-4">
+                <input type="search" placeholder="Buscar por unidad o inquilino..." value={buscar} onChange={(e) => setBuscar(e.target.value)} className="w-full max-w-xs rounded-lg border-border bg-surface text-sm text-ink" />
             </div>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-[13px] border border-border bg-surface shadow-sm">
+                <table className="min-w-full divide-y divide-border text-sm">
+                    <thead className="bg-surface-2">
                         <tr>
-                            <th className="px-3 py-2 text-left font-medium text-gray-500">Unidad</th>
-                            <th className="px-3 py-2 text-left font-medium text-gray-500">Inquilino</th>
-                            <th className="px-3 py-2 text-right font-medium text-gray-500">Alquiler</th>
-                            <th className="px-3 py-2 text-right font-medium text-gray-500">Luz</th>
-                            <th className="px-3 py-2 text-right font-medium text-gray-500">Agua</th>
-                            <th className="px-3 py-2 text-right font-medium text-gray-500">Otros</th>
-                            <th className="px-3 py-2 text-right font-medium text-gray-500">Total</th>
-                            <th className="px-3 py-2 text-right font-medium text-gray-500">Saldo</th>
-                            <th className="px-3 py-2 text-left font-medium text-gray-500">Estado</th>
-                            <th className="px-3 py-2 text-right font-medium text-gray-500">Acciones</th>
+                            <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Unidad</th>
+                            <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Inquilino</th>
+                            <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Alquiler</th>
+                            <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Luz</th>
+                            <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Agua</th>
+                            <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Otros</th>
+                            <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Total</th>
+                            <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Saldo</th>
+                            <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Estado</th>
+                            <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                         {filtrados.map((c) => (
                             <tr key={c.id_cobro}>
-                                <td className="px-3 py-2 font-medium text-gray-800">
+                                <td className="px-3 py-2.5 font-semibold text-ink">
                                     <div className="flex items-center gap-1.5">
                                         {c.codigo_unidad}
                                         {c.traslado && (
@@ -390,20 +392,20 @@ export default function Index({ periodo, periodos, cobros, carteraVencida }) {
                                         )}
                                     </div>
                                     {c.tramo_parcial && (
-                                        <span className="mt-0.5 block text-[11px] font-normal text-gray-400" title="Este cobro cubre solo una parte del período (traslado o cambio de inquilino)">
+                                        <span className="mt-0.5 block text-[11px] font-normal text-muted-2" title="Este cobro cubre solo una parte del período (traslado o cambio de inquilino)">
                                             {fmtCorta(c.tramo_desde)}–{fmtCorta(c.tramo_hasta)} ({c.tramo_dias} d)
                                         </span>
                                     )}
                                 </td>
-                                <td className="px-3 py-2 text-gray-500">{c.inquilino}</td>
-                                <td className="px-3 py-2 text-right text-gray-500">{Number(c.monto_alquiler).toFixed(2)}</td>
-                                <td className="px-3 py-2 text-right text-gray-500">{(Number(c.monto_luz) + Number(c.ajuste_minimo_luz)).toFixed(2)}</td>
-                                <td className="px-3 py-2 text-right text-gray-500">{Number(c.monto_agua).toFixed(2)}</td>
-                                <td className="px-3 py-2 text-right text-gray-500">{(Number(c.monto_gas) + Number(c.otros_conceptos)).toFixed(2)}</td>
-                                <td className="px-3 py-2 text-right font-semibold text-gray-800">{Number(c.total_cobrar).toFixed(2)}</td>
-                                <td className="px-3 py-2 text-right text-danger">{Number(c.saldo_pendiente).toFixed(2)}</td>
-                                <td className="px-3 py-2"><EstadoBadge estado={c.estado_pago} /></td>
-                                <td className="px-3 py-2 text-right">
+                                <td className="px-3 py-2.5 text-muted">{c.inquilino}</td>
+                                <td className="px-3 py-2.5 text-right font-mono text-muted">{Number(c.monto_alquiler).toFixed(2)}</td>
+                                <td className="px-3 py-2.5 text-right font-mono text-muted">{(Number(c.monto_luz) + Number(c.ajuste_minimo_luz)).toFixed(2)}</td>
+                                <td className="px-3 py-2.5 text-right font-mono text-muted">{Number(c.monto_agua).toFixed(2)}</td>
+                                <td className="px-3 py-2.5 text-right font-mono text-muted">{(Number(c.monto_gas) + Number(c.otros_conceptos)).toFixed(2)}</td>
+                                <td className="px-3 py-2.5 text-right font-mono font-semibold text-ink">{Number(c.total_cobrar).toFixed(2)}</td>
+                                <td className="px-3 py-2.5 text-right font-mono font-semibold text-danger">{Number(c.saldo_pendiente).toFixed(2)}</td>
+                                <td className="px-3 py-2.5"><EstadoBadge estado={c.estado_pago} /></td>
+                                <td className="px-3 py-2.5 text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         <IconButton icon={Eye} label="Ver detalle" onClick={() => setModalDetalle(c)} />
                                         {puede('cobros.generar') && periodo.estado === 'ABIERTO' && c.estado_pago !== 'PAGADO' && c.estado_pago !== 'ANULADO' && (
@@ -417,52 +419,52 @@ export default function Index({ periodo, periodos, cobros, carteraVencida }) {
                             </tr>
                         ))}
                         {filtrados.length === 0 && (
-                            <tr><td colSpan={10} className="px-4 py-6 text-center text-gray-400">Sin cobros generados para este periodo.</td></tr>
+                            <tr><td colSpan={10} className="px-4 py-6 text-center text-muted-2">Sin cobros generados para este periodo.</td></tr>
                         )}
                     </tbody>
                 </table>
             </div>
 
             {carteraVencida.length > 0 && (
-                <section className="mt-6 overflow-hidden rounded-lg border border-amber-200 bg-white">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-100 bg-amber-50 px-4 py-3">
+                <section className="mt-6">
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-t-[13px] border border-b-0 border-danger bg-danger-tint px-[18px] py-[13px]">
                         <div className="flex items-center gap-2">
-                            <AlertTriangle className="h-4 w-4 text-warning" />
-                            <h3 className="text-sm font-semibold text-gray-800">Cartera vencida — periodos anteriores</h3>
-                            <Badge variant="warning">{carteraVencida.length}</Badge>
+                            <AlertTriangle className="h-4 w-4 text-danger" />
+                            <h3 className="text-sm font-extrabold text-ink">Cartera vencida — periodos anteriores</h3>
+                            <span className="rounded-full bg-danger px-2.5 py-0.5 text-[0.7rem] font-extrabold text-white">{carteraVencida.length}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                            <p className="text-xs text-gray-500">Saldos de meses ya cerrados. No cambia según el periodo que elijas arriba.</p>
-                            <span className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-danger shadow-sm">
+                            <p className="hidden text-xs text-muted sm:block">Saldos de meses ya cerrados. No cambia según el periodo que elijas arriba.</p>
+                            <span className="shrink-0 rounded-lg bg-surface px-3 py-1.5 font-mono text-sm font-bold text-danger shadow-sm">
                                 Total adeudado: S/ {totalCarteraVencida.toFixed(2)}
                             </span>
                         </div>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead className="bg-gray-50">
+                    <div className="overflow-x-auto rounded-b-[13px] border border-t-0 border-danger bg-surface">
+                        <table className="min-w-full divide-y divide-border text-sm">
+                            <thead className="bg-surface-2">
                                 <tr>
-                                    <th className="px-3 py-2 text-left font-medium text-gray-500">Periodo</th>
-                                    <th className="px-3 py-2 text-left font-medium text-gray-500">Unidad</th>
-                                    <th className="px-3 py-2 text-left font-medium text-gray-500">Inquilino</th>
-                                    <th className="px-3 py-2 text-right font-medium text-gray-500">Total</th>
-                                    <th className="px-3 py-2 text-right font-medium text-gray-500">Pagado</th>
-                                    <th className="px-3 py-2 text-right font-medium text-gray-500">Saldo</th>
-                                    <th className="px-3 py-2 text-left font-medium text-gray-500">Vencimiento</th>
-                                    <th className="px-3 py-2 text-right font-medium text-gray-500">Acciones</th>
+                                    <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Periodo</th>
+                                    <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Unidad</th>
+                                    <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Inquilino</th>
+                                    <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Total</th>
+                                    <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Pagado</th>
+                                    <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Saldo</th>
+                                    <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Vencimiento</th>
+                                    <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-border">
                                 {carteraVencida.map((c) => (
                                     <tr key={c.id_cobro}>
-                                        <td className="px-3 py-2 text-gray-500">{c.periodo_label}</td>
-                                        <td className="px-3 py-2 font-medium text-gray-800">{c.codigo_unidad}</td>
-                                        <td className="px-3 py-2 text-gray-500">{c.inquilino}</td>
-                                        <td className="px-3 py-2 text-right text-gray-500">{Number(c.total_cobrar).toFixed(2)}</td>
-                                        <td className="px-3 py-2 text-right text-gray-500">{Number(c.pagado_total).toFixed(2)}</td>
-                                        <td className="px-3 py-2 text-right font-semibold text-danger">{Number(c.saldo_pendiente).toFixed(2)}</td>
-                                        <td className="px-3 py-2 text-gray-500">{formatDate(c.fecha_vencimiento)}</td>
-                                        <td className="px-3 py-2 text-right">
+                                        <td className="px-3 py-2.5 text-muted">{c.periodo_label}</td>
+                                        <td className="px-3 py-2.5 font-semibold text-ink">{c.codigo_unidad}</td>
+                                        <td className="px-3 py-2.5 text-muted">{c.inquilino}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono text-muted">{Number(c.total_cobrar).toFixed(2)}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono text-muted">{Number(c.pagado_total).toFixed(2)}</td>
+                                        <td className="px-3 py-2.5 text-right font-mono font-semibold text-danger">{Number(c.saldo_pendiente).toFixed(2)}</td>
+                                        <td className="px-3 py-2.5 text-muted">{formatDate(c.fecha_vencimiento)}</td>
+                                        <td className="px-3 py-2.5 text-right">
                                             {puede('cobros.pagos.registrar') && (
                                                 <IconButton icon={Wallet} label="Registrar pago" variant="primary" onClick={() => setModalPago(c)} />
                                             )}
@@ -470,10 +472,10 @@ export default function Index({ periodo, periodos, cobros, carteraVencida }) {
                                     </tr>
                                 ))}
                             </tbody>
-                            <tfoot className="bg-gray-50">
+                            <tfoot className="bg-surface-2">
                                 <tr>
-                                    <td colSpan={5} className="px-3 py-2 text-right text-xs font-semibold uppercase text-gray-500">Total adeudado</td>
-                                    <td className="px-3 py-2 text-right text-sm font-bold text-danger">S/ {totalCarteraVencida.toFixed(2)}</td>
+                                    <td colSpan={5} className="px-3 py-2.5 text-right text-xs font-semibold uppercase text-muted-2">Total adeudado</td>
+                                    <td className="px-3 py-2.5 text-right font-mono text-sm font-bold text-danger">S/ {totalCarteraVencida.toFixed(2)}</td>
                                     <td colSpan={2}></td>
                                 </tr>
                             </tfoot>

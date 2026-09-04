@@ -1,7 +1,9 @@
+import Card from '@/Components/Card';
+import KpiCard from '@/Components/KpiCard';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
 import {
-    AlertOctagon, AlertTriangle, Calculator, CalendarClock, Gauge, Info, Wallet, Zap,
+    AlertOctagon, AlertTriangle, Calculator, CalendarClock, Gauge, Wallet, Zap,
 } from 'lucide-react';
 import Chart from 'react-apexcharts';
 
@@ -130,207 +132,191 @@ export default function Dashboard({
             <Head title="Dashboard" />
 
             <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <KpiCard title="Total alquiler mensual" value={money(stats.total_alquiler)} desc={`Suma de las ${stats.total_ocupados} unidades ocupadas`} icon={Wallet} iconColor="text-success" />
-                <KpiCard title="Luz distribuida" value={money(stats.total_luz)} desc="Resultado de la liquidación del recibo" icon={Zap} iconColor="text-primary" />
-                <KpiCard title="Consumo liquidado" value={`${number(totalConsumo)} kWh`} desc="Suma de consumos de unidades ocupadas" icon={Gauge} iconColor="text-warning" />
-                <KpiCard title="Cobro teórico del mes" value={money(stats.total_cobrar)} desc="Alquiler + agua fija + luz" icon={Calculator} iconColor="text-purple-600" />
-                <KpiCard title="Morosidad total" value={money(morosidadTotal)} desc="Deuda anterior acumulada" icon={AlertTriangle} iconColor="text-danger" />
+                <KpiCard label="Total alquiler mensual" value={money(stats.total_alquiler)} desc={`Suma de las ${stats.total_ocupados} unidades ocupadas`} icon={Wallet} tone="success" />
+                <KpiCard label="Luz distribuida" value={money(stats.total_luz)} desc="Resultado de la liquidación del recibo" icon={Zap} tone="primary" />
+                <KpiCard label="Consumo liquidado" value={`${number(totalConsumo)} kWh`} desc="Suma de consumos de unidades ocupadas" icon={Gauge} tone="warning" />
+                <KpiCard label="Cobro teórico del mes" value={money(stats.total_cobrar)} desc="Alquiler + agua fija + luz" icon={Calculator} tone="purple" />
+                <KpiCard label="Morosidad total" value={money(morosidadTotal)} desc="Deuda anterior acumulada" icon={AlertTriangle} tone="danger" />
             </div>
 
             <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
-                <section className="rounded-lg border border-gray-200 bg-white p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-800">Tendencia de cobros (últimos {tendencia.length} periodos)</h3>
-                    {tendencia.length > 0 ? (
-                        <Chart options={tendenciaOptions} series={tendenciaSeries} type="area" height={260} />
-                    ) : (
-                        <p className="py-8 text-center text-sm text-gray-400">Sin periodos suficientes todavía.</p>
-                    )}
-                </section>
-                <section className="rounded-lg border border-gray-200 bg-white p-4">
-                    <div className="mb-1 flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-gray-800">Salud de cobranza</h3>
-                        <span className="text-xs text-gray-400">{totalSalud} cobro{totalSalud === 1 ? '' : 's'}</span>
-                    </div>
-                    {totalSalud > 0 ? (
-                        <Chart options={saludOptions} series={saludData} type="donut" height={260} />
-                    ) : (
-                        <p className="py-8 text-center text-sm text-gray-400">Sin cobros generados para este periodo.</p>
-                    )}
-                </section>
+                <Card>
+                    <Card.Header title={`Tendencia de cobros (últimos ${tendencia.length} periodos)`} />
+                    <Card.Body>
+                        {tendencia.length > 0 ? (
+                            <Chart options={tendenciaOptions} series={tendenciaSeries} type="area" height={260} />
+                        ) : (
+                            <p className="py-8 text-center text-sm text-muted-2">Sin periodos suficientes todavía.</p>
+                        )}
+                    </Card.Body>
+                </Card>
+                <Card>
+                    <Card.Header title="Salud de cobranza" hint={`${totalSalud} cobro${totalSalud === 1 ? '' : 's'}`} />
+                    <Card.Body>
+                        {totalSalud > 0 ? (
+                            <Chart options={saludOptions} series={saludData} type="donut" height={260} />
+                        ) : (
+                            <p className="py-8 text-center text-sm text-muted-2">Sin cobros generados para este periodo.</p>
+                        )}
+                    </Card.Body>
+                </Card>
             </div>
 
             <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <section className="rounded-lg border border-gray-200 bg-white p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-800">Composición del recibo</h3>
-                    <div className="space-y-1.5 text-sm">
-                        <CompRow label="Consumo de energía" value={recibo?.consumo_energia} />
-                        <CompRow label="Cargo fijo" value={recibo?.cargo_fijo} />
-                        <CompRow label="Mant. y reposición" value={recibo?.mant_reposicion} />
-                        <CompRow label="Alumbrado público" value={recibo?.alumbrado_publico} />
-                        <CompRow label="IGV" value={recibo?.igv} />
-                        <CompRow label="Electrificación rural" value={recibo?.electrificacion_rural} />
-                        <div className="flex justify-between border-t border-gray-100 pt-1.5 font-semibold text-gray-900">
-                            <span>Total a pagar</span><span>{money(recibo?.total_recibo)}</span>
+                <Card>
+                    <Card.Header title="Composición del recibo" />
+                    <Card.Body>
+                        <div className="space-y-1.5 text-sm">
+                            <CompRow label="Consumo de energía" value={recibo?.consumo_energia} />
+                            <CompRow label="Cargo fijo" value={recibo?.cargo_fijo} />
+                            <CompRow label="Mant. y reposición" value={recibo?.mant_reposicion} />
+                            <CompRow label="Alumbrado público" value={recibo?.alumbrado_publico} />
+                            <CompRow label="IGV" value={recibo?.igv} />
+                            <CompRow label="Electrificación rural" value={recibo?.electrificacion_rural} />
+                            <div className="flex justify-between border-t border-border pt-1.5 font-semibold text-ink">
+                                <span>Total a pagar</span><span className="font-mono">{money(recibo?.total_recibo)}</span>
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </Card.Body>
+                </Card>
 
-                <section className="rounded-lg border border-gray-200 bg-white p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-gray-800">Contratos por vencer</h3>
-                        {vencimientosContrato.length > 0 && (
-                            <span className="text-xs text-gray-400">{vencimientosContrato.length}</span>
-                        )}
-                    </div>
-                    {vencimientosContrato.length === 0 ? (
-                        <p className="py-4 text-sm text-gray-400">Sin contratos por vencer en los próximos 60 días.</p>
-                    ) : (
-                        <div className="max-h-[196px] space-y-2 overflow-y-auto pr-1">
-                            {vencimientosContrato.map((aviso) => {
-                                const vencido = aviso.nivel === 'VENCIDO';
-                                const urgente = aviso.nivel === 'URGENTE';
-                                const color = vencido || urgente ? 'danger' : 'warning';
-                                return (
-                                    <div key={aviso.id_referencia} className={`flex items-center gap-3 rounded-lg border-l-4 bg-surface p-3 ${color === 'danger' ? 'border-danger' : 'border-warning'} ${vencido ? 'bg-red-50/60' : ''}`}>
-                                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${color === 'danger' ? 'bg-red-100 text-danger' : 'bg-amber-100 text-warning'}`}>
-                                            {vencido ? <AlertOctagon className="h-4 w-4" /> : urgente ? <AlertTriangle className="h-4 w-4" /> : <CalendarClock className="h-4 w-4" />}
-                                        </span>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-medium text-gray-800">{aviso.inquilino}</p>
-                                            <p className="text-xs text-gray-400">Unidad {aviso.codigo_unidad}</p>
-                                        </div>
-                                        <div className={`shrink-0 rounded-full px-2.5 py-1 text-center text-xs font-bold text-white ${color === 'danger' ? 'bg-danger' : 'bg-warning'}`}>
-                                            {vencido ? `Vencido ${Math.abs(aviso.dias_restantes)}d` : `${aviso.dias_restantes}d`}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </section>
-
-                <section className="rounded-lg border border-gray-200 bg-white p-4">
-                    <h3 className="mb-3 text-sm font-semibold text-gray-800">Regla de cálculo</h3>
-                    <ul className="space-y-2 text-sm text-gray-600">
-                        <li className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />El consumo de energía se reparte según kWh consumidos por unidad.</li>
-                        <li className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />Los cargos comunes se distribuyen de forma equitativa entre las {filas.length} unidades ocupadas.</li>
-                        <li className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />El cobro final del mes suma alquiler + luz + agua fija.</li>
-                    </ul>
-                </section>
-            </div>
-
-            <section className="rounded-lg border border-gray-200 bg-white p-4">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-800">Resumen operativo</h3>
-                        <p className="text-xs text-gray-500">Recibo de luz y reparto por unidad de este periodo.</p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
-                        <span className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full bg-danger" />Subió</span>
-                        <span className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full bg-success" />Bajó</span>
-                        <span className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full bg-gray-400" />Igual</span>
-                        <span className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full bg-gray-200" />Sin dato anterior</span>
-                    </div>
-                </div>
-
-                <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <MiniStat label="Suministro" value={recibo?.numero_suministro ?? '—'} />
-                    <MiniStat label="Consumo general" value={`${number(recibo?.consumo_kwh_general)} kWh`} />
-                    <MiniStat label="Consumo energía" value={money(recibo?.consumo_energia)} />
-                    <MiniStat label="Total recibo" value={money(recibo?.total_recibo)} />
-                </div>
-
-                {filas.length === 0 ? (
-                    <p className="py-4 text-sm text-gray-400">Sin datos. Genera la liquidación primero.</p>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200 text-sm">
-                            <thead>
-                                <tr className="text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                                    <th className="py-2 pr-3">Unidad</th>
-                                    <th className="py-2 pr-3">Inquilino</th>
-                                    <th className="py-2 pr-3 text-right">Consumo</th>
-                                    <th className="py-2 pr-3">Tendencia</th>
-                                    <th className="py-2 pr-3 text-right">Luz</th>
-                                    <th className="py-2 pr-3 text-right">Alquiler</th>
-                                    <th className="py-2 pr-3 text-right">Total</th>
-                                    <th className="py-2 pr-3">Participación</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {filas.map((row) => {
-                                    const pct = (Number(row.porcentaje_participacion || 0) * 100).toFixed(1);
-                                    const tendencia = tendenciaConsumo(row);
+                <Card>
+                    <Card.Header title="Contratos por vencer" hint={vencimientosContrato.length > 0 ? String(vencimientosContrato.length) : undefined} />
+                    <Card.Body>
+                        {vencimientosContrato.length === 0 ? (
+                            <p className="py-4 text-sm text-muted-2">Sin contratos por vencer en los próximos 60 días.</p>
+                        ) : (
+                            <div className="max-h-[196px] space-y-2 overflow-y-auto pr-1">
+                                {vencimientosContrato.map((aviso) => {
+                                    const vencido = aviso.nivel === 'VENCIDO';
+                                    const urgente = aviso.nivel === 'URGENTE';
+                                    const color = vencido || urgente ? 'danger' : 'warning';
                                     return (
-                                        <tr key={row.id_unidad}>
-                                            <td className="whitespace-nowrap py-2.5 pr-3 font-semibold text-gray-800">{row.codigo_unidad}</td>
-                                            <td className="whitespace-nowrap py-2.5 pr-3 text-gray-600">
-                                                {row.inquilino ?? '—'}
-                                                <span className="ml-1.5 text-xs text-gray-400">{row.nombre_unidad}</span>
-                                            </td>
-                                            <td className="whitespace-nowrap py-2.5 pr-3 text-right font-medium text-gray-700">{number(row.consumo_kwh)} kWh</td>
-                                            <td className="py-2.5 pr-3" title={tendencia.text}>
-                                                {tendencia.sinDato ? (
-                                                    <span className="text-xs text-gray-300">Sin dato</span>
-                                                ) : (
-                                                    <Sparkline anterior={Number(consumoAnterior[row.id_unidad])} actual={Number(row.consumo_kwh || 0)} stroke={tendencia.stroke} />
-                                                )}
-                                            </td>
-                                            <td className="whitespace-nowrap py-2.5 pr-3 text-right text-gray-700">{money(row.total_pagar_luz)}</td>
-                                            <td className="whitespace-nowrap py-2.5 pr-3 text-right text-gray-700">{money(row.monto_alquiler)}</td>
-                                            <td className="whitespace-nowrap py-2.5 pr-3 text-right font-semibold text-gray-900">{money(row.total_cobrar)}</td>
-                                            <td className="py-2.5 pr-3">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-1.5 w-16 rounded-full bg-gray-100">
-                                                        <div className="h-1.5 rounded-full bg-primary" style={{ width: `${pct}%` }} />
-                                                    </div>
-                                                    <span className="w-10 shrink-0 text-xs text-gray-400">{pct}%</span>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        <div key={aviso.id_referencia} className={`flex items-center gap-3 rounded-lg border-l-4 bg-surface-2 p-3 ${color === 'danger' ? 'border-danger' : 'border-warning'} ${vencido ? 'bg-danger-tint/60' : ''}`}>
+                                            <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${color === 'danger' ? 'bg-danger-tint text-danger' : 'bg-warning-tint text-warning'}`}>
+                                                {vencido ? <AlertOctagon className="h-4 w-4" /> : urgente ? <AlertTriangle className="h-4 w-4" /> : <CalendarClock className="h-4 w-4" />}
+                                            </span>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-medium text-ink">{aviso.inquilino}</p>
+                                                <p className="text-xs text-muted-2">Unidad {aviso.codigo_unidad}</p>
+                                            </div>
+                                            <div className={`shrink-0 rounded-full px-2.5 py-1 text-center font-mono text-xs font-bold text-white ${color === 'danger' ? 'bg-danger' : 'bg-warning'}`}>
+                                                {vencido ? `Vencido ${Math.abs(aviso.dias_restantes)}d` : `${aviso.dias_restantes}d`}
+                                            </div>
+                                        </div>
                                     );
                                 })}
-                            </tbody>
-                        </table>
+                            </div>
+                        )}
+                    </Card.Body>
+                </Card>
+
+                <Card>
+                    <Card.Header title="Regla de cálculo" />
+                    <Card.Body>
+                        <ul className="space-y-2 text-sm text-muted">
+                            <li className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />El consumo de energía se reparte según kWh consumidos por unidad.</li>
+                            <li className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />Los cargos comunes se distribuyen de forma equitativa entre las {filas.length} unidades ocupadas.</li>
+                            <li className="flex gap-2"><span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />El cobro final del mes suma alquiler + luz + agua fija.</li>
+                        </ul>
+                    </Card.Body>
+                </Card>
+            </div>
+
+            <Card>
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-[18px] py-[15px]">
+                    <div>
+                        <h3 className="text-sm font-bold text-ink">Resumen operativo</h3>
+                        <p className="text-xs text-muted">Recibo de luz y reparto por unidad de este periodo.</p>
                     </div>
-                )}
-            </section>
+                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted">
+                        <span className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full bg-danger" />Subió</span>
+                        <span className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full bg-success" />Bajó</span>
+                        <span className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full bg-muted-2" />Igual</span>
+                        <span className="flex items-center gap-1.5"><span className="h-1.5 w-3 rounded-full bg-surface-3" />Sin dato anterior</span>
+                    </div>
+                </div>
+                <Card.Body>
+                    <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        <MiniStat label="Suministro" value={recibo?.numero_suministro ?? '—'} />
+                        <MiniStat label="Consumo general" value={`${number(recibo?.consumo_kwh_general)} kWh`} />
+                        <MiniStat label="Consumo energía" value={money(recibo?.consumo_energia)} />
+                        <MiniStat label="Total recibo" value={money(recibo?.total_recibo)} />
+                    </div>
+
+                    {filas.length === 0 ? (
+                        <p className="py-4 text-sm text-muted-2">Sin datos. Genera la liquidación primero.</p>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-border text-sm">
+                                <thead>
+                                    <tr className="text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">
+                                        <th className="py-2 pr-3">Unidad</th>
+                                        <th className="py-2 pr-3">Inquilino</th>
+                                        <th className="py-2 pr-3 text-right">Consumo</th>
+                                        <th className="py-2 pr-3">Tendencia</th>
+                                        <th className="py-2 pr-3 text-right">Luz</th>
+                                        <th className="py-2 pr-3 text-right">Alquiler</th>
+                                        <th className="py-2 pr-3 text-right">Total</th>
+                                        <th className="py-2 pr-3">Participación</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                    {filas.map((row) => {
+                                        const pct = (Number(row.porcentaje_participacion || 0) * 100).toFixed(1);
+                                        const tendencia = tendenciaConsumo(row);
+                                        return (
+                                            <tr key={row.id_unidad}>
+                                                <td className="whitespace-nowrap py-2.5 pr-3 font-semibold text-ink">{row.codigo_unidad}</td>
+                                                <td className="whitespace-nowrap py-2.5 pr-3 text-muted">
+                                                    {row.inquilino ?? '—'}
+                                                    <span className="ml-1.5 text-xs text-muted-2">{row.nombre_unidad}</span>
+                                                </td>
+                                                <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono font-medium text-ink">{number(row.consumo_kwh)} kWh</td>
+                                                <td className="py-2.5 pr-3" title={tendencia.text}>
+                                                    {tendencia.sinDato ? (
+                                                        <span className="text-xs text-muted-2">Sin dato</span>
+                                                    ) : (
+                                                        <Sparkline anterior={Number(consumoAnterior[row.id_unidad])} actual={Number(row.consumo_kwh || 0)} stroke={tendencia.stroke} />
+                                                    )}
+                                                </td>
+                                                <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono text-muted">{money(row.total_pagar_luz)}</td>
+                                                <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono text-muted">{money(row.monto_alquiler)}</td>
+                                                <td className="whitespace-nowrap py-2.5 pr-3 text-right font-mono font-semibold text-ink">{money(row.total_cobrar)}</td>
+                                                <td className="py-2.5 pr-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-1.5 w-16 rounded-full bg-surface-3">
+                                                            <div className="h-1.5 rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                        <span className="w-10 shrink-0 font-mono text-xs text-muted-2">{pct}%</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </Card.Body>
+            </Card>
         </AdminLayout>
     );
 }
 
-function KpiCard({ title, value, desc, icon: Icon, iconColor }) {
-    return (
-        <article className="rounded-lg border border-gray-200 bg-white p-4">
-            <div className="flex items-center gap-1 text-xs font-medium text-gray-500">
-                <span>{title}</span>
-                <span className="group relative inline-flex">
-                    <Info tabIndex={0} className="h-3.5 w-3.5 cursor-help text-gray-300 outline-none hover:text-gray-400 focus:text-gray-400" />
-                    <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 w-44 -translate-x-1/2 rounded-md bg-gray-800 px-2 py-1.5 text-center text-[11px] font-normal normal-case leading-snug text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-                        {desc}
-                    </span>
-                </span>
-            </div>
-            <div className="mt-1 flex items-center gap-2">
-                {Icon && <Icon className={`h-5 w-5 shrink-0 ${iconColor ?? 'text-gray-400'}`} />}
-                <p className="text-xl font-bold text-gray-900">{value}</p>
-            </div>
-        </article>
-    );
-}
 function MiniStat({ label, value }) {
     return (
-        <div className="rounded-lg bg-surface p-2 text-center">
-            <p className="text-xs text-gray-400">{label}</p>
-            <p className="text-sm font-semibold text-gray-800">{value}</p>
+        <div className="rounded-lg bg-paper p-2 text-center">
+            <p className="text-xs text-muted-2">{label}</p>
+            <p className="font-mono text-sm font-semibold text-ink">{value}</p>
         </div>
     );
 }
 function CompRow({ label, value }) {
     return (
         <div className="flex justify-between">
-            <span className="text-gray-500">{label}</span>
-            <strong className="text-gray-800">{money(value)}</strong>
+            <span className="text-muted">{label}</span>
+            <strong className="font-mono text-ink">{money(value)}</strong>
         </div>
     );
 }

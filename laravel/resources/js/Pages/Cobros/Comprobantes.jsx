@@ -28,12 +28,12 @@ function RechazarForm({ comprobante, onClose }) {
                 value={motivo}
                 onChange={(e) => setMotivo(e.target.value)}
                 placeholder="Motivo del rechazo..."
-                className="w-56 rounded-md border-gray-300 text-xs"
+                className="w-56 rounded-md border-border bg-surface text-xs text-ink"
             />
             <button onClick={submit} disabled={!motivo.trim()} className="rounded-md bg-danger px-3 py-1 text-xs font-medium text-white disabled:opacity-50">
                 Confirmar
             </button>
-            <button onClick={onClose} className="text-xs text-gray-500 hover:text-gray-700">Cancelar</button>
+            <button onClick={onClose} className="text-xs text-muted hover:text-ink">Cancelar</button>
         </div>
     );
 }
@@ -86,24 +86,24 @@ function AprobarModal({ comprobante, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-5 shadow-xl">
-                <h3 className="mb-3 text-base font-semibold text-gray-800">Aprobar comprobante</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
+            <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-[13px] bg-surface p-5 shadow-xl">
+                <h3 className="mb-3 text-base font-bold text-ink">Aprobar comprobante</h3>
 
-                <div className="mb-4 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
+                <div className="mb-4 rounded-lg bg-surface-2 p-3 text-xs text-muted">
                     <p><strong>Inquilino:</strong> {comprobante.cobro?.persona?.nombres} {comprobante.cobro?.persona?.apellidos}</p>
                     <p><strong>Unidad:</strong> {comprobante.cobro?.unidad?.codigo_unidad}</p>
                     <p><strong>Monto declarado:</strong> S/ {montoDeclarado.toFixed(2)}</p>
                 </div>
 
                 <form onSubmit={submit} className="space-y-3">
-                    <div className="space-y-2 rounded-lg border border-gray-100 p-3">
-                        <label className="block text-xs font-medium text-gray-500">Modo de pago</label>
-                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                    <div className="space-y-2 rounded-lg border border-border p-3">
+                        <label className="block text-xs font-medium text-muted">Modo de pago</label>
+                        <label className="flex items-center gap-2 text-sm text-ink">
                             <input type="radio" checked={data.modo_aplicacion === 'AUTOMATICA'} onChange={() => setData('modo_aplicacion', 'AUTOMATICA')} />
                             Aplicar completo / automático
                         </label>
-                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                        <label className="flex items-center gap-2 text-sm text-ink">
                             <input type="radio" checked={data.modo_aplicacion === 'MANUAL'} onChange={() => setData('modo_aplicacion', 'MANUAL')} />
                             Aplicar solo a ciertos servicios
                         </label>
@@ -111,18 +111,18 @@ function AprobarModal({ comprobante, onClose }) {
 
                     {data.modo_aplicacion === 'MANUAL' && (
                         <div className="space-y-2">
-                            <p className="text-xs font-medium text-gray-500">Selecciona conceptos a pagar</p>
-                            {conceptos === null && <p className="text-xs text-gray-400">Cargando conceptos...</p>}
-                            {conceptos?.length === 0 && <p className="text-xs text-gray-400">No hay conceptos con saldo pendiente que admitan pago directo.</p>}
+                            <p className="text-xs font-medium text-muted">Selecciona conceptos a pagar</p>
+                            {conceptos === null && <p className="text-xs text-muted-2">Cargando conceptos...</p>}
+                            {conceptos?.length === 0 && <p className="text-xs text-muted-2">No hay conceptos con saldo pendiente que admitan pago directo.</p>}
                             {conceptos?.map((c) => {
                                 const marcado = c.id_cobro_detalle in seleccion;
                                 return (
-                                    <div key={c.id_cobro_detalle} className="flex items-center justify-between gap-2 rounded-md border border-gray-100 p-2">
+                                    <div key={c.id_cobro_detalle} className="flex items-center justify-between gap-2 rounded-md border border-border p-2">
                                         <label className="flex flex-1 items-center gap-2 text-sm">
                                             <input type="checkbox" checked={marcado} onChange={(e) => toggleConcepto(c, e.target.checked)} />
                                             <span>
-                                                <span className="block font-medium text-gray-700">{c.nombre}</span>
-                                                <span className="block text-xs text-gray-400">Saldo: S/ {Number(c.saldo_pendiente).toFixed(2)}</span>
+                                                <span className="block font-medium text-ink">{c.nombre}</span>
+                                                <span className="block text-xs text-muted-2">Saldo: S/ {Number(c.saldo_pendiente).toFixed(2)}</span>
                                             </span>
                                         </label>
                                         <input
@@ -131,13 +131,13 @@ function AprobarModal({ comprobante, onClose }) {
                                             max={c.saldo_pendiente}
                                             value={marcado ? seleccion[c.id_cobro_detalle] : ''}
                                             onChange={(e) => cambiarMontoConcepto(c.id_cobro_detalle, e.target.value)}
-                                            className="w-24 rounded-md border-gray-300 text-sm disabled:bg-gray-100"
+                                            className="w-24 rounded-md border-border bg-surface text-sm text-ink disabled:bg-surface-2"
                                         />
                                     </div>
                                 );
                             })}
                             {errors.aplicaciones && <p className="text-xs text-danger">{errors.aplicaciones}</p>}
-                            <div className={`rounded-md px-3 py-2 text-sm font-medium ${totalSeleccionado === montoDeclarado ? 'bg-primary-light text-primary-dark' : 'bg-amber-50 text-warning'}`}>
+                            <div className={`rounded-md px-3 py-2 text-sm font-medium ${totalSeleccionado === montoDeclarado ? 'bg-primary-light text-primary-dark' : 'bg-warning-tint text-warning'}`}>
                                 Seleccionado: S/ {totalSeleccionado.toFixed(2)} de S/ {montoDeclarado.toFixed(2)} declarado
                             </div>
                         </div>
@@ -148,7 +148,7 @@ function AprobarModal({ comprobante, onClose }) {
                         <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">
                             Confirmar aprobación
                         </button>
-                        <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
+                        <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:bg-surface-2">Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -182,57 +182,57 @@ export default function Comprobantes({ comprobantes, estadoFiltro }) {
             <div className="mb-4">
                 <StatusTabs value={estadoFiltro} options={tabs} onChange={cambiarFiltro} />
             </div>
-            <p className="mb-4 text-xs text-gray-400">
+            <p className="mb-4 text-xs text-muted-2">
                 Esta lista es para revisar comprobantes que los propios inquilinos subieron desde el portal. Si tú recibiste el pago directamente (efectivo, Yape, etc.) y quieres registrarlo tú mismo sin pasar por aquí, hazlo desde el submódulo "Pagos" — es la misma lógica de aplicación, solo que sin el paso de revisión.
             </p>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-[13px] border border-border bg-surface shadow-sm">
+                <table className="min-w-full divide-y divide-border text-sm">
+                    <thead className="bg-surface-2">
                         <tr>
-                            <th className="px-3 py-2 text-left font-medium text-gray-500">Periodo</th>
-                            <th className="px-3 py-2 text-left font-medium text-gray-500">Unidad</th>
-                            <th className="px-3 py-2 text-left font-medium text-gray-500">Inquilino</th>
-                            <th className="px-3 py-2 text-right font-medium text-gray-500">Monto</th>
-                            <th className="px-3 py-2 text-left font-medium text-gray-500">Fecha</th>
-                            <th className="px-3 py-2 text-left font-medium text-gray-500">Método</th>
-                            <th className="px-3 py-2 text-center font-medium text-gray-500">Imagen</th>
-                            <th className="px-3 py-2 text-left font-medium text-gray-500">Estado</th>
-                            <th className="px-3 py-2 text-right font-medium text-gray-500">Acciones</th>
+                            <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Periodo</th>
+                            <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Unidad</th>
+                            <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Inquilino</th>
+                            <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Monto</th>
+                            <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Fecha</th>
+                            <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Método</th>
+                            <th className="px-3 py-2.5 text-center text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Imagen</th>
+                            <th className="px-3 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Estado</th>
+                            <th className="px-3 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                         {comprobantes.data.map((c) => (
                             <tr key={c.id}>
-                                <td className="px-3 py-2 text-gray-500">{c.cobro?.periodo ? `${c.cobro.periodo.mes}/${c.cobro.periodo.anio}` : '—'}</td>
-                                <td className="px-3 py-2 font-medium text-gray-800">{c.cobro?.unidad?.codigo_unidad}</td>
-                                <td className="px-3 py-2 text-gray-500">{c.cobro?.persona?.nombres} {c.cobro?.persona?.apellidos}</td>
-                                <td className="px-3 py-2 text-right text-gray-500">S/ {Number(c.monto_declarado).toFixed(2)}</td>
-                                <td className="px-3 py-2 text-gray-500">{formatDate(c.fecha_pago_declarada)}</td>
-                                <td className="px-3 py-2 text-gray-500">
+                                <td className="px-3 py-2.5 text-muted">{c.cobro?.periodo ? `${c.cobro.periodo.mes}/${c.cobro.periodo.anio}` : '—'}</td>
+                                <td className="px-3 py-2.5 font-semibold text-ink">{c.cobro?.unidad?.codigo_unidad}</td>
+                                <td className="px-3 py-2.5 text-muted">{c.cobro?.persona?.nombres} {c.cobro?.persona?.apellidos}</td>
+                                <td className="px-3 py-2.5 text-right font-mono text-muted">S/ {Number(c.monto_declarado).toFixed(2)}</td>
+                                <td className="px-3 py-2.5 text-muted">{formatDate(c.fecha_pago_declarada)}</td>
+                                <td className="px-3 py-2.5 text-muted">
                                     {c.metodo_pago}
                                     {c.numero_operacion && (
-                                        <p className="text-xs text-gray-400">
+                                        <p className="text-xs text-muted-2">
                                             {c.metodo_pago === 'EFECTIVO' ? `Entregado a: ${c.numero_operacion}` : `Op. ${c.numero_operacion}`}
                                         </p>
                                     )}
                                 </td>
-                                <td className="px-3 py-2 text-center">
+                                <td className="px-3 py-2.5 text-center">
                                     {c.imagen_url ? (
                                         <button onClick={() => setLightbox(c.imagen_url)} className="inline-block" title="Ver comprobante">
-                                            <img src={c.imagen_url} alt="Comprobante" className="h-10 w-10 rounded-md border border-gray-200 object-cover hover:opacity-80" />
+                                            <img src={c.imagen_url} alt="Comprobante" className="h-10 w-10 rounded-md border border-border object-cover hover:opacity-80" />
                                         </button>
                                     ) : (
-                                        <span className="text-xs text-gray-400">Sin foto</span>
+                                        <span className="text-xs text-muted-2">Sin foto</span>
                                     )}
                                 </td>
-                                <td className="px-3 py-2">
+                                <td className="px-3 py-2.5">
                                     <EstadoBadge estado={c.estado} />
                                     {c.estado === 'RECHAZADO' && c.motivo_rechazo && (
-                                        <p className="mt-1 max-w-[160px] text-xs text-gray-400">{c.motivo_rechazo}</p>
+                                        <p className="mt-1 max-w-[160px] text-xs text-muted-2">{c.motivo_rechazo}</p>
                                     )}
                                 </td>
-                                <td className="px-3 py-2 text-right">
+                                <td className="px-3 py-2.5 text-right">
                                     {c.estado === 'PENDIENTE' && puede('cobros.comprobantes.revisar') && (
                                         rechazando === c.id ? (
                                             <RechazarForm comprobante={c} onClose={() => setRechazando(null)} />
@@ -247,7 +247,7 @@ export default function Comprobantes({ comprobantes, estadoFiltro }) {
                             </tr>
                         ))}
                         {comprobantes.data.length === 0 && (
-                            <tr><td colSpan={9} className="px-4 py-6 text-center text-gray-400">Sin comprobantes en este filtro.</td></tr>
+                            <tr><td colSpan={9} className="px-4 py-6 text-center text-muted-2">Sin comprobantes en este filtro.</td></tr>
                         )}
                     </tbody>
                 </table>
@@ -257,7 +257,7 @@ export default function Comprobantes({ comprobantes, estadoFiltro }) {
             {aprobando && <AprobarModal comprobante={aprobando} onClose={() => setAprobando(null)} />}
 
             {lightbox && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setLightbox(null)}>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-4" onClick={() => setLightbox(null)}>
                     <img src={lightbox} alt="Comprobante" className="max-h-[90vh] max-w-full rounded-lg object-contain" />
                 </div>
             )}
