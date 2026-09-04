@@ -37,12 +37,32 @@ class ReporteConsumoService
             ->get(['id_unidad', 'id_periodo', DB::raw('SUM(consumo_kwh) as kwh')])
             ->groupBy('id_unidad');
 
+        // Fallback para periodos anteriores a que cobros_mensuales.consumo_kwh
+        // existiera como snapshot: esos cobros quedaron con 0 (nunca se
+        // backfillo esa columna, solo id_ocupacion -- ver Fase 0.4). El dato
+        // real de esos periodos SI sigue en liquidacion_luz_detalle (por
+        // unidad+periodo, sin desglose por tramo), asi que Reportes lo usa
+        // como respaldo -- de solo lectura, no toca cobros_mensuales.
+        $consumoHistoricoPorUnidadPeriodo = DB::table('liquidacion_luz_detalle')
+            ->whereIn('id_periodo', $idsPeriodo)
+            ->groupBy('id_unidad', 'id_periodo')
+            ->get(['id_unidad', 'id_periodo', DB::raw('SUM(consumo_kwh) as kwh')])
+            ->groupBy('id_unidad');
+
         $matriz = [];
         $totalPorPeriodo = array_fill(0, $periodos->count(), 0.0);
 
         foreach ($unidades as $unidad) {
             $porPeriodo = $consumoPorUnidadPeriodo->get($unidad->id_unidad, collect())->keyBy('id_periodo');
-            $valores = $periodos->map(fn ($p) => round((float) ($porPeriodo[$p->id_periodo]->kwh ?? 0), 1))->values()->all();
+            $porPeriodoHistorico = $consumoHistoricoPorUnidadPeriodo->get($unidad->id_unidad, collect())->keyBy('id_periodo');
+            $valores = $periodos->map(function ($p) use ($porPeriodo, $porPeriodoHistorico) {
+                $kwh = (float) ($porPeriodo[$p->id_periodo]->kwh ?? 0);
+                if ($kwh <= 0) {
+                    $kwh = (float) ($porPeriodoHistorico[$p->id_periodo]->kwh ?? 0);
+                }
+
+                return round($kwh, 1);
+            })->values()->all();
 
             foreach ($valores as $i => $v) {
                 $totalPorPeriodo[$i] += $v;

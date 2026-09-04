@@ -103,10 +103,14 @@ class ReporteOcupacionService
             ],
             'timeline' => $timeline,
             'dias_rango' => $diasRango,
-            'rango_fechas' => [
-                'inicio' => $rangoInicio->day.' '.self::MESES_CORTOS[$rangoInicio->month],
-                'fin' => $rangoFin->day.' '.self::MESES_CORTOS[$rangoFin->month],
-            ],
+            // Un tick por periodo del rango (no por mes calendario -- los
+            // periodos de esta app no son meses calendario, corren de
+            // mitad de mes a mitad de mes) en el inicio real de cada uno,
+            // mismo criterio de granularidad que el resto de Reportes.
+            'periodo_ticks' => $periodos->map(fn ($p) => [
+                'offset_dias' => (int) $rangoInicio->diffInDays($p->fecha_inicio->copy()->startOfDay()),
+                'label' => self::MESES_CORTOS[$p->mes].' '.$p->anio,
+            ])->values()->all(),
             'serie_periodo' => $periodos->map(function ($p) {
                 $inicio = $p->fecha_inicio->copy()->startOfDay();
                 $fin = $p->fecha_fin->copy()->startOfDay();

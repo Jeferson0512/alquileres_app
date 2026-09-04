@@ -22,8 +22,8 @@ const CODE_TO_PATH = {
 // ítem expandible con ese nombre; "consultas" queda suelto a propósito, ver
 // CLAUDE.md.
 const MODULE_GROUPS = {
-    dashboard: 'Operación',
-    reportes: 'Operación',
+    dashboard: 'General',
+    reportes: 'General',
     periodos: 'Operación',
     inquilinos: 'Operación',
     unidades: 'Operación',

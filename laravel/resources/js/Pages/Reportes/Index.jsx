@@ -218,7 +218,7 @@ function TabFinanciero({ data }) {
 }
 
 function TabOcupacion({ data }) {
-    const { kpis, timeline, dias_rango: diasRango, rango_fechas: rangoFechas, serie_periodo: seriePeriodo, motivo_salida: motivoSalida, eventos } = data;
+    const { kpis, timeline, dias_rango: diasRango, periodo_ticks: periodoTicks, serie_periodo: seriePeriodo, motivo_salida: motivoSalida, eventos } = data;
 
     const ocupOptions = {
         chart: { toolbar: { show: false }, fontFamily: 'inherit' },
@@ -271,9 +271,20 @@ function TabOcupacion({ data }) {
                     </div>
                     <div className="mt-1.5 grid grid-cols-[80px_1fr] gap-3">
                         <div />
-                        <div className="flex justify-between font-mono text-[10px] text-muted-2">
-                            <span>{rangoFechas.inicio}</span>
-                            <span>{rangoFechas.fin}</span>
+                        <div className="relative h-4">
+                            {periodoTicks.map((tick, i) => {
+                                const pct = (tick.offset_dias / diasRango) * 100;
+                                const translate = pct < 5 ? '0' : pct > 95 ? '-100%' : '-50%';
+                                return (
+                                    <span
+                                        key={i}
+                                        className="absolute top-0 whitespace-nowrap font-mono text-[10px] text-muted-2"
+                                        style={{ left: `${pct}%`, transform: `translateX(${translate})` }}
+                                    >
+                                        {tick.label}
+                                    </span>
+                                );
+                            })}
                         </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted">
