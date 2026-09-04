@@ -3,6 +3,10 @@
 body { font-family: 'Helvetica', 'Arial', sans-serif; color: #0F172A; font-size: 11px; }
 table { width: 100%; border-collapse: collapse; }
 .mono { font-family: 'Courier', 'Courier New', monospace; }
+/* Helvetica (base del documento) no trae glifos de simbolos/flechas (⚠ ▲ →
+   salian como "?"). DejaVu Sans si los tiene y ya viene empaquetada con
+   dompdf (vendor/dompdf/dompdf/lib/fonts) -- no requiere instalar nada. */
+.glyph { font-family: 'DejaVu Sans', 'Helvetica', sans-serif; }
 
 /* ---- encabezado ---- */
 .doc-header { position: fixed; top: -76px; left: 0; right: 0; height: 60px; border-bottom: 3px solid #2563EB; padding-bottom: 10px; }

@@ -49,7 +49,7 @@
                 @endphp
                 <tr>
                     <td class="mono">{{ $t['unidad'] }}</td>
-                    <td>{{ count($personas) > 0 ? implode(' → ', $personas) : '—' }}</td>
+                    <td>{!! count($personas) > 0 ? implode(' <span class="glyph">→</span> ', array_map('e', $personas)) : '—' !!}</td>
                     <td class="num">{{ $t['dias_ocupados'] }}</td>
                     <td class="num">{{ $ocupacion['dias_rango'] }}</td>
                     <td class="num">{{ $t['tasa_ocupacion'] }}%</td>

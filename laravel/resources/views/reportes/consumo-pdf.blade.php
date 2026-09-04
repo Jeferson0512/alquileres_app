@@ -71,7 +71,7 @@
                     <td class="mono">{{ $m['unidad'] }}</td>
                     @foreach($m['valores'] as $v)
                         <td class="num" style="{{ $v['bajo_minimo'] ? 'color:#D97706;font-weight:bold;' : ($v['anomalia'] ? 'color:#DC2626;font-weight:bold;' : '') }}">
-                            {{ $v['kwh'] }}{{ $v['bajo_minimo'] ? ' ⚠' : ($v['anomalia'] ? ' ▲' : '') }}
+                            {{ $v['kwh'] }}{!! $v['bajo_minimo'] ? ' <span class="glyph">⚠</span>' : ($v['anomalia'] ? ' <span class="glyph">▲</span>' : '') !!}
                         </td>
                     @endforeach
                     <td class="num muted">{{ $m['promedio'] }}</td>
@@ -79,7 +79,7 @@
             @endforeach
         </tbody>
     </table>
-    <div class="note-box" style="margin-top:6px;">⚠ bajo el mínimo facturable ({{ $k['minimo_kwh'] }} kWh) &nbsp;&middot;&nbsp; ▲ se aleja de su propio promedio en ese período</div>
+    <div class="note-box" style="margin-top:6px;"><span class="glyph">⚠</span> bajo el mínimo facturable ({{ $k['minimo_kwh'] }} kWh) &nbsp;&middot;&nbsp; <span class="glyph">▲</span> se aleja de su propio promedio en ese período</div>
 
     @if(count($consumo['tramos']) > 0)
         @include('reportes._section', ['n' => 5, 'label' => 'Consumo por tramo de ocupación'])

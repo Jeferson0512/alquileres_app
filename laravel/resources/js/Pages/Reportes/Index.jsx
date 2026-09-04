@@ -6,7 +6,7 @@ import StatusTabs from '@/Components/StatusTabs';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
 import {
-    AlertTriangle, Building2, CalendarClock, Gauge, KeyRound, TrendingDown, TrendingUp, Wallet, Zap,
+    AlertTriangle, Building2, CalendarClock, Download, Gauge, KeyRound, TrendingDown, TrendingUp, Wallet, Zap,
 } from 'lucide-react';
 import { useState } from 'react';
 import Chart from 'react-apexcharts';
@@ -37,6 +37,16 @@ const TABS = [
     { value: 'consumo', label: 'Consumo de luz' },
 ];
 
+// PDF: link nativo del navegador (target=_blank), sin JS de por medio -- ni
+// fetch+blob ni window.open programatico. Mismo criterio que ya usa el PDF
+// del Portal (PortalReciboController::descargar, "stream() abre inline en
+// pestaña nueva"): la descarga la maneja el navegador, no una librería.
+const EXPORT_ROUTES_PDF = {
+    financiero: 'reportes.financiero.pdf',
+    ocupacion: 'reportes.ocupacion.pdf',
+    consumo: 'reportes.consumo.pdf',
+};
+
 export default function ReportesIndex({ periodos, rango, financiero, ocupacion, consumo }) {
     const [tab, setTab] = useState('financiero');
 
@@ -48,7 +58,18 @@ export default function ReportesIndex({ periodos, rango, financiero, ocupacion, 
 
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <StatusTabs value={tab} options={TABS} onChange={setTab} />
-                <PeriodRangeSwitcher periodos={periodos} desde={rango.desde} hasta={rango.hasta} onChange={cambiarRango} />
+                <div className="flex flex-wrap items-center gap-3">
+                    <PeriodRangeSwitcher periodos={periodos} desde={rango.desde} hasta={rango.hasta} onChange={cambiarRango} />
+                    <a
+                        href={route(EXPORT_ROUTES_PDF[tab], { desde: rango.desde, hasta: rango.hasta })}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 rounded-lg bg-ink px-3.5 py-2 text-sm font-semibold text-white hover:bg-ink/90"
+                    >
+                        <Download className="h-4 w-4" />
+                        Exportar PDF
+                    </a>
+                </div>
             </div>
 
             {tab === 'financiero' && <TabFinanciero data={financiero} />}

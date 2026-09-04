@@ -11,10 +11,12 @@ namespace App\Support;
  * sin depender de su parser de SVG.
  *
  * Se dibuja a 2x el tamano final (CSS width/height lo reduce) para que se
- * vea nitido impreso/exportado. Las etiquetas usan la fuente bitmap nativa
- * de GD (imagestring) -- no requiere ningun .ttf instalado en el servidor,
- * a costa de verse pixelada en vez del Helvetica del resto del documento
- * (aceptable a este tamano, es solo el eje).
+ * vea nitido impreso/exportado. Las etiquetas usan DejaVu Sans via FreeType
+ * (imagettftext) -- el .ttf ya viene empaquetado con dompdf mismo
+ * (vendor/dompdf/dompdf/lib/fonts), asi que no depende de fuentes
+ * instaladas en el SO ni rompe en produccion. Se probo primero con la
+ * fuente bitmap nativa de GD (imagestring): no escala con el 2x, quedaba
+ * ilegible/pixelada junto a las barras vectoriales nitidas.
  */
 class PdfChart
 {
@@ -48,7 +50,7 @@ class PdfChart
             $y = (int) ($padT + $plotH - ($plotH * $t / 3));
             $val = (int) round($max * $t / 3);
             imageline($img, $padL, $y, $w - $padR, $y, $lineaGris);
-            self::texto($img, (string) number_format($val), $padL - 4 * $s, $y - 4 * $s, $gris, 'r');
+            self::textoCentradoV($img, (string) number_format($val), $padL - 5 * $s, $y, $gris, 'r');
         }
 
         $n = max(count($categorias), 1);
@@ -70,7 +72,7 @@ class PdfChart
 
         foreach ($categorias as $ci => $cat) {
             $gx = $padL + $ci * $groupW;
-            self::texto($img, (string) $cat, (int) ($gx + $groupW / 2), $h - 12 * $s, $gris, 'c');
+            self::texto($img, (string) $cat, (int) ($gx + $groupW / 2), $h - 4 * $s, $gris, 'c');
         }
 
         return self::salida($img);
@@ -102,9 +104,9 @@ class PdfChart
             $bh = (int) ($filaAlto * 0.56);
             $v = $valores[$i] ?? 0;
             $bw = $max > 0 ? (int) ($plotW * $v / $max) : 0;
-            self::texto($img, (string) $et, $padL - 6 * $s, $y0 + (int) ($bh / 2) - 4 * $s, $gris, 'r');
+            self::textoCentradoV($img, (string) $et, $padL - 6 * $s, $y0 + (int) ($bh / 2), $gris, 'r');
             imagefilledrectangle($img, $padL, $y0, $padL + $bw, $y0 + $bh, $color);
-            self::texto($img, number_format($v, 1), $padL + $bw + 5 * $s, $y0 + (int) ($bh / 2) - 4 * $s, self::color($img, '#0F172A'), 'l');
+            self::textoCentradoV($img, number_format($v, 1), $padL + $bw + 6 * $s, $y0 + (int) ($bh / 2), self::color($img, '#0F172A'), 'l');
         }
 
         return self::salida($img);
@@ -163,16 +165,37 @@ class PdfChart
         return imagecolorallocate($img, $r, $g, $b);
     }
 
-    private static function texto($img, string $text, int $x, int $y, $color, string $align = 'l'): void
+    /**
+     * imagettftext ancla el texto en la linea base (no arriba-izquierda como
+     * el imagestring de GD que se uso antes) -- este helper recibe el
+     * CENTRO vertical deseado y calcula la linea base a partir de ahi, para
+     * no tener que repetir el mismo ajuste a ojo en cada punto de la barra.
+     */
+    private static function textoCentradoV($img, string $text, int $x, int $centerY, $color, string $align = 'l', float $tamano = 15): void
     {
-        $font = 2;
-        $w = imagefontwidth($font) * strlen($text);
+        self::texto($img, $text, $x, (int) ($centerY + $tamano * 0.33), $color, $align, $tamano);
+    }
+
+    /**
+     * $tamano ya en unidades del canvas 2x (no se reescala aca) -- mismo
+     * criterio que el resto del archivo, donde cada medida se multiplica
+     * por $s explicitamente en el punto de uso.
+     */
+    private static function texto($img, string $text, int $x, int $y, $color, string $align = 'l', float $tamano = 15): void
+    {
+        $bbox = imagettfbbox($tamano, 0, self::fuente(), $text);
+        $w = $bbox[2] - $bbox[0];
         $offsetX = match ($align) {
             'r' => -$w,
             'c' => (int) (-$w / 2),
             default => 0,
         };
-        imagestring($img, $font, $x + $offsetX, $y, $text, $color);
+        imagettftext($img, $tamano, 0, $x + $offsetX, $y, $color, self::fuente(), $text);
+    }
+
+    private static function fuente(): string
+    {
+        return base_path('vendor/dompdf/dompdf/lib/fonts/DejaVuSans-Bold.ttf');
     }
 
     private static function salida($img): string
