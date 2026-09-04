@@ -1,12 +1,14 @@
 import Badge from '@/Components/Badge';
 import Card from '@/Components/Card';
+import Dropdown from '@/Components/Dropdown';
 import KpiCard from '@/Components/KpiCard';
 import PeriodRangeSwitcher from '@/Components/PeriodRangeSwitcher';
 import StatusTabs from '@/Components/StatusTabs';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router } from '@inertiajs/react';
 import {
-    AlertTriangle, Building2, CalendarClock, Download, Gauge, KeyRound, TrendingDown, TrendingUp, Wallet, Zap,
+    AlertTriangle, Building2, CalendarClock, ChevronDown, Download, FileSpreadsheet, FileText, Gauge, KeyRound,
+    TrendingDown, TrendingUp, Wallet, Zap,
 } from 'lucide-react';
 import { useState } from 'react';
 import Chart from 'react-apexcharts';
@@ -37,15 +39,52 @@ const TABS = [
     { value: 'consumo', label: 'Consumo de luz' },
 ];
 
-// PDF: link nativo del navegador (target=_blank), sin JS de por medio -- ni
-// fetch+blob ni window.open programatico. Mismo criterio que ya usa el PDF
-// del Portal (PortalReciboController::descargar, "stream() abre inline en
-// pestaña nueva"): la descarga la maneja el navegador, no una librería.
-const EXPORT_ROUTES_PDF = {
-    financiero: 'reportes.financiero.pdf',
-    ocupacion: 'reportes.ocupacion.pdf',
-    consumo: 'reportes.consumo.pdf',
+// Links nativos del navegador (sin fetch+blob ni window.open programatico)
+// -- mismo criterio que ya usa el PDF del Portal (PortalReciboController::
+// descargar, "stream() abre inline en pestaña nueva"): la descarga la
+// maneja el navegador, no una libreria. El PDF abre en pestaña nueva para
+// verlo antes de decidir si descargarlo; el Excel no es viewable inline,
+// asi que ese sí dispara la descarga directo.
+const EXPORT_ROUTES = {
+    financiero: { pdf: 'reportes.financiero.pdf', excel: 'reportes.financiero.excel' },
+    ocupacion: { pdf: 'reportes.ocupacion.pdf', excel: 'reportes.ocupacion.excel' },
+    consumo: { pdf: 'reportes.consumo.pdf', excel: 'reportes.consumo.excel' },
 };
+
+function BotonExportar({ tab, rango }) {
+    const rutas = EXPORT_ROUTES[tab];
+    const query = { desde: rango.desde, hasta: rango.hasta };
+
+    return (
+        <Dropdown>
+            <Dropdown.Trigger>
+                <button type="button" className="flex items-center gap-1.5 rounded-lg bg-ink px-3.5 py-2 text-sm font-semibold text-white hover:bg-ink/90">
+                    <Download className="h-4 w-4" />
+                    Exportar
+                    <ChevronDown className="h-3.5 w-3.5" />
+                </button>
+            </Dropdown.Trigger>
+            <Dropdown.Content align="right" width="56" contentClasses="bg-surface py-1.5">
+                <a
+                    href={route(rutas.pdf, query)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-ink hover:bg-surface-2"
+                >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-danger text-[9px] font-bold text-white"><FileText className="h-3.5 w-3.5" /></span>
+                    Ver / descargar PDF
+                </a>
+                <a
+                    href={route(rutas.excel, query)}
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-sm text-ink hover:bg-surface-2"
+                >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-success text-[9px] font-bold text-white"><FileSpreadsheet className="h-3.5 w-3.5" /></span>
+                    Descargar Excel
+                </a>
+            </Dropdown.Content>
+        </Dropdown>
+    );
+}
 
 export default function ReportesIndex({ periodos, rango, financiero, ocupacion, consumo }) {
     const [tab, setTab] = useState('financiero');
@@ -60,15 +99,7 @@ export default function ReportesIndex({ periodos, rango, financiero, ocupacion, 
                 <StatusTabs value={tab} options={TABS} onChange={setTab} />
                 <div className="flex flex-wrap items-center gap-3">
                     <PeriodRangeSwitcher periodos={periodos} desde={rango.desde} hasta={rango.hasta} onChange={cambiarRango} />
-                    <a
-                        href={route(EXPORT_ROUTES_PDF[tab], { desde: rango.desde, hasta: rango.hasta })}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1.5 rounded-lg bg-ink px-3.5 py-2 text-sm font-semibold text-white hover:bg-ink/90"
-                    >
-                        <Download className="h-4 w-4" />
-                        Exportar PDF
-                    </a>
+                    <BotonExportar tab={tab} rango={rango} />
                 </div>
             </div>
 

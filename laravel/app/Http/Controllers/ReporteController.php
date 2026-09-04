@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ConsumoExport;
+use App\Exports\FinancieroExport;
+use App\Exports\OcupacionExport;
 use App\Models\Inmueble;
 use App\Models\Periodo;
 use App\Services\ReporteConsumoService;
@@ -12,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReporteController extends Controller
 {
@@ -72,6 +76,36 @@ class ReporteController extends Controller
         ])->setPaper('letter');
 
         return $pdf->stream('reporte-consumo-'.now()->format('Ymd-His').'.pdf');
+    }
+
+    public function exportarFinancieroExcel(Request $request, ReporteFinancieroService $financiero)
+    {
+        ['rango' => $rango] = $this->rangoDePeriodos($request);
+
+        return Excel::download(
+            new FinancieroExport($financiero->build($rango), $this->rangoLabel($rango)),
+            'reporte-financiero-'.now()->format('Ymd-His').'.xlsx',
+        );
+    }
+
+    public function exportarOcupacionExcel(Request $request, ReporteOcupacionService $ocupacion)
+    {
+        ['rango' => $rango] = $this->rangoDePeriodos($request);
+
+        return Excel::download(
+            new OcupacionExport($ocupacion->build($rango), $this->rangoLabel($rango)),
+            'reporte-ocupacion-'.now()->format('Ymd-His').'.xlsx',
+        );
+    }
+
+    public function exportarConsumoExcel(Request $request, ReporteConsumoService $consumo)
+    {
+        ['rango' => $rango] = $this->rangoDePeriodos($request);
+
+        return Excel::download(
+            new ConsumoExport($consumo->build($rango), $this->rangoLabel($rango)),
+            'reporte-consumo-'.now()->format('Ymd-His').'.xlsx',
+        );
     }
 
     /**
