@@ -3,7 +3,7 @@ import { iniciales } from '@/lib/iniciales';
 import MESES from '@/lib/meses';
 import { Link, router, usePage } from '@inertiajs/react';
 import {
-    Banknote, Bell, Building2, Calculator, Calendar, ChevronDown, CircleCheck, CircleX, Gauge, IdCard, KeyRound,
+    Banknote, BarChart3, Bell, Building2, Calculator, Calendar, ChevronDown, CircleCheck, CircleX, Gauge, IdCard, KeyRound,
     LayoutDashboard, Menu, MessageSquare, Receipt, ReceiptText, RefreshCcw, Settings, ShieldCheck, Tag, UserCog, Users, Wallet, Zap,
 } from 'lucide-react';
 import { Fragment, useState } from 'react';
@@ -23,6 +23,7 @@ const CODE_TO_PATH = {
 // CLAUDE.md.
 const MODULE_GROUPS = {
     dashboard: 'Operación',
+    reportes: 'Operación',
     periodos: 'Operación',
     inquilinos: 'Operación',
     unidades: 'Operación',
@@ -37,6 +38,7 @@ const MODULE_GROUPS = {
 // Un ícono Lucide por módulo/submódulo (mismos "code" de la tabla `modules`).
 const MODULE_ICONS = {
     dashboard: LayoutDashboard,
+    reportes: BarChart3,
     periodos: Calendar,
     inquilinos: Users,
     unidades: Building2,

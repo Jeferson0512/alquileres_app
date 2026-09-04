@@ -25,6 +25,7 @@ use App\Http\Controllers\PortalReciboController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReciboController;
+use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\UnidadController;
 use App\Http\Controllers\UnidadMedidorCompartidoController;
@@ -58,6 +59,9 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Reportes
+    Route::get('/reportes', [ReporteController::class, 'index'])->middleware('permission:reportes.ver')->name('reportes.index');
+
     // Periodos
     Route::get('/periodos', [PeriodoController::class, 'index'])->middleware('permission:periodos.ver')->name('periodos.index');
     Route::post('/periodos', [PeriodoController::class, 'store'])->middleware('permission:periodos.crear')->name('periodos.store');

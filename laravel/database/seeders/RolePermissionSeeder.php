@@ -15,6 +15,8 @@ class RolePermissionSeeder extends Seeder
     private const PERMISSIONS = [
         'dashboard.ver',
 
+        'reportes.ver',
+
         'periodos.ver', 'periodos.crear', 'periodos.cerrar',
 
         'inquilinos.ver', 'inquilinos.crear', 'inquilinos.editar', 'inquilinos.eliminar',
