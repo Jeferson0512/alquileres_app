@@ -15,7 +15,7 @@ export default function VerifyEmail({ status }) {
         <GuestLayout>
             <Head title="Verificar correo" />
 
-            <div className="mb-4 text-sm text-gray-600">
+            <div className="mb-4 text-sm text-muted">
                 ¡Gracias por registrarte! Antes de empezar, ¿podrías verificar
                 tu correo electrónico haciendo clic en el enlace que te
                 acabamos de enviar? Si no recibiste el correo, con gusto te
@@ -23,7 +23,7 @@ export default function VerifyEmail({ status }) {
             </div>
 
             {status === 'verification-link-sent' && (
-                <div className="mb-4 text-sm font-medium text-green-600">
+                <div className="mb-4 text-sm font-medium text-success">
                     Se envió un nuevo enlace de verificación al correo
                     electrónico que registraste.
                 </div>
@@ -39,7 +39,7 @@ export default function VerifyEmail({ status }) {
                         href={route('logout')}
                         method="post"
                         as="button"
-                        className="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        className="rounded-md text-sm text-muted underline hover:text-ink focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
                         Cerrar sesión
                     </Link>

@@ -48,11 +48,11 @@ export default function UpdatePasswordForm({ className = '' }) {
     return (
         <section className={className}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 className="text-lg font-bold text-ink">
                     Actualizar contraseña
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-muted">
                     Asegurate de usar una contraseña larga y difícil de
                     adivinar para mantener tu cuenta segura.
                 </p>
@@ -134,7 +134,7 @@ export default function UpdatePasswordForm({ className = '' }) {
                         leave="transition ease-in-out"
                         leaveTo="opacity-0"
                     >
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted">
                             Guardado.
                         </p>
                     </Transition>

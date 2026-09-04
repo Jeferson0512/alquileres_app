@@ -13,15 +13,15 @@ export default function Edit({ mustVerifyEmail, status }) {
             <Head title="Mi perfil" />
 
             <div className="space-y-4">
-                <div className="flex items-center gap-3.5 rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+                <div className="flex items-center gap-3.5 rounded-[13px] border border-border bg-surface p-4 shadow-sm sm:p-6">
                     <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary-light text-lg font-extrabold text-primary-dark">
                         {iniciales(user.name)}
                     </span>
                     <div className="min-w-0">
-                        <div className="truncate text-base font-extrabold text-gray-900">
+                        <div className="truncate text-base font-extrabold text-ink">
                             {user.name}
                         </div>
-                        <div className="truncate text-sm text-gray-500">
+                        <div className="truncate text-sm text-muted">
                             {user.email}
                         </div>
                     </div>
@@ -33,19 +33,19 @@ export default function Edit({ mustVerifyEmail, status }) {
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+                    <div className="rounded-[13px] border border-border bg-surface p-4 shadow-sm sm:p-6">
                         <UpdateProfileInformationForm
                             mustVerifyEmail={mustVerifyEmail}
                             status={status}
                         />
                     </div>
 
-                    <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6">
+                    <div className="rounded-[13px] border border-border bg-surface p-4 shadow-sm sm:p-6">
                         <UpdatePasswordForm />
                     </div>
                 </div>
 
-                <div className="rounded-lg border border-danger/30 border-t-4 border-t-danger bg-white p-4 sm:p-6">
+                <div className="rounded-[13px] border border-danger/30 border-t-4 border-t-danger bg-surface p-4 shadow-sm sm:p-6">
                     <DeleteUserForm />
                 </div>
             </div>

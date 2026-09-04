@@ -1,3 +1,6 @@
+import InputError from '@/Components/InputError';
+import InputLabel from '@/Components/InputLabel';
+import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
@@ -43,15 +46,16 @@ export default function Index({ config }) {
 
     const field = (key, label, type = 'text') => (
         <div>
-            <label className="block text-xs font-medium text-gray-500">{label}</label>
-            <input
+            <InputLabel htmlFor={key} value={label} />
+            <TextInput
+                id={key}
                 type={type}
                 value={data[key]}
                 disabled={!puede}
                 onChange={(e) => setData(key, e.target.value)}
-                className="mt-1 w-full rounded-md border-gray-300 text-sm disabled:bg-gray-50"
+                className="mt-1 block w-full disabled:bg-surface-2"
             />
-            {errors[key] && <p className="mt-1 text-xs text-danger">{errors[key]}</p>}
+            <InputError className="mt-1" message={errors[key]} />
         </div>
     );
 
@@ -61,31 +65,31 @@ export default function Index({ config }) {
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
                 <form onSubmit={submit} className="space-y-6">
-                    <div className="rounded-lg border border-gray-200 bg-white p-5">
-                        <h3 className="mb-3 text-sm font-semibold text-gray-800">Umbrales de luz</h3>
+                    <div className="rounded-[13px] border border-border bg-surface p-5 shadow-sm">
+                        <h3 className="mb-3 text-sm font-bold text-ink">Umbrales de luz</h3>
                         <div className="grid grid-cols-2 gap-4">
                             {field('monto_minimo_luz', 'Monto mínimo de luz (S/)', 'number')}
                             {field('minimo_kwh_aviso', 'kWh mínimo de aviso', 'number')}
                         </div>
                     </div>
 
-                    <div className="rounded-lg border border-gray-200 bg-white p-5">
-                        <h3 className="mb-3 text-sm font-semibold text-gray-800">Yape</h3>
+                    <div className="rounded-[13px] border border-border bg-surface p-5 shadow-sm">
+                        <h3 className="mb-3 text-sm font-bold text-ink">Yape</h3>
                         <div className="grid grid-cols-2 gap-4">
                             {field('yape_titular', 'Titular')}
                             {field('yape_numero', 'Número')}
                         </div>
 
                         {puede && (
-                            <div className="mt-4 border-t border-gray-100 pt-4">
-                                <label className="block text-xs font-medium text-gray-500">QR de pago</label>
+                            <div className="mt-4 border-t border-border pt-4">
+                                <InputLabel value="QR de pago" />
                                 <div className="mt-1 flex items-center gap-3">
                                     <input
                                         ref={qrInputRef}
                                         type="file"
                                         accept="image/png,image/jpeg,image/webp"
                                         onChange={(e) => qrForm.setData('qr', e.target.files?.[0] ?? null)}
-                                        className="block flex-1 text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-primary-light file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-dark"
+                                        className="block flex-1 text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-primary-light file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-dark"
                                     />
                                     <button
                                         type="button"
@@ -96,22 +100,22 @@ export default function Index({ config }) {
                                         Subir QR
                                     </button>
                                 </div>
-                                {qrForm.errors.qr && <p className="mt-1 text-xs text-danger">{qrForm.errors.qr}</p>}
-                                <p className="mt-1 text-xs text-gray-400">PNG, JPG o WEBP, máx. 5 MB. Es el mismo QR que verán todos los inquilinos en su portal.</p>
+                                <InputError className="mt-1" message={qrForm.errors.qr} />
+                                <p className="mt-1 text-xs text-muted-2">PNG, JPG o WEBP, máx. 5 MB. Es el mismo QR que verán todos los inquilinos en su portal.</p>
                             </div>
                         )}
                     </div>
 
-                    <div className="rounded-lg border border-gray-200 bg-white p-5">
-                        <h3 className="mb-3 text-sm font-semibold text-gray-800">Contacto</h3>
+                    <div className="rounded-[13px] border border-border bg-surface p-5 shadow-sm">
+                        <h3 className="mb-3 text-sm font-bold text-ink">Contacto</h3>
                         <div className="grid grid-cols-2 gap-4">
                             {field('whatsapp_contacto', 'WhatsApp (con código de país, solo números)', 'tel')}
                         </div>
-                        <p className="mt-1 text-xs text-gray-400">Ej. 51987654321 — sin espacios ni símbolos. Es el botón de WhatsApp que ve el inquilino en su portal.</p>
+                        <p className="mt-1 text-xs text-muted-2">Ej. 51987654321 — sin espacios ni símbolos. Es el botón de WhatsApp que ve el inquilino en su portal.</p>
                     </div>
 
-                    <div className="rounded-lg border border-gray-200 bg-white p-5">
-                        <h3 className="mb-3 text-sm font-semibold text-gray-800">Transferencia bancaria</h3>
+                    <div className="rounded-[13px] border border-border bg-surface p-5 shadow-sm">
+                        <h3 className="mb-3 text-sm font-bold text-ink">Transferencia bancaria</h3>
                         <div className="grid grid-cols-2 gap-4">
                             {field('banco_nombre', 'Banco')}
                             {field('banco_titular', 'Titular')}
@@ -120,8 +124,8 @@ export default function Index({ config }) {
                         </div>
                     </div>
 
-                    <div className="rounded-lg border border-gray-200 bg-white p-5">
-                        <h3 className="mb-3 text-sm font-semibold text-gray-800">Mensaje base para avisos</h3>
+                    <div className="rounded-[13px] border border-border bg-surface p-5 shadow-sm">
+                        <h3 className="mb-3 text-sm font-bold text-ink">Mensaje base para avisos</h3>
                         {field('mensaje_base', 'Mensaje')}
                     </div>
 
@@ -133,7 +137,7 @@ export default function Index({ config }) {
                 </form>
 
                 <aside className="space-y-4">
-                    <section className="rounded-lg border border-gray-200 bg-gradient-to-br from-surface-dark to-primary-dark p-5 text-white">
+                    <section className="rounded-[13px] border border-primary-dark bg-gradient-to-br from-ink to-primary-dark p-5 text-white shadow-sm">
                         <p className="text-xs uppercase tracking-wide text-white/70">Así lo verá el inquilino</p>
 
                         <div className="mt-3 flex items-center gap-3 rounded-lg bg-white/10 p-3">
@@ -169,9 +173,9 @@ export default function Index({ config }) {
                         )}
                     </section>
 
-                    <section className="rounded-lg border border-gray-200 bg-white p-5">
-                        <h3 className="mb-2 text-sm font-semibold text-gray-800">¿Dónde se usa esto?</h3>
-                        <ul className="space-y-2 text-xs text-gray-500">
+                    <section className="rounded-[13px] border border-border bg-surface p-5 shadow-sm">
+                        <h3 className="mb-2 text-sm font-bold text-ink">¿Dónde se usa esto?</h3>
+                        <ul className="space-y-2 text-xs text-muted">
                             <li className="flex gap-2"><span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />Se muestra en el aviso de cobro que le compartes a cada inquilino.</li>
                             <li className="flex gap-2"><span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />"kWh mínimo de aviso" oculta el consumo si es muy bajo, para no alarmar sin motivo.</li>
                             <li className="flex gap-2"><span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />"Monto mínimo de luz" agrega un ajuste si el cobro de luz calculado queda por debajo de este piso.</li>

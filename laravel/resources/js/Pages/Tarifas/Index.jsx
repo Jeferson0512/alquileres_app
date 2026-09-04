@@ -1,3 +1,4 @@
+import Badge from '@/Components/Badge';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -23,47 +24,45 @@ export default function Index({ tarifas }) {
         <AdminLayout title="Tarifas">
             <Head title="Tarifas" />
 
-            <p className="mb-4 text-sm text-gray-500">Montos de agua, gas, mantenimiento y demás servicios por unidad. Cada cambio queda auditado.</p>
+            <p className="mb-4 text-sm text-muted">Montos de agua, gas, mantenimiento y demás servicios por unidad. Cada cambio queda auditado.</p>
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-[13px] border border-border bg-surface shadow-sm">
+                <table className="min-w-full divide-y divide-border text-sm">
+                    <thead className="bg-surface-2">
                         <tr>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Servicio</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Descripción</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Monto</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Activo</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Acciones</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Servicio</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Descripción</th>
+                            <th className="px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Monto</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Activo</th>
+                            <th className="px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                         {tarifas.map((t) => (
                             <tr key={t.id_tarifa}>
-                                <td className="px-4 py-2 font-medium text-gray-800">{t.servicio}</td>
-                                <td className="px-4 py-2 text-gray-500">
+                                <td className="px-4 py-2.5 font-semibold text-ink">{t.servicio}</td>
+                                <td className="px-4 py-2.5 text-muted">
                                     {editing === t.id_tarifa ? (
-                                        <input value={data.descripcion} onChange={(e) => setData('descripcion', e.target.value)} className="w-full rounded-md border-gray-300 text-sm" />
+                                        <input value={data.descripcion} onChange={(e) => setData('descripcion', e.target.value)} className="w-full rounded-md border-border bg-surface text-sm text-ink" />
                                     ) : (t.descripcion ?? '-')}
                                 </td>
-                                <td className="px-4 py-2 text-right text-gray-500">
+                                <td className="px-4 py-2.5 text-right font-mono text-muted">
                                     {editing === t.id_tarifa ? (
-                                        <input type="number" step="0.01" value={data.monto} onChange={(e) => setData('monto', e.target.value)} className="w-28 rounded-md border-gray-300 text-right text-sm" />
+                                        <input type="number" step="0.01" value={data.monto} onChange={(e) => setData('monto', e.target.value)} className="w-28 rounded-md border-border bg-surface text-right font-mono text-sm text-ink" />
                                     ) : `S/ ${Number(t.monto).toFixed(2)}`}
                                 </td>
-                                <td className="px-4 py-2">
+                                <td className="px-4 py-2.5">
                                     {editing === t.id_tarifa ? (
-                                        <input type="checkbox" checked={data.activo} onChange={(e) => setData('activo', e.target.checked)} />
+                                        <input type="checkbox" checked={data.activo} onChange={(e) => setData('activo', e.target.checked)} className="h-4 w-4 rounded border-border text-primary focus:ring-primary" />
                                     ) : (
-                                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${t.activo ? 'bg-primary-light text-primary-dark' : 'bg-gray-100 text-gray-600'}`}>
-                                            {t.activo ? 'Sí' : 'No'}
-                                        </span>
+                                        <Badge variant={t.activo ? 'info' : 'gray'}>{t.activo ? 'Sí' : 'No'}</Badge>
                                     )}
                                 </td>
-                                <td className="px-4 py-2 text-right">
+                                <td className="px-4 py-2.5 text-right">
                                     {editing === t.id_tarifa ? (
                                         <form onSubmit={submit} className="inline-flex gap-2">
                                             <button type="submit" disabled={processing} className="text-sm font-medium text-primary hover:text-primary-dark">Guardar</button>
-                                            <button type="button" onClick={() => setEditing(null)} className="text-sm font-medium text-gray-500">Cancelar</button>
+                                            <button type="button" onClick={() => setEditing(null)} className="text-sm font-medium text-muted">Cancelar</button>
                                         </form>
                                     ) : puede && (
                                         <button onClick={() => startEdit(t)} className="text-sm font-medium text-primary hover:text-primary-dark">Editar</button>

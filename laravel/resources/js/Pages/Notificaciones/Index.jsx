@@ -13,13 +13,13 @@ const TABS = [
 ];
 
 const ICONOS = {
-    RENOVACION: { Icon: RefreshCcw, bg: 'bg-amber-100', text: 'text-warning' },
-    COMPROBANTE_PENDIENTE: { Icon: ReceiptText, bg: 'bg-amber-100', text: 'text-warning' },
-    COMPROBANTE_APROBADO: { Icon: CircleCheck, bg: 'bg-green-100', text: 'text-success' },
-    COMPROBANTE_RECHAZADO: { Icon: CircleX, bg: 'bg-red-100', text: 'text-danger' },
-    CONSULTA_NUEVO: { Icon: MessageSquare, bg: 'bg-amber-100', text: 'text-warning' },
-    CONSULTA_CONTACTADO: { Icon: MessageSquare, bg: 'bg-green-100', text: 'text-success' },
-    CONSULTA_DESCARTADO: { Icon: MessageSquare, bg: 'bg-gray-100', text: 'text-gray-400' },
+    RENOVACION: { Icon: RefreshCcw, bg: 'bg-warning-tint', text: 'text-warning' },
+    COMPROBANTE_PENDIENTE: { Icon: ReceiptText, bg: 'bg-warning-tint', text: 'text-warning' },
+    COMPROBANTE_APROBADO: { Icon: CircleCheck, bg: 'bg-success-tint', text: 'text-success' },
+    COMPROBANTE_RECHAZADO: { Icon: CircleX, bg: 'bg-danger-tint', text: 'text-danger' },
+    CONSULTA_NUEVO: { Icon: MessageSquare, bg: 'bg-warning-tint', text: 'text-warning' },
+    CONSULTA_CONTACTADO: { Icon: MessageSquare, bg: 'bg-success-tint', text: 'text-success' },
+    CONSULTA_DESCARTADO: { Icon: MessageSquare, bg: 'bg-surface-3', text: 'text-muted-2' },
 };
 
 function iconoDe(item) {
@@ -44,7 +44,7 @@ export default function Index({ feed, estadoFiltro, totalSinLeer }) {
                 <button
                     onClick={marcarLeidas}
                     disabled={totalSinLeer === 0}
-                    className="shrink-0 rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                     Marcar todas como leídas
                 </button>
@@ -52,7 +52,7 @@ export default function Index({ feed, estadoFiltro, totalSinLeer }) {
 
             <div className="space-y-2">
                 {feed.data.length === 0 && (
-                    <p className="rounded-lg border border-gray-200 bg-white p-6 text-center text-sm text-gray-400">Sin notificaciones en este filtro.</p>
+                    <p className="rounded-[13px] border border-border bg-surface p-6 text-center text-sm text-muted-2 shadow-sm">Sin notificaciones en este filtro.</p>
                 )}
                 {feed.data.map((n) => {
                     const { Icon, bg, text } = iconoDe(n);
@@ -60,9 +60,9 @@ export default function Index({ feed, estadoFiltro, totalSinLeer }) {
                         <Link
                             key={n.id}
                             href={n.url}
-                            className={`flex items-center justify-between gap-3 rounded-lg border p-4 transition-colors ${
+                            className={`flex items-center justify-between gap-3 rounded-[13px] border p-4 shadow-sm transition-colors ${
                                 n.leido
-                                    ? 'border-gray-200 bg-white hover:bg-gray-50'
+                                    ? 'border-border bg-surface hover:bg-surface-2'
                                     : 'border-primary-light bg-primary-light/40 hover:bg-primary-light/60'
                             }`}
                         >
@@ -71,12 +71,12 @@ export default function Index({ feed, estadoFiltro, totalSinLeer }) {
                                     <Icon className="h-4 w-4" />
                                 </span>
                                 <div>
-                                    <p className={`flex items-center gap-1.5 text-sm ${n.leido ? 'font-normal text-gray-600' : 'font-semibold text-gray-900'}`}>
+                                    <p className={`flex items-center gap-1.5 text-sm ${n.leido ? 'font-normal text-muted' : 'font-semibold text-ink'}`}>
                                         {n.titulo}
                                         {!n.leido && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />}
                                     </p>
-                                    <p className={`text-xs ${n.leido ? 'text-gray-400' : 'text-gray-600'}`}>{n.detalle}</p>
-                                    <p className="mt-1 text-xs text-gray-400">{formatDate(n.fecha)}</p>
+                                    <p className={`text-xs ${n.leido ? 'text-muted-2' : 'text-muted'}`}>{n.detalle}</p>
+                                    <p className="mt-1 text-xs text-muted-2">{formatDate(n.fecha)}</p>
                                 </div>
                             </div>
                             <div className="flex shrink-0 items-center gap-2">
@@ -92,7 +92,7 @@ export default function Index({ feed, estadoFiltro, totalSinLeer }) {
                 })}
             </div>
 
-            <div className="mt-3 rounded-lg border border-gray-200 bg-white">
+            <div className="mt-3 rounded-[13px] border border-border bg-surface shadow-sm">
                 <Pagination meta={feed} onPageChange={cambiarPagina} />
             </div>
         </AdminLayout>

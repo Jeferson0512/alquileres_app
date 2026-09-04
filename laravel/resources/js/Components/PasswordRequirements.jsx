@@ -15,7 +15,7 @@ export default function PasswordRequirements({ password, className = '' }) {
                 return (
                     <li
                         key={requisito.key}
-                        className={`flex items-center gap-1.5 transition-colors ${cumple ? 'text-success' : 'text-gray-400'}`}
+                        className={`flex items-center gap-1.5 transition-colors ${cumple ? 'text-success' : 'text-muted-2'}`}
                     >
                         {cumple ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0" />}
                         {requisito.label}

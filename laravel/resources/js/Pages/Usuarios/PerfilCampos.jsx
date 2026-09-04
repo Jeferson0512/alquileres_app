@@ -14,27 +14,27 @@ export default function PerfilCampos({ campos }) {
                 Estos son los datos que un inquilino debe completar antes de poder usar su portal. Marca cuáles son obligatorios — los que no marques quedan como opcionales.
             </div>
 
-            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+            <div className="overflow-hidden rounded-[13px] border border-border bg-surface shadow-sm">
+                <table className="min-w-full divide-y divide-border text-sm">
+                    <thead className="bg-surface-2">
                         <tr>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Campo</th>
-                            <th className="px-4 py-2 text-center font-medium text-gray-500">Obligatorio</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Campo</th>
+                            <th className="px-4 py-2.5 text-center text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Obligatorio</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                         {campos.map((campo) => (
                             <tr key={campo.id}>
-                                <td className="px-4 py-2 font-medium text-gray-800">{campo.label}</td>
-                                <td className="px-4 py-2 text-center">
+                                <td className="px-4 py-2.5 font-semibold text-ink">{campo.label}</td>
+                                <td className="px-4 py-2.5 text-center">
                                     <label className="inline-flex cursor-pointer items-center gap-2">
                                         <input
                                             type="checkbox"
                                             checked={campo.required}
                                             onChange={() => toggle(campo)}
-                                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                                         />
-                                        <span className="text-xs text-gray-500">{campo.required ? 'Obligatorio' : 'Opcional'}</span>
+                                        <span className="text-xs text-muted">{campo.required ? 'Obligatorio' : 'Opcional'}</span>
                                     </label>
                                 </td>
                             </tr>

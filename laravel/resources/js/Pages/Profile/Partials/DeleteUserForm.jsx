@@ -48,11 +48,11 @@ export default function DeleteUserForm({ className = '' }) {
     return (
         <section className={`space-y-6 ${className}`}>
             <header>
-                <h2 className="text-lg font-medium text-gray-900">
+                <h2 className="text-lg font-bold text-ink">
                     Eliminar cuenta
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-muted">
                     Esto elimina únicamente tu cuenta de acceso (login, email
                     y contraseña) — no borra tus datos como inquilino ni
                     ningún historial del sistema (ocupaciones, cobros, pagos,
@@ -67,11 +67,11 @@ export default function DeleteUserForm({ className = '' }) {
 
             <Modal show={confirmingUserDeletion} onClose={closeModal}>
                 <form onSubmit={deleteUser} className="p-6">
-                    <h2 className="text-lg font-medium text-gray-900">
+                    <h2 className="text-lg font-bold text-ink">
                         ¿Estás seguro que querés eliminar tu cuenta?
                     </h2>
 
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-muted">
                         Se elimina de forma permanente tu acceso al sistema
                         (no vas a poder volver a iniciar sesión con este
                         usuario). Tu historial de negocio no se toca. Ingresá

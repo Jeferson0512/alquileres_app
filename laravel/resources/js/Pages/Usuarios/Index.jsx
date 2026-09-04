@@ -1,5 +1,11 @@
 import IconButton from '@/Components/IconButton';
+import InputError from '@/Components/InputError';
+import InputLabel from '@/Components/InputLabel';
+import Modal from '@/Components/Modal';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
 import StatusBadge from '@/Components/StatusBadge';
+import TextInput from '@/Components/TextInput';
 import AdminLayout from '@/Layouts/AdminLayout';
 import confirmDialog from '@/lib/confirm';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
@@ -15,28 +21,28 @@ function EditarModal({ usuario, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl">
-                <h3 className="mb-4 text-base font-semibold text-gray-800">Editar usuario</h3>
-                <form onSubmit={submit} className="space-y-3">
+        <Modal show onClose={onClose} maxWidth="sm">
+            <form onSubmit={submit} className="p-5">
+                <h3 className="mb-4 text-base font-bold text-ink">Editar usuario</h3>
+                <div className="space-y-3">
                     <div>
-                        <label className="block text-xs font-medium text-gray-500">Nombre *</label>
-                        <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                        {errors.name && <p className="mt-1 text-xs text-danger">{errors.name}</p>}
+                        <InputLabel htmlFor="usuario_name" value="Nombre *" />
+                        <TextInput id="usuario_name" className="mt-1 block w-full" value={data.name} onChange={(e) => setData('name', e.target.value)} />
+                        <InputError className="mt-1" message={errors.name} />
                     </div>
                     <div>
-                        <label className="block text-xs font-medium text-gray-500">Email *</label>
-                        <input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                        {errors.email && <p className="mt-1 text-xs text-danger">{errors.email}</p>}
+                        <InputLabel htmlFor="usuario_email" value="Email *" />
+                        <TextInput id="usuario_email" type="email" className="mt-1 block w-full" value={data.email} onChange={(e) => setData('email', e.target.value)} />
+                        <InputError className="mt-1" message={errors.email} />
                     </div>
-                    {errors.general && <p className="text-xs text-danger">{errors.general}</p>}
-                    <div className="flex gap-2 pt-2">
-                        <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
-                        <button type="button" onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                    <InputError message={errors.general} />
+                </div>
+                <div className="mt-4 flex justify-end gap-3">
+                    <SecondaryButton type="button" onClick={onClose}>Cancelar</SecondaryButton>
+                    <PrimaryButton disabled={processing}>Guardar</PrimaryButton>
+                </div>
+            </form>
+        </Modal>
     );
 }
 
@@ -49,26 +55,24 @@ function PasswordModal({ usuario, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl">
-                <h3 className="mb-1 text-base font-semibold text-gray-800">Cambiar contraseña</h3>
-                <p className="mb-4 text-sm text-gray-500">{usuario.name}</p>
+        <Modal show onClose={() => { reset(); onClose(); }} maxWidth="sm">
+            <form onSubmit={submit} className="p-5">
+                <h3 className="mb-1 text-base font-bold text-ink">Cambiar contraseña</h3>
+                <p className="mb-4 text-sm text-muted">{usuario.name}</p>
                 <p className="mb-4 rounded-lg bg-primary-light px-3 py-2 text-xs text-primary-dark">
                     Esto reemplaza la contraseña sin pedir la actual — úsalo cuando el usuario la olvidó y no puede entrar él mismo a cambiarla.
                 </p>
-                <form onSubmit={submit} className="space-y-3">
-                    <div>
-                        <label className="block text-xs font-medium text-gray-500">Contraseña nueva *</label>
-                        <input type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                        {errors.password && <p className="mt-1 text-xs text-danger">{errors.password}</p>}
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                        <button type="submit" disabled={processing} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50">Guardar</button>
-                        <button type="button" onClick={() => { reset(); onClose(); }} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div>
+                    <InputLabel htmlFor="usuario_password" value="Contraseña nueva *" />
+                    <TextInput id="usuario_password" type="password" className="mt-1 block w-full" value={data.password} onChange={(e) => setData('password', e.target.value)} />
+                    <InputError className="mt-1" message={errors.password} />
+                </div>
+                <div className="mt-4 flex justify-end gap-3">
+                    <SecondaryButton type="button" onClick={() => { reset(); onClose(); }}>Cancelar</SecondaryButton>
+                    <PrimaryButton disabled={processing}>Guardar</PrimaryButton>
+                </div>
+            </form>
+        </Modal>
     );
 }
 
@@ -121,42 +125,42 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
             </div>
 
             {creating && (
-                <form onSubmit={submit} className="mb-6 grid grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-white p-4 sm:grid-cols-4">
+                <form onSubmit={submit} className="mb-6 grid grid-cols-2 gap-4 rounded-[13px] border border-border bg-surface p-4 shadow-sm sm:grid-cols-4">
                     <div>
-                        <label className="block text-xs font-medium text-gray-500">Rol *</label>
-                        <select value={data.rol} onChange={(e) => setData('rol', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm">
+                        <InputLabel htmlFor="nuevo_rol" value="Rol *" />
+                        <select id="nuevo_rol" value={data.rol} onChange={(e) => setData('rol', e.target.value)} className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary">
                             {roles.map((r) => <option key={r} value={r}>{r}</option>)}
                         </select>
-                        {errors.rol && <p className="mt-1 text-xs text-danger">{errors.rol}</p>}
+                        <InputError className="mt-1" message={errors.rol} />
                         {!esInquilino && (
-                            <p className="mt-1 text-xs text-gray-400">Elige "Inquilino" para vincular esta cuenta a un inquilino ya registrado.</p>
+                            <p className="mt-1 text-xs text-muted-2">Elige "Inquilino" para vincular esta cuenta a un inquilino ya registrado.</p>
                         )}
                     </div>
 
                     {esInquilino ? (
                         <div className="col-span-2 sm:col-span-3">
-                            <label className="block text-xs font-medium text-gray-500">Inquilino (persona) *</label>
-                            <select value={data.id_persona} onChange={(e) => setData('id_persona', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm">
+                            <InputLabel htmlFor="nuevo_persona" value="Inquilino (persona) *" />
+                            <select id="nuevo_persona" value={data.id_persona} onChange={(e) => setData('id_persona', e.target.value)} className="mt-1 w-full rounded-md border-border bg-surface text-sm text-ink shadow-sm focus:border-primary focus:ring-primary">
                                 <option value="">-- elegir --</option>
                                 {personasDisponibles.map((p) => (
                                     <option key={p.id_persona} value={p.id_persona}>{p.nombres} {p.apellidos}</option>
                                 ))}
                             </select>
-                            {errors.id_persona && <p className="mt-1 text-xs text-danger">{errors.id_persona}</p>}
+                            <InputError className="mt-1" message={errors.id_persona} />
                             {personasDisponibles.length === 0 && (
                                 <p className="mt-1 text-xs text-warning">No hay inquilinos sin cuenta todavía — todos ya tienen acceso o falta crear su ocupación.</p>
                             )}
 
                             {personaSeleccionada && (
-                                <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg bg-surface p-3">
+                                <div className="mt-3 grid grid-cols-2 gap-3 rounded-lg bg-surface-2 p-3">
                                     <div>
-                                        <p className="text-xs text-gray-400">Nombre (de su ficha)</p>
-                                        <p className="text-sm font-medium text-gray-800">{personaSeleccionada.nombres} {personaSeleccionada.apellidos}</p>
+                                        <p className="text-xs text-muted-2">Nombre (de su ficha)</p>
+                                        <p className="text-sm font-medium text-ink">{personaSeleccionada.nombres} {personaSeleccionada.apellidos}</p>
                                     </div>
                                     <div>
-                                        <p className="text-xs text-gray-400">Email (de su ficha)</p>
+                                        <p className="text-xs text-muted-2">Email (de su ficha)</p>
                                         {personaSeleccionada.email ? (
-                                            <p className="text-sm font-medium text-gray-800">{personaSeleccionada.email}</p>
+                                            <p className="text-sm font-medium text-ink">{personaSeleccionada.email}</p>
                                         ) : (
                                             <p className="text-xs text-danger">Sin email — agrégalo primero en Inquilinos.</p>
                                         )}
@@ -167,59 +171,57 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
                     ) : (
                         <>
                             <div>
-                                <label className="block text-xs font-medium text-gray-500">Nombre *</label>
-                                <input type="text" value={data.name} onChange={(e) => setData('name', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                                {errors.name && <p className="mt-1 text-xs text-danger">{errors.name}</p>}
+                                <InputLabel htmlFor="nuevo_name" value="Nombre *" />
+                                <TextInput id="nuevo_name" className="mt-1 block w-full" value={data.name} onChange={(e) => setData('name', e.target.value)} />
+                                <InputError className="mt-1" message={errors.name} />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-500">Email *</label>
-                                <input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                                {errors.email && <p className="mt-1 text-xs text-danger">{errors.email}</p>}
+                                <InputLabel htmlFor="nuevo_email" value="Email *" />
+                                <TextInput id="nuevo_email" type="email" className="mt-1 block w-full" value={data.email} onChange={(e) => setData('email', e.target.value)} />
+                                <InputError className="mt-1" message={errors.email} />
                             </div>
                         </>
                     )}
 
                     <div>
-                        <label className="block text-xs font-medium text-gray-500">Contraseña *</label>
-                        <input type="password" value={data.password} onChange={(e) => setData('password', e.target.value)} className="mt-1 w-full rounded-md border-gray-300 text-sm" />
-                        {errors.password && <p className="mt-1 text-xs text-danger">{errors.password}</p>}
+                        <InputLabel htmlFor="nuevo_password" value="Contraseña *" />
+                        <TextInput id="nuevo_password" type="password" className="mt-1 block w-full" value={data.password} onChange={(e) => setData('password', e.target.value)} />
+                        <InputError className="mt-1" message={errors.password} />
                     </div>
 
                     <div className="col-span-2 flex gap-2 sm:col-span-4">
-                        <button
-                            type="submit"
+                        <PrimaryButton
                             disabled={processing || (esInquilino && personaSeleccionada && !personaSeleccionada.email)}
-                            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-dark disabled:opacity-50"
                         >
                             Guardar
-                        </button>
-                        <button type="button" onClick={() => { setCreating(false); reset(); }} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
+                        </PrimaryButton>
+                        <SecondaryButton type="button" onClick={() => { setCreating(false); reset(); }}>Cancelar</SecondaryButton>
                     </div>
                 </form>
             )}
 
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-[13px] border border-border bg-surface shadow-sm">
+                <table className="min-w-full divide-y divide-border text-sm">
+                    <thead className="bg-surface-2">
                         <tr>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Nombre</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Email</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Rol</th>
-                            <th className="px-4 py-2 text-left font-medium text-gray-500">Estado</th>
-                            <th className="px-4 py-2 text-right font-medium text-gray-500">Acciones</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Nombre</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Email</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Rol</th>
+                            <th className="px-4 py-2.5 text-left text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Estado</th>
+                            <th className="px-4 py-2.5 text-right text-[0.7rem] font-bold uppercase tracking-wide text-muted-2">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-border">
                         {usuarios.map((u) => (
                             <tr key={u.id}>
-                                <td className="px-4 py-2 font-medium text-gray-800">{u.name}</td>
-                                <td className="px-4 py-2 text-gray-500">{u.email}</td>
-                                <td className="px-4 py-2">
+                                <td className="px-4 py-2.5 font-semibold text-ink">{u.name}</td>
+                                <td className="px-4 py-2.5 text-muted">{u.email}</td>
+                                <td className="px-4 py-2.5">
                                     {puede('usuarios.asignar_rol') ? (
                                         <select
                                             value={u.rol ?? ''}
                                             onChange={(e) => cambiarRol(u, e.target.value)}
-                                            className="rounded-md border-gray-300 text-sm"
+                                            className="rounded-md border-border bg-surface text-sm text-ink"
                                         >
                                             <option value="">Sin rol</option>
                                             {roles.map((r) => <option key={r} value={r}>{r}</option>)}
@@ -228,10 +230,10 @@ export default function Index({ usuarios, roles, personasDisponibles }) {
                                         <span className="rounded-full bg-primary-light px-2.5 py-0.5 text-xs font-medium text-primary-dark">{u.rol ?? 'Sin rol'}</span>
                                     )}
                                 </td>
-                                <td className="px-4 py-2">
+                                <td className="px-4 py-2.5">
                                     <StatusBadge estado={u.estado} />
                                 </td>
-                                <td className="px-4 py-2 text-right">
+                                <td className="px-4 py-2.5 text-right">
                                     <div className="flex items-center justify-end gap-1">
                                         {puede('usuarios.asignar_rol') && u.id_persona === null && (
                                             <IconButton icon={Pencil} label="Editar nombre/email" onClick={() => setEditando(u)} />
