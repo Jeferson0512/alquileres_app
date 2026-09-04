@@ -388,10 +388,10 @@
         </label>
 
         <label class="task-item">
-          <input type="checkbox" data-id="reportes-1" />
+          <input type="checkbox" data-id="reportes-1" checked />
           <div class="task-text">
             <strong>Módulo de Reportes (financiero, ocupación, consumo, exportable)</strong>
-            <span>2026-09-04: alcance confirmado con el usuario para un módulo nuevo — no viene de investigación externa como las demás ideas de esta sección, es un pedido directo. Cubre 4 tipos: <strong>financiero</strong> (ingresos/egresos, morosidad, cobrado vs. facturado por período o rango de fechas), <strong>ocupación</strong> (historial por unidad, tasa de vacancia, contratos vencidos/renovados en un rango), <strong>consumo de luz</strong> (histórico por unidad, comparativa entre períodos — conecta directo con la idea de "Alertas de anomalías" de arriba), y <strong>exportable</strong> a Excel/PDF para uso externo (contador, declaraciones). Es una feature nueva de verdad, no un reskin: toca Services/Controllers, necesita agregaciones sobre varios períodos a la vez (hoy todo el sistema consulta un período a la vez), un módulo nuevo en la tabla <code>modules</code>, y decidir librería para exportar a Excel (dompdf ya existe para PDF, Excel necesitaría algo como <code>maatwebsite/excel</code>). Queda al final de la cola de trabajo pendiente, con su propia ronda de diseño antes de programarse.</span>
+            <span>✅ Hecho (2026-09-04): módulo nuevo completo, no viene de investigación externa como las demás ideas de esta sección, fue un pedido directo. Cubre 4 tipos: <strong>financiero</strong> (facturado/cobrado/pendiente, aging de morosidad por tramos de días, desglose por concepto, detalle por unidad — egresos reales quedan para v3, no hay tabla de gastos hoy), <strong>ocupación</strong> (timeline por unidad, tasa de vacancia, eventos de contrato en un rango), <strong>consumo de luz</strong> (comparativa entre períodos, resaltado de desviación contra el propio promedio de la unidad — conecta con la idea de "Alertas de anomalías" de arriba, que queda como su propia mejora de v3), y <strong>exportable</strong> a PDF (dompdf) y Excel (<code>maatwebsite/excel</code>, instalado para esto) desde cada pestaña. Por rango de períodos, no de fechas libres. 3 Services nuevos + Controller + módulo <code>reportes</code> en la tabla <code>modules</code>.</span>
           </div>
         </label>
       </div>

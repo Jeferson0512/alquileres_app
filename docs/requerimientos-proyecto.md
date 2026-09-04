@@ -76,6 +76,8 @@ Puebla la tabla `modules` y el seeder de roles de Spatie. Convención: `{módulo
 ```
 dashboard.ver
 
+reportes.ver
+
 periodos.ver | periodos.crear | periodos.cerrar
 
 inquilinos.ver | inquilinos.crear | inquilinos.editar | inquilinos.eliminar
