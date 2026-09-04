@@ -218,7 +218,7 @@ function TabFinanciero({ data }) {
 }
 
 function TabOcupacion({ data }) {
-    const { kpis, timeline, dias_rango: diasRango, serie_periodo: seriePeriodo, motivo_salida: motivoSalida, eventos } = data;
+    const { kpis, timeline, dias_rango: diasRango, rango_fechas: rangoFechas, serie_periodo: seriePeriodo, motivo_salida: motivoSalida, eventos } = data;
 
     const ocupOptions = {
         chart: { toolbar: { show: false }, fontFamily: 'inherit' },
@@ -268,6 +268,13 @@ function TabOcupacion({ data }) {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                    <div className="mt-1.5 grid grid-cols-[80px_1fr] gap-3">
+                        <div />
+                        <div className="flex justify-between font-mono text-[10px] text-muted-2">
+                            <span>{rangoFechas.inicio}</span>
+                            <span>{rangoFechas.fin}</span>
+                        </div>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted">
                         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: CHART_COLORS.primary }} />Ocupada</span>

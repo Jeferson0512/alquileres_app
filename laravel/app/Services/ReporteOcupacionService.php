@@ -28,7 +28,7 @@ class ReporteOcupacionService
         $rangoFin = $periodos->last()->fecha_fin->copy()->startOfDay();
         $diasRango = (int) $rangoInicio->diffInDays($rangoFin) + 1;
 
-        $unidades = Unidad::orderBy('codigo_unidad')->get(['id_unidad', 'codigo_unidad']);
+        $unidades = Unidad::where('estado', 'ACTIVO')->orderBy('codigo_unidad')->get(['id_unidad', 'codigo_unidad']);
 
         $ocupaciones = OcupacionUnidad::with('persona:id_persona,nombres,apellidos')
             ->where('fecha_inicio', '<=', $rangoFin)
@@ -103,6 +103,10 @@ class ReporteOcupacionService
             ],
             'timeline' => $timeline,
             'dias_rango' => $diasRango,
+            'rango_fechas' => [
+                'inicio' => $rangoInicio->day.' '.self::MESES_CORTOS[$rangoInicio->month],
+                'fin' => $rangoFin->day.' '.self::MESES_CORTOS[$rangoFin->month],
+            ],
             'serie_periodo' => $periodos->map(function ($p) {
                 $inicio = $p->fecha_inicio->copy()->startOfDay();
                 $fin = $p->fecha_fin->copy()->startOfDay();
@@ -118,7 +122,7 @@ class ReporteOcupacionService
 
                         return $desde->gt($hasta) ? 0 : (int) $desde->diffInDays($hasta) + 1;
                     });
-                $unidadesCount = Unidad::count();
+                $unidadesCount = Unidad::where('estado', 'ACTIVO')->count();
 
                 return [
                     'label' => self::MESES_CORTOS[$p->mes].' '.$p->anio,

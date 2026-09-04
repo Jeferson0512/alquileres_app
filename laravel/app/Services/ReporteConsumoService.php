@@ -26,7 +26,7 @@ class ReporteConsumoService
     public function build(Collection $periodos): array
     {
         $idsPeriodo = $periodos->pluck('id_periodo')->all();
-        $unidades = Unidad::orderBy('codigo_unidad')->get(['id_unidad', 'codigo_unidad', 'id_inmueble']);
+        $unidades = Unidad::where('estado', 'ACTIVO')->orderBy('codigo_unidad')->get(['id_unidad', 'codigo_unidad', 'id_inmueble']);
 
         $minimoKwh = (float) (ConfigCobranza::where('id_inmueble', $unidades->first()?->id_inmueble)->value('minimo_kwh_aviso') ?? 13.5);
 
@@ -122,8 +122,7 @@ class ReporteConsumoService
                 ->whereIn('id_periodo', $idsPeriodo)
                 ->get();
 
-            foreach ($tramos->groupBy('id_periodo') as $idPeriodo => $filas) {
-                $periodo = $filas->first();
+            foreach ($tramos->groupBy('id_periodo') as $filas) {
                 $tramoOrigen = $filas->firstWhere('id_ocupacion', $origen->id_ocupacion);
                 $tramoDestino = $filas->firstWhere('id_ocupacion', $destino->id_ocupacion);
                 if (!$tramoOrigen && !$tramoDestino) {
