@@ -334,16 +334,19 @@
           <input type="checkbox" data-id="innovador-3" />
           <div class="task-text">
             <strong>Confirmación automática de pago vía Yape Business API (webhook)</strong>
-            <span>QR dinámico por cobro y confirmación automática de pago, sin conciliación manual. Fuente: Yape Business API, pagos digitales Perú 2026. <em>Anotado 2026-09-04: mencionada para la tercera versión, pero depende de una decisión de negocio externa (RUC, afiliación a Yape Business, tiempos de aprobación) antes de poder programarse.</em></span>
+            <span>QR dinámico por cobro y confirmación automática de pago, sin conciliación manual. Fuente: Yape Business API, pagos digitales Perú 2026. <em>Anotado 2026-09-04: mencionada para la tercera versión, pero depende de una decisión de negocio externa (RUC, afiliación a Yape Business, tiempos de aprobación) antes de poder programarse. Actualizado el mismo día tras investigar el caso puntual del usuario (RUC "10" persona natural + inscripción en RNP) — ver FAQ actualizada abajo.</em></span>
             <details>
               <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
               <p><strong>Beneficios:</strong> elimina la conciliación manual de pagos por Yape (hoy 100% manual); reduce errores humanos al registrar pagos; el inquilino paga escaneando un QR específico de su cobro, no un QR genérico.</p>
-              <p><strong>¿Qué necesito para activarlo?</strong> RUC activo, cuenta corriente o de ahorros en BCP, y completar el formulario de afiliación a Yape Business — la aprobación toma entre 3 y 10 días hábiles según la investigación.</p>
-              <p><strong>¿Si no tengo RUC, puedo usarlo?</strong> No, es un requisito del programa Yape Business (es un producto para comercios formales, no para personas naturales).</p>
+              <p><strong>¿Qué necesito para activarlo?</strong> RUC activo y habido ante SUNAT, cuenta corriente o de ahorros en BCP, y completar el flujo "Ser Yape Empresa" desde la app — la aprobación toma entre 3 y 10 días hábiles según la investigación.</p>
+              <p><strong>¿Si tengo RUC "10" (persona natural, no empresa) puedo usarlo?</strong> Probablemente sí — el flujo oficial de Yape solo pide "tipo de documento: RUC" sin filtrar por prefijo 10/20, y no se encontró ninguna fuente primaria que excluya explícitamente al RUC 10. La única forma de confirmarlo al 100% es probar el flujo "Ser Yape Empresa" directo en la app (gratis, reversible) — Yape no publica un documento exhaustivo de requisitos verificables.</p>
+              <p><strong>¿Estar inscrito en el RNP (Registro Nacional de Proveedores del Estado) complica esto?</strong> No, según la investigación (2026-09-04) — el RNP es exclusivamente para contratar con el Estado peruano, no impone obligaciones tributarias adicionales, y no vuelve a la persona "Persona Expuesta Políticamente" (PEP) ante el banco (ese estatus es solo para funcionarios públicos). El único requisito que RNP y Yape Business comparten es que el RUC esté activo y habido ante SUNAT — si eso se cumple, no se cruzan entre sí.</p>
               <p><strong>¿Qué pasa con los pagos en efectivo o transferencia?</strong> Siguen funcionando igual que hoy (registro manual); esta mejora solo automatiza el canal Yape.</p>
-              <p class="fuentes"><strong>Fuentes consultadas:</strong>
-                <a href="https://docs.alignet.com/agente-tercero/Working-version/principal" target="_blank" rel="noopener noreferrer">documentación de la API de autorización con Yape</a> y
-                <a href="https://ecoplazaedificaciones.com.pe/blog/yape-plin-pagos-digitales-mercados-peru-2026" target="_blank" rel="noopener noreferrer">panorama de pagos digitales en Perú (2026)</a>, usadas para confirmar requisitos de afiliación (RUC, cuenta BCP) y tiempos de aprobación.
+              <p class="fuentes"><strong>Fuentes consultadas (2026-09-04):</strong>
+                <a href="https://www.yape.com.pe/preguntas-frecuentes/yape-empresa/como-puedo-acceder-a-yape-empresa" target="_blank" rel="noopener noreferrer">Centro de Ayuda Yape — cómo acceder a Yape Empresa</a>,
+                <a href="https://www.gob.pe/410-inscribirme-en-el-registro-nacional-de-proveedores-rnp" target="_blank" rel="noopener noreferrer">gob.pe — Registro Nacional de Proveedores (RNP)</a>,
+                <a href="https://www.licitalab.pe/blog/registro-nacional-proveedores-rnp" target="_blank" rel="noopener noreferrer">requisitos y vigencia del RNP</a> y
+                <a href="https://regcheq.com/es-pe/blog/quienes-son-pep-peru-sbs" target="_blank" rel="noopener noreferrer">quiénes son PEP en Perú según la SBS</a>, usadas para confirmar que RUC persona natural y la inscripción en RNP no bloquean la afiliación a Yape Business.
               </p>
             </details>
           </div>
