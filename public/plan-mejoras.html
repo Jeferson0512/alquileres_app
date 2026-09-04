@@ -225,10 +225,10 @@
         </label>
 
         <label class="task-item">
-          <input type="checkbox" data-id="medio-3" />
+          <input type="checkbox" data-id="medio-3" checked />
           <div class="task-text">
             <strong>Recibos en PDF</strong>
-            <span>2026-08-16: diseño aprobado (sección 3 del artifact "Mi Alquiler") — documento formal con folio (<code>numero_comprobante</code>), tabla de conceptos, deuda anterior separada, sello de estado no editable. Falta implementar: descarga self-service desde el portal (hoy solo existe como generador admin en Avisos/Index.jsx, PNG vía canvas) + agregar exportación a PDF con dompdf (ya en el plan original) o vía canvas→PDF en el cliente.</span>
+            <span>✅ Hecho — terminó siendo parte del mismo trabajo que "Rediseño del portal de inquilino" (mediano-5, abajo): el recibo descargable en PDF real vía dompdf, con folio, deuda anterior y la regla del <code>minimo_kwh_aviso</code>, ya está implementado y probado ahí. Quedaba sin marcar por separado aunque ya estaba resuelto.</span>
           </div>
         </label>
 
@@ -296,7 +296,7 @@
           <input type="checkbox" data-id="innovador-1" />
           <div class="task-text">
             <strong>PWA instalable + notificaciones push</strong>
-            <span>Convertir la SPA actual en una app instalable (manifest.json + service worker), sin tienda de apps. Fuente: tendencias PWA 2026.</span>
+            <span>Convertir la SPA actual en una app instalable (manifest.json + service worker), sin tienda de apps. Fuente: tendencias PWA 2026. <em>Anotado 2026-09-04: candidata real para la tercera versión — no requiere cuentas ni credenciales externas, solo trabajo de código propio.</em></span>
             <details>
               <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
               <p><strong>Beneficios:</strong> el admin/cobrador la instala en su celular como app real; funciona aunque haya mala señal (cachea pantallas ya visitadas); puede recibir notificaciones push de vencimientos/cobros aunque tenga el navegador cerrado.</p>
@@ -315,7 +315,7 @@
           <input type="checkbox" data-id="innovador-2" />
           <div class="task-text">
             <strong>Recordatorios automáticos por WhatsApp Business API</strong>
-            <span>Enviar automáticamente los avisos de vencimiento de contrato y cobros pendientes por WhatsApp, sin compartir manualmente. Fuente: WhatsApp Business API 2026.</span>
+            <span>Enviar automáticamente los avisos de vencimiento de contrato y cobros pendientes por WhatsApp, sin compartir manualmente. Fuente: WhatsApp Business API 2026. <em>Anotado 2026-09-04: mencionada para la tercera versión, pero depende de una decisión de negocio externa (cuenta de WhatsApp Business verificada, costo por plantilla de mensaje) antes de poder programarse.</em></span>
             <details>
               <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
               <p><strong>Beneficios:</strong> cero olvidos de avisar a tiempo; el inquilino recibe el mensaje directo en una app que ya usa todos los días; reduce el trabajo manual de "Avisos" a solo revisar, no enviar uno por uno.</p>
@@ -334,7 +334,7 @@
           <input type="checkbox" data-id="innovador-3" />
           <div class="task-text">
             <strong>Confirmación automática de pago vía Yape Business API (webhook)</strong>
-            <span>QR dinámico por cobro y confirmación automática de pago, sin conciliación manual. Fuente: Yape Business API, pagos digitales Perú 2026.</span>
+            <span>QR dinámico por cobro y confirmación automática de pago, sin conciliación manual. Fuente: Yape Business API, pagos digitales Perú 2026. <em>Anotado 2026-09-04: mencionada para la tercera versión, pero depende de una decisión de negocio externa (RUC, afiliación a Yape Business, tiempos de aprobación) antes de poder programarse.</em></span>
             <details>
               <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
               <p><strong>Beneficios:</strong> elimina la conciliación manual de pagos por Yape (hoy 100% manual); reduce errores humanos al registrar pagos; el inquilino paga escaneando un QR específico de su cobro, no un QR genérico.</p>
@@ -353,7 +353,7 @@
           <input type="checkbox" data-id="innovador-4" />
           <div class="task-text">
             <strong>Alertas de anomalías de consumo eléctrico</strong>
-            <span>Comparar la lectura nueva contra el histórico de esa unidad y avisar si el consumo se dispara. Fuente: submetering y detección de anomalías 2026.</span>
+            <span>Comparar la lectura nueva contra el histórico de esa unidad y avisar si el consumo se dispara. Fuente: submetering y detección de anomalías 2026. <em>Anotado 2026-09-04: candidata real para la tercera versión — conecta directo con el reporte de "Consumo de luz" ya confirmado para el módulo de Reportes nuevo, misma comparación contra histórico sirve para las dos cosas.</em></span>
             <details>
               <summary onclick="event.stopPropagation()">Beneficios y preguntas frecuentes</summary>
               <p><strong>Beneficios:</strong> detecta posibles fugas, focos/equipos dañados, o errores de digitación al capturar la lectura, antes de que afecten la liquidación de todos; el aviso aparece en el mismo lugar donde ya revisas las lecturas, no requiere un módulo nuevo.</p>
@@ -384,6 +384,14 @@
                 <a href="https://www.unitconnect.com/rental-property-management-software-trends-for-2026/" target="_blank" rel="noopener noreferrer">tendencias de software de alquileres para 2026 (UnitConnect)</a>, que señalan la analítica de datos como una de las prioridades del sector.
               </p>
             </details>
+          </div>
+        </label>
+
+        <label class="task-item">
+          <input type="checkbox" data-id="reportes-1" />
+          <div class="task-text">
+            <strong>Módulo de Reportes (financiero, ocupación, consumo, exportable)</strong>
+            <span>2026-09-04: alcance confirmado con el usuario para un módulo nuevo — no viene de investigación externa como las demás ideas de esta sección, es un pedido directo. Cubre 4 tipos: <strong>financiero</strong> (ingresos/egresos, morosidad, cobrado vs. facturado por período o rango de fechas), <strong>ocupación</strong> (historial por unidad, tasa de vacancia, contratos vencidos/renovados en un rango), <strong>consumo de luz</strong> (histórico por unidad, comparativa entre períodos — conecta directo con la idea de "Alertas de anomalías" de arriba), y <strong>exportable</strong> a Excel/PDF para uso externo (contador, declaraciones). Es una feature nueva de verdad, no un reskin: toca Services/Controllers, necesita agregaciones sobre varios períodos a la vez (hoy todo el sistema consulta un período a la vez), un módulo nuevo en la tabla <code>modules</code>, y decidir librería para exportar a Excel (dompdf ya existe para PDF, Excel necesitaría algo como <code>maatwebsite/excel</code>). Queda al final de la cola de trabajo pendiente, con su propia ronda de diseño antes de programarse.</span>
           </div>
         </label>
       </div>
