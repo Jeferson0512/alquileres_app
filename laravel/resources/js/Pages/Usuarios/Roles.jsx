@@ -1,5 +1,6 @@
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
+import { CornerDownRight } from 'lucide-react';
 import { Fragment, useState } from 'react';
 
 const ACCION_LABELS = {
@@ -12,6 +13,19 @@ const ACCION_LABELS = {
 
 function accionLabel(accion) {
     return ACCION_LABELS[accion] ?? accion;
+}
+
+// Un submódulo (ej. "Tarifas" bajo "Cobros") se marca con este ícono en vez
+// del texto "↳" -- un glifo de flecha se ve distinto (y a veces mal) según
+// la fuente/plataforma; un ícono real de lucide siempre se ve igual.
+function GroupTitle({ grupo }) {
+    if (!grupo.es_submodulo) return grupo.name;
+    return (
+        <span className="inline-flex items-center gap-1.5">
+            <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-muted-2" />
+            {grupo.name}
+        </span>
+    );
 }
 
 export default function Roles({ grupos, roles, rolePermissions }) {
@@ -70,7 +84,7 @@ export default function Roles({ grupos, roles, rolePermissions }) {
                         {grupos.map((grupo) => (
                             <div key={grupo.code} className="rounded-lg border border-border p-3">
                                 <p className={`mb-1.5 text-xs font-bold text-ink ${grupo.es_submodulo ? 'pl-3' : ''}`}>
-                                    {grupo.es_submodulo ? '↳ ' : ''}{grupo.name}
+                                    <GroupTitle grupo={grupo} />
                                 </p>
                                 <div className="space-y-1">
                                     {grupo.permisos.map((permiso) => (
@@ -115,7 +129,7 @@ export default function Roles({ grupos, roles, rolePermissions }) {
                             <Fragment key={grupo.code}>
                                 <tr className="bg-surface-2">
                                     <td colSpan={roles.length + 1} className={`px-4 py-1.5 font-bold text-ink ${grupo.es_submodulo ? 'pl-8' : ''}`}>
-                                        {grupo.es_submodulo ? '↳ ' : ''}{grupo.name}
+                                        <GroupTitle grupo={grupo} />
                                     </td>
                                 </tr>
                                 {grupo.permisos.map((permiso) => (

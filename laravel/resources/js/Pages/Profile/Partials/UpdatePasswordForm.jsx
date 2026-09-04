@@ -1,5 +1,6 @@
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
+import PasswordMatchHint from '@/Components/PasswordMatchHint';
 import PasswordRequirements from '@/Components/PasswordRequirements';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
@@ -117,6 +118,8 @@ export default function UpdatePasswordForm({ className = '' }) {
                         className="mt-1 block w-full"
                         autoComplete="new-password"
                     />
+
+                    <PasswordMatchHint password={data.password} confirmation={data.password_confirmation} />
 
                     <InputError
                         message={errors.password_confirmation}
