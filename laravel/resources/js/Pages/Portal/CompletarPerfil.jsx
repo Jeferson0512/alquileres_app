@@ -155,7 +155,7 @@ export default function CompletarPerfil({ persona, campos, incompleto }) {
                 </div>
             )}
 
-            <div className="space-y-4">
+            <div className={incompleto ? '' : 'grid grid-cols-1 gap-4 lg:grid-cols-2'}>
                 <Section icon={UserRound} title="Datos de contacto" description="Los usamos para avisos de cobros y vencimientos.">
                     <form onSubmit={submit} className="space-y-4">
                         {campos.map((campo) => (
