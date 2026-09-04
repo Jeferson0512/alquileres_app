@@ -13,7 +13,7 @@ export default function confirmDialog({ title, text, confirmText = 'Confirmar', 
         confirmButtonText: confirmText,
         cancelButtonText: 'Cancelar',
         confirmButtonColor: danger ? '#DC2626' : '#2563EB',
-        cancelButtonColor: '#6B7280',
+        cancelButtonColor: '#64748B',
         reverseButtons: true,
         focusCancel: true,
     }).then((result) => result.isConfirmed);

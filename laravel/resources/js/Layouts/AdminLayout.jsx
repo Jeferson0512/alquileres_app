@@ -100,8 +100,8 @@ function breadcrumbFor(navigation, currentPath) {
 
 const ESTADO_PERIODO_STYLES = {
     ABIERTO: 'bg-primary-light text-primary-dark',
-    CERRADO: 'bg-gray-100 text-gray-500',
-    ANULADO: 'bg-red-50 text-danger',
+    CERRADO: 'bg-surface-3 text-muted',
+    ANULADO: 'bg-danger-tint text-danger',
 };
 
 // Selector de periodo real (no solo texto) -- aparece en el topbar SOLO en
@@ -121,10 +121,10 @@ function PeriodSwitcher({ periodo, periodos, onChange }) {
             <Dropdown.Trigger>
                 <button
                     type="button"
-                    className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-2.5 pr-2 hover:bg-gray-100"
+                    className="flex items-center gap-2 rounded-lg border border-border bg-surface-2 py-1.5 pl-2.5 pr-2 hover:bg-surface-3"
                 >
-                    <Calendar className="h-4 w-4 shrink-0 text-gray-400" />
-                    <span className="text-sm font-semibold text-gray-800">{MESES[periodo.mes - 1]} {periodo.anio}</span>
+                    <Calendar className="h-4 w-4 shrink-0 text-muted-2" />
+                    <span className="text-sm font-semibold text-ink">{MESES[periodo.mes - 1]} {periodo.anio}</span>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${ESTADO_PERIODO_STYLES[periodo.estado] ?? 'bg-gray-100 text-gray-500'}`}>
                         {periodo.estado}
                     </span>
@@ -179,11 +179,11 @@ function NavItem({ item, currentPath }) {
                     href={`/${moduleToPath(item.code)}`}
                     className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                         active
-                            ? 'bg-primary/20 text-white'
-                            : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                            ? 'bg-sidebar-active text-white'
+                            : 'text-sidebar-ink hover:bg-white/5 hover:text-white'
                     }`}
                 >
-                    <ModuleIcon code={item.code} className={`h-4 w-4 shrink-0 ${active ? 'text-primary-light' : ''}`} />
+                    <ModuleIcon code={item.code} className={`h-4 w-4 shrink-0 ${active ? 'text-primary' : 'opacity-75'}`} />
                     {item.name}
                 </Link>
             </li>
@@ -196,17 +196,17 @@ function NavItem({ item, currentPath }) {
                 type="button"
                 onClick={() => setOpen((v) => !v)}
                 className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    active ? 'bg-primary/20 text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'
+                    active ? 'bg-sidebar-active text-white' : 'text-sidebar-ink hover:bg-white/5 hover:text-white'
                 }`}
             >
                 <span className="flex items-center gap-3">
-                    <ModuleIcon code={item.code} className={`h-4 w-4 shrink-0 ${active ? 'text-primary-light' : ''}`} />
+                    <ModuleIcon code={item.code} className={`h-4 w-4 shrink-0 ${active ? 'text-primary' : 'opacity-75'}`} />
                     {item.name}
                 </span>
                 <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
             </button>
             {open && (
-                <ul className="ml-3 mt-1 space-y-1 border-l border-white/10 pl-3">
+                <ul className="ml-3 mt-1 space-y-1 border-l border-sidebar-border pl-3">
                     {item.children.map((child) => {
                         const childActive = isModuleActive(currentPath, child.code);
                         return (
@@ -215,11 +215,11 @@ function NavItem({ item, currentPath }) {
                                     href={`/${moduleToPath(child.code)}`}
                                     className={`flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium ${
                                         childActive
-                                            ? 'bg-primary/20 text-white'
-                                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                                            ? 'bg-sidebar-active text-white'
+                                            : 'text-sidebar-muted hover:bg-white/5 hover:text-white'
                                     }`}
                                 >
-                                    <ModuleIcon code={child.code} className={`h-4 w-4 shrink-0 ${childActive ? 'text-primary-light' : ''}`} />
+                                    <ModuleIcon code={child.code} className={`h-4 w-4 shrink-0 ${childActive ? 'text-primary' : 'opacity-75'}`} />
                                     {child.name}
                                 </Link>
                             </li>
@@ -261,7 +261,7 @@ function NotificacionesBell() {
             <Dropdown.Trigger>
                 <button
                     type="button"
-                    className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-2"
                     title="Notificaciones"
                 >
                     <Bell className="h-[18px] w-[18px]" />
@@ -325,19 +325,22 @@ export default function AdminLayout({ title, description, actions, children, per
     const configPath = firstConfigPath(navigation);
 
     return (
-        <div className="min-h-screen bg-surface">
+        <div className="min-h-screen bg-paper">
             {/* Sidebar -- oscuro a propósito, distinto del resto del panel (que
                 sigue 100% claro, sin clases dark:): es una identidad fija del
                 sidebar, no un modo de tema. El toggle claro/oscuro real solo
                 existe en el Portal del inquilino, ver tailwind.config.js. */}
             <aside
-                className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col transform bg-surface-dark transition-transform lg:translate-x-0 ${
+                className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col transform bg-sidebar-bg transition-transform lg:translate-x-0 ${
                     mobileOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
-                <div className="flex h-16 shrink-0 items-center border-b border-white/10 px-5">
-                    <Link href="/dashboard" className="text-lg font-semibold text-white">
-                        Alquileres App
+                <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-sidebar-border px-5">
+                    <Link href="/dashboard" className="flex items-center gap-2.5">
+                        <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[9px] bg-gradient-to-br from-primary to-[#1E40AF] text-sm font-extrabold text-white">
+                            A
+                        </span>
+                        <span className="text-[0.98rem] font-extrabold tracking-tight text-white">Alquileres App</span>
                     </Link>
                 </div>
                 <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-3">
@@ -349,7 +352,7 @@ export default function AdminLayout({ title, description, actions, children, per
                             return (
                                 <Fragment key={item.code}>
                                     {showGroupLabel && (
-                                        <li className="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500 first:pt-0">
+                                        <li className="px-3 pb-1.5 pt-4 text-[11px] font-bold uppercase tracking-wider text-sidebar-muted first:pt-0">
                                             {group}
                                         </li>
                                     )}
@@ -372,11 +375,11 @@ export default function AdminLayout({ title, description, actions, children, per
             {/* Contenido */}
             <div className="lg:pl-64">
                 {/* Topbar */}
-                <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
+                <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border bg-surface px-4 sm:px-6">
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
-                            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+                            className="rounded-lg p-2 text-muted hover:bg-surface-2 lg:hidden"
                             onClick={() => setMobileOpen((v) => !v)}
                         >
                             <Menu className="h-6 w-6" />
@@ -392,7 +395,7 @@ export default function AdminLayout({ title, description, actions, children, per
                     {configPath && (
                         <Link
                             href={configPath}
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted hover:bg-surface-2"
                             title="Configuración"
                         >
                             <Settings className="h-[18px] w-[18px]" />
@@ -403,16 +406,16 @@ export default function AdminLayout({ title, description, actions, children, per
                         <Dropdown.Trigger>
                             <button
                                 type="button"
-                                className="flex items-center gap-2.5 rounded-lg py-1.5 pl-1.5 pr-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100"
+                                className="flex items-center gap-2.5 rounded-lg py-1.5 pl-1.5 pr-2.5 text-sm font-medium text-muted hover:bg-surface-2"
                             >
                                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-light text-xs font-bold text-primary-dark">
                                     {iniciales(user.name)}
                                 </span>
                                 <span className="hidden text-left leading-tight sm:block">
-                                    <span className="block text-sm font-semibold text-gray-800">{user.name}</span>
-                                    {user.role && <span className="block text-xs text-gray-400">{user.role}</span>}
+                                    <span className="block text-sm font-semibold text-ink">{user.name}</span>
+                                    {user.role && <span className="block text-xs text-muted-2">{user.role}</span>}
                                 </span>
-                                <svg className="h-4 w-4 shrink-0 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <svg className="h-4 w-4 shrink-0 text-muted-2" fill="currentColor" viewBox="0 0 20 20">
                                     <path
                                         fillRule="evenodd"
                                         d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -433,13 +436,13 @@ export default function AdminLayout({ title, description, actions, children, per
 
                 <main className="p-4 sm:p-6">
                     {breadcrumb.length > 0 && (
-                        <p className="mb-1 text-xs text-gray-400">{breadcrumb.join(' / ')}</p>
+                        <p className="mb-1 text-xs text-muted-2">{breadcrumb.join(' / ')}</p>
                     )}
                     {(title || actions) && (
                         <div className="mb-3 flex flex-wrap items-end justify-between gap-2.5">
                             <div>
-                                {title && <h1 className="text-lg font-semibold text-gray-900">{title}</h1>}
-                                {description && <p className="mt-0.5 text-sm text-gray-500">{description}</p>}
+                                {title && <h1 className="text-lg font-extrabold tracking-tight text-ink">{title}</h1>}
+                                {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
                             </div>
                             {actions && <div className="shrink-0">{actions}</div>}
                         </div>

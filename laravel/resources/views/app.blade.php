@@ -8,7 +8,9 @@
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        {{-- Plus Jakarta Sans (texto general) + IBM Plex Mono (numeros: KPIs,
+             montos, lecturas de medidor) -- prototipo "Torre de Control". --}}
+        <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800|ibm-plex-mono:500,600&display=swap" rel="stylesheet" />
 
         {{-- Portal de Inquilinos: solo ahi, nunca en el panel admin --}}
         @if(str_starts_with(request()->path(), 'portal'))

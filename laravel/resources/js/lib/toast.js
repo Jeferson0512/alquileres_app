@@ -12,11 +12,13 @@ const Toast = Swal.mixin({
     },
 });
 
+// Colores exactos de la paleta de marca (docs/requerimientos-proyecto.md, S7)
+// -- SweetAlert2 no lee Tailwind, así que van en hex literal.
 const toast = {
-    success: (message) => message && Toast.fire({ icon: 'success', title: message }),
-    error: (message) => message && Toast.fire({ icon: 'error', title: message }),
-    warning: (message) => message && Toast.fire({ icon: 'warning', title: message }),
-    info: (message) => message && Toast.fire({ icon: 'info', title: message }),
+    success: (message) => message && Toast.fire({ icon: 'success', title: message, iconColor: '#16A34A' }),
+    error: (message) => message && Toast.fire({ icon: 'error', title: message, iconColor: '#DC2626' }),
+    warning: (message) => message && Toast.fire({ icon: 'warning', title: message, iconColor: '#D97706' }),
+    info: (message) => message && Toast.fire({ icon: 'info', title: message, iconColor: '#2563EB' }),
 };
 
 export default toast;

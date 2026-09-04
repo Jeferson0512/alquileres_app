@@ -14,7 +14,7 @@ export default async function promptDialog({ title, inputLabel, confirmText = 'C
         confirmButtonText: confirmText,
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#2563EB',
-        cancelButtonColor: '#6B7280',
+        cancelButtonColor: '#64748B',
         inputValidator: (v) => (!v || !v.trim() ? 'Este campo es obligatorio' : undefined),
     });
 
